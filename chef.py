@@ -2,17 +2,19 @@
 
 from le_utils.constants.languages import getlang
 from ricecooker.chefs import SushiChef
-from ricecooker.classes import nodes, questions, licenses
+from ricecooker.classes import licenses, nodes, questions
+from ricecooker.classes.files import VideoFile, YouTubeSubtitleFile
+from ricecooker.classes.questions import PerseusQuestion
 
-from .khan import get_khan_topic_tree
-
+from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
+                  get_khan_topic_tree)
 
 LICENSE_MAPPING = {
     "CC BY": licenses.CC_BYLicense(copyright_holder="Khan Academy"),
-    "CC BY-NC": licenses.CC_BY_NCLicense,
-    "CC BY-NC-ND": licenses.CC_BY_NC_NDLicense,
-    "CC BY-NC-SA (KA default)": licenses.CC_BY_NC_SALicense,
-    "CC BY-SA": licenses.CC_BY_SALicense,
+    "CC BY-NC": licenses.CC_BY_NCLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-ND": licenses.CC_BY_NC_NDLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-SA (KA default)": licenses.CC_BY_NC_SALicense(copyright_holder="Khan Academy"),
+    "CC BY-SA": licenses.CC_BY_SALicense(copyright_holder="Khan Academy"),
     "Non-commercial/non-Creative Commons (College Board)": licenses.SpecialPermissionsLicense(copyright_holder="Khan Academy", description="Non-commercial/non-Creative Commons (College Board)"),
     # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,
 }
@@ -30,6 +32,7 @@ SLUG_BLACKLIST += ["MoMA", "getty-museum", "stanford-medicine", "crash-course1",
 #                    "time-value-of-money", "changing-a-mixed-number-to-an-improper-fraction",
 #                    "applying-the-metric-system"]  # errors on video downloads
 
+
 class KhanAcademySushiChef(SushiChef):
     """
     Khan Academy sushi chef.
@@ -42,11 +45,12 @@ class KhanAcademySushiChef(SushiChef):
         lang = getlang(lang_code)
 
         channel = nodes.ChannelNode(
-            source_id="KA ({0})".format(lang_code),
+            source_id="KA ({0}) hooplah".format(lang_code),
             source_domain="khanacademy.org-test",
             title="Khan Academy ({0}) - TEST".format(lang.native_name),
             description='Khan Academy content for {}.'.format(lang.name),
             thumbnail="https://upload.wikimedia.org/wikipedia/commons/1/15/Khan_Academy_Logo_Old_version_2015.jpg",
+            language=lang
         )
 
         return channel
@@ -60,7 +64,7 @@ class KhanAcademySushiChef(SushiChef):
 
         ka_root_topic = get_khan_topic_tree(lang=lang_code)
 
-        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, lang=lang_code)
+        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang_code)
 
         for topic in root_topic.children:
             channel.add_child(topic)
@@ -68,7 +72,7 @@ class KhanAcademySushiChef(SushiChef):
         return channel
 
 
-def convert_ka_node_to_ricecooker_node(ka_node):
+def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
     if ka_node.slug in SLUG_BLACKLIST:
         return None
@@ -80,11 +84,14 @@ def convert_ka_node_to_ricecooker_node(ka_node):
             description=ka_node.description[:400],
         )
         for ka_subtopic in ka_node.children:
-            subtopic = convert_ka_node_to_ricecooker_node(ka_subtopic)
+            subtopic = convert_ka_node_to_ricecooker_node(ka_subtopic, target_lang=target_lang)
             if subtopic:
                 topic.add_child(subtopic)
-        return topic
-    
+        if len(topic.children) > 0:
+            return topic
+        else:
+            return None
+
     elif isinstance(ka_node, KhanExercise):
         exercise = nodes.ExerciseNode(
             source_id=ka_node.id,
@@ -92,27 +99,32 @@ def convert_ka_node_to_ricecooker_node(ka_node):
             description=ka_node.description[:400],
             # exercise_data={'mastery_model': node.get('suggested_completion_criteria')},
             license=licenses.SpecialPermissionsLicense(copyright_holder="Khan Academy", description="Permission granted to distribute through Kolibri for non-commercial use"),  # need to formalize with KA
-            thumbnail=node.thumbnail,
+            thumbnail=ka_node.thumbnail,
         )
         for ka_assessment_item in ka_node.get_assessment_items():
             assessment_item = PerseusQuestion(
-                id=assessment_item.id,
-                raw_data=assessment_item.data,
-                source_url=assessment_item.source_url,
+                id=ka_assessment_item.id,
+                raw_data=ka_assessment_item.data,
+                source_url=ka_assessment_item.source_url,
             )
             exercise.add_question(assessment_item)
         return exercise
 
     elif isinstance(ka_node, KhanVideo):
-        
+
         # TODO: Use traditional compression here to avoid breaking existing KA downloads?
         files = [VideoFile(ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4")))]
-        
-        # if the video is in English, include any subtitles available along with it
-        if ka_node.lang == "en":
-            for lang_code in ka_node.get_subtitle_languages():
-                files.append(YouTubeSubtitleFile(node.id, language=lang_code))
-    
+
+        # include any subtitles that are available for this video
+        subtitle_languages = ka_node.get_subtitle_languages()
+        for lang_code in subtitle_languages:
+            files.append(YouTubeSubtitleFile(ka_node.id, language=lang_code))
+
+        # if we dont have video in target lang or subtitle not available in target lang, return None
+        if ka_node.lang != target_lang:
+            if ka_node.lang not in subtitle_languages:
+                return None
+
         # convert KA's license format into our own license classes
         if ka_node.license in LICENSE_MAPPING:
             license = LICENSE_MAPPING[ka_node.license]
@@ -125,7 +137,7 @@ def convert_ka_node_to_ricecooker_node(ka_node):
             title=ka_node.title,
             description=ka_node.description[:400],
             license=license,
-            thumbnail=node.thumbnail,
+            thumbnail=ka_node.thumbnail,
             files=files,
         )
 
