@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
+from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
+                  get_khan_topic_tree)
 from le_utils.constants.languages import getlang
 from ricecooker.chefs import SushiChef
 from ricecooker.classes import licenses, nodes, questions
 from ricecooker.classes.files import VideoFile, YouTubeSubtitleFile
 from ricecooker.classes.questions import PerseusQuestion
-
-from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
-                  get_khan_topic_tree)
 
 LICENSE_MAPPING = {
     "CC BY": licenses.CC_BYLicense(copyright_holder="Khan Academy"),
@@ -87,6 +86,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             subtopic = convert_ka_node_to_ricecooker_node(ka_subtopic, target_lang=target_lang)
             if subtopic:
                 topic.add_child(subtopic)
+        topic.derive_thumbnail()
         if len(topic.children) > 0:
             return topic
         else:
@@ -118,7 +118,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         # include any subtitles that are available for this video
         subtitle_languages = ka_node.get_subtitle_languages()
         for lang_code in subtitle_languages:
-            files.append(YouTubeSubtitleFile(ka_node.id, language=lang_code))
+            files.append(YouTubeSubtitleFile(ka_node.youtube_id, language=lang_code))
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang:
@@ -130,7 +130,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             license = LICENSE_MAPPING[ka_node.license]
         else:
             # license = licenses.CC_BY_NC_SA # or?
-            raise Exception("Unknown license on video {}: {}".format(ka_node.id, ka_node.license))
+            raise Exception("Unknown license on video {}: {}".format(ka_node.youtube_id, ka_node.license))
 
         video = nodes.VideoNode(
             source_id=ka_node.id,

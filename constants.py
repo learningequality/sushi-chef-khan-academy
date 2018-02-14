@@ -1,5 +1,4 @@
 import json
-
 from collections import OrderedDict
 
 TOPIC_ATTRIBUTES = [
@@ -65,9 +64,7 @@ PROJECTION_KEYS = json.dumps(OrderedDict([
 ]))
 
 V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
-# CAPTION_CHECK_URL = "https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId={youtube_id}&key={key}"
-# KA_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1k5xh2UXV3EchRHnYzeP6-YGKrmba22vsltGSuU9bL88/export?format=csv#gid=0"
-# KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"
+KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"
 # EXERCISE_URL = "https://www.khanacademy.org/api/internal/exercises?lang={lang}"
 ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={lang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?key={key}"
