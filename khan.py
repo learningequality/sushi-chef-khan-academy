@@ -70,7 +70,8 @@ def _recurse_create(node, tree_dict, lang="en"):
                                   thumbnail=node['imageUrl'],
                                   license=node['licenseName'],
                                   download_urls=node['downloadUrls'],
-                                  youtube_id=node['translatedYoutubeId'],
+                                  youtube_id=node['youtubeId'],
+                                  translated_youtube_id=node['translatedYoutubeId'],
                                   lang=node['translatedYoutubeLang'])
         elif node['kind'] == 'Article':
             khan_node = KhanArticle(id=node['id'],
@@ -146,16 +147,17 @@ class KhanAssessmentItem(object):
 
 class KhanVideo(KhanNode):
 
-    def __init__(self, id, title, description, slug, thumbnail, license, download_urls, youtube_id, lang="en"):
+    def __init__(self, id, title, description, slug, thumbnail, license, download_urls, youtube_id, translated_youtube_id, lang="en"):
         super(KhanVideo, self).__init__(id, title, description, slug, lang=lang)
         self.license = license
         self.thumbnail = thumbnail
         self.download_urls = download_urls
         self.youtube_id = youtube_id
+        self.translated_youtube_id = translated_youtube_id
 
     def get_subtitle_languages(self):
         with youtube_dl.YoutubeDL({"listsubtitles": True}) as ydl:
-                return list(YoutubeIE(ydl).extract(self.id)["subtitles"].keys())
+            return list(YoutubeIE(ydl).extract(self.translated_youtube_id)["subtitles"].keys())
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)

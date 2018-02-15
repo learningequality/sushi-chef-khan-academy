@@ -37,6 +37,7 @@ VIDEO_ATTRIBUTES = [
     'kind',
     'licenseName',
     'slug',
+    'youtubeId',
     'translatedYoutubeLang',
     'translatedYoutubeId',
     'translatedTitle',

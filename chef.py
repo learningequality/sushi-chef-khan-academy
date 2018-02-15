@@ -118,11 +118,12 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         # include any subtitles that are available for this video
         subtitle_languages = ka_node.get_subtitle_languages()
         for lang_code in subtitle_languages:
-            files.append(YouTubeSubtitleFile(ka_node.youtube_id, language=lang_code))
+            files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang:
             if ka_node.lang not in subtitle_languages:
+                print('Excluding video node with youtube_id: {}'.format(ka_node.translated_youtube_id))
                 return None
 
         # convert KA's license format into our own license classes
@@ -133,7 +134,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             raise Exception("Unknown license on video {}: {}".format(ka_node.youtube_id, ka_node.license))
 
         video = nodes.VideoNode(
-            source_id=ka_node.id,
+            source_id=ka_node.youtube_id,
             title=ka_node.title,
             description=ka_node.description[:400],
             license=license,
