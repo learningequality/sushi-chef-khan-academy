@@ -6,7 +6,7 @@ from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from html2text import html2text
-from le_utils.constants.languages import getlang
+from le_utils.constants.languages import getlang, getlang_by_name
 from network import make_request
 from youtube_dl.extractor import YoutubeIE
 
@@ -17,6 +17,10 @@ video_map = generate_dubbed_video_mappings_from_csv()
 def get_khan_topic_tree(lang="en", curr_key=None):
     response = make_request(V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS), timeout=120)
     topic_tree = ujson.loads(response.content)
+
+    # if name of lang is passed in, get language code
+    if getlang_by_name(lang):
+        lang = getlang_by_name(lang).primary_code
 
     if lang != "en":
         global translations
@@ -53,9 +57,11 @@ def _recurse_create(node, tree_dict, lang="en"):
                                   lang=lang)
         elif node['kind'] == 'Video':
 
-            native_name = getlang(lang).native_name
+            name = getlang(lang).name.lower()
             if node['translatedYoutubeLang'] != lang:
-                node['translatedYoutubeId'] = video_map[native_name].get(node['translatedYoutubeId'], node['translatedYoutubeId'])
+                if video_map[name].get(node['translatedYoutubeId']):
+                    node['translatedYoutubeId'] = video_map[name].get(node['translatedYoutubeId'])
+                    node['translatedYoutubeLang'] = lang
 
             if node.get('translatedDescriptionHtml'):
                 video_description = html2text(translations.get(node["translatedDescriptionHtml"], node["translatedDescriptionHtml"]))[:400]
