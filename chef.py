@@ -1,12 +1,18 @@
 #!/usr/bin/env python
+import logging
 
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
                   get_khan_topic_tree)
-from le_utils.constants.languages import getlang
+from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import SushiChef
 from ricecooker.classes import licenses, nodes, questions
 from ricecooker.classes.files import VideoFile, YouTubeSubtitleFile
 from ricecooker.classes.questions import PerseusQuestion
+
+logging.basicConfig(filename='sushi_khan_academy.log', filemode='w', level=logging.DEBUG)
+
+logger = logging.getLogger("root")
+logger.setLevel(logging.DEBUG)
 
 LICENSE_MAPPING = {
     "CC BY": licenses.CC_BYLicense(copyright_holder="Khan Academy"),
@@ -41,7 +47,7 @@ class KhanAcademySushiChef(SushiChef):
 
         lang_code = kwargs.get("lang", "en")
 
-        lang = getlang(lang_code)
+        lang = getlang(lang_code) or getlang_by_name(lang_code)
 
         channel = nodes.ChannelNode(
             source_id="KA ({0}) hooplah".format(lang_code),
@@ -112,8 +118,18 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
     elif isinstance(ka_node, KhanVideo):
 
+        # if download_url is missing, return None for this node
+        download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
+        if download_url is None:
+            logger.warning("Download urls are missing for youtube_id: {}".format(ka_node.youtube_id))
+            return None
+
+        # for lite languages, replace youtube ids with translated ones
+        if ka_node.translated_youtube_id not in download_url:
+            download_url = ka_node.download_urls.get("mp4").replace(ka_node.youtube_id, ka_node.translated_youtube_id)
+
         # TODO: Use traditional compression here to avoid breaking existing KA downloads?
-        files = [VideoFile(ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4")))]
+        files = [VideoFile(download_url)]
 
         # include any subtitles that are available for this video
         subtitle_languages = ka_node.get_subtitle_languages()
@@ -123,7 +139,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang:
             if ka_node.lang not in subtitle_languages:
-                print('Excluding video node with youtube_id: {}'.format(ka_node.translated_youtube_id))
+                logger.warning('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
                 return None
 
         # convert KA's license format into our own license classes
@@ -131,7 +147,8 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             license = LICENSE_MAPPING[ka_node.license]
         else:
             # license = licenses.CC_BY_NC_SA # or?
-            raise Exception("Unknown license on video {}: {}".format(ka_node.youtube_id, ka_node.license))
+            logger.error("Unknown license ({}) on video with youtube id {}".format(ka_node.license, ka_node.translated_youtube_id))
+            return None
 
         video = nodes.VideoNode(
             source_id=ka_node.youtube_id,
