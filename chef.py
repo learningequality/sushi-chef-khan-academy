@@ -66,10 +66,10 @@ class KhanAcademySushiChef(SushiChef):
         channel = self.get_channel(**kwargs)
 
         lang_code = kwargs.get("lang", "en")
-
         ka_root_topic = get_khan_topic_tree(lang=lang_code)
 
-        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang_code)
+        lang_code = getlang(lang_code) or getlang_by_name(lang_code)
+        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang_code.primary_code)
 
         for topic in root_topic.children:
             channel.add_child(topic)
@@ -114,6 +114,9 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                 source_url=ka_assessment_item.source_url,
             )
             exercise.add_question(assessment_item)
+        # if there are no questions for this exercise, return None
+        if not exercise.questions:
+            return None
         return exercise
 
     elif isinstance(ka_node, KhanVideo):
@@ -133,14 +136,18 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         # include any subtitles that are available for this video
         subtitle_languages = ka_node.get_subtitle_languages()
-        for lang_code in subtitle_languages:
-            files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang:
-            if ka_node.lang not in subtitle_languages:
+            if target_lang not in subtitle_languages:
                 logger.warning('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
                 return None
+
+        for lang_code in subtitle_languages:
+            if target_lang == 'en':
+                files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
+            elif lang_code == target_lang:
+                files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
 
         # convert KA's license format into our own license classes
         if ka_node.license in LICENSE_MAPPING:
