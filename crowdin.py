@@ -11,8 +11,6 @@ from network import make_request
 from ricecooker.utils.caching import (CacheControlAdapter,
                                       CacheForeverHeuristic, FileCache)
 
-from utils import get_lang_code_list
-
 
 # monkey patch polib.POEntry.merge
 def new_merge(self, other):
@@ -52,12 +50,7 @@ class Catalog(dict):
 
 def retrieve_translations(lang_code, includes="*.po"):
 
-    code_list = get_lang_code_list(lang_code)
-    for code in code_list:
-        r = make_request(CROWDIN_URL.format(key=os.environ['KA_CROWDIN_SECRET_KEY'], lang_code=code), timeout=180)
-        print("Trying to download from {}".format(r.url))
-        if r.status_code != 404:
-            break
+    r = make_request(CROWDIN_URL.format(key=os.environ['KA_CROWDIN_SECRET_KEY'], lang_code=lang_code), timeout=180)
 
     with open('crowdin.zip', "wb") as f:
         for chunk in r.iter_content(1024):

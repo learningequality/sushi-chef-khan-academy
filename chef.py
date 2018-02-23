@@ -31,6 +31,7 @@ EXERCISE_MAPPING = {
     "num_problems_4": {"mastery_model": exercises.M_OF_N, 'm': 3, 'n': 4},
     "num_problems_7": {"mastery_model": exercises.M_OF_N, 'm': 5, 'n': 7},
     "num_problems_14": {"mastery_model": exercises.M_OF_N, 'm': 10, 'n': 14},
+    "num_correct_in_a_row_5": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_5},
 }
 
 SLUG_BLACKLIST = ["new-and-noteworthy", "talks-and-interviews", "coach-res"]  # not relevant
@@ -114,6 +115,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         else:
             logger.warning("Unknown mastery model ({}) for exercise with id: {}".format(ka_node.mastery_model, ka_node.id))
             mastery_model = exercises.M_OF_N
+
         exercise = nodes.ExerciseNode(
             source_id=ka_node.id,
             title=ka_node.title,

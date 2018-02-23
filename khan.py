@@ -62,9 +62,10 @@ def _recurse_create(node, tree_dict, lang="en"):
 
             name = getlang(lang).name.lower()
             if node['translatedYoutubeLang'] != lang:
-                if video_map[name].get(node['translatedYoutubeId']):
-                    node['translatedYoutubeId'] = video_map[name].get(node['translatedYoutubeId'])
-                    node['translatedYoutubeLang'] = lang
+                if video_map.get(name):
+                    if video_map[name].get(node['translatedYoutubeId']):
+                        node['translatedYoutubeId'] = video_map[name].get(node['translatedYoutubeId'])
+                        node['translatedYoutubeLang'] = lang
 
             if node.get('translatedDescriptionHtml'):
                 video_description = html2text(translations.get(node["translatedDescriptionHtml"], node["translatedDescriptionHtml"]))[:400]
