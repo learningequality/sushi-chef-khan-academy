@@ -3,9 +3,10 @@ import logging
 
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
                   get_khan_topic_tree)
+from le_utils.constants import exercises
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import SushiChef
-from ricecooker.classes import licenses, nodes, questions
+from ricecooker.classes import licenses, nodes
 from ricecooker.classes.files import VideoFile, YouTubeSubtitleFile
 from ricecooker.classes.questions import PerseusQuestion
 
@@ -22,6 +23,14 @@ LICENSE_MAPPING = {
     "CC BY-SA": licenses.CC_BY_SALicense(copyright_holder="Khan Academy"),
     "Non-commercial/non-Creative Commons (College Board)": licenses.SpecialPermissionsLicense(copyright_holder="Khan Academy", description="Non-commercial/non-Creative Commons (College Board)"),
     # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,
+}
+
+EXERCISE_MAPPING = {
+    "do-all": exercises.DO_ALL,
+    "skill-check": exercises.SKILL_CHECK,
+    "num_problems_4": {"mastery_model": exercises.M_OF_N, 'm': 3, 'n': 4},
+    "num_problems_7": {"mastery_model": exercises.M_OF_N, 'm': 5, 'n': 7},
+    "num_problems_14": {"mastery_model": exercises.M_OF_N, 'm': 10, 'n': 14},
 }
 
 SLUG_BLACKLIST = ["new-and-noteworthy", "talks-and-interviews", "coach-res"]  # not relevant
@@ -50,9 +59,9 @@ class KhanAcademySushiChef(SushiChef):
         lang = getlang(lang_code) or getlang_by_name(lang_code)
 
         channel = nodes.ChannelNode(
-            source_id="KA ({0}) hooplah".format(lang_code),
-            source_domain="khanacademy.org-test",
-            title="Khan Academy ({0}) - TEST".format(lang.native_name),
+            source_id="KA ({0})".format(lang_code),
+            source_domain="khanacademy.org",
+            title="Khan Academy ({0})".format(lang.native_name),
             description='Khan Academy content for {}.'.format(lang.name),
             thumbnail="https://upload.wikimedia.org/wikipedia/commons/1/15/Khan_Academy_Logo_Old_version_2015.jpg",
             language=lang
@@ -99,11 +108,17 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             return None
 
     elif isinstance(ka_node, KhanExercise):
+
+        if ka_node.mastery_model in EXERCISE_MAPPING:
+            mastery_model = EXERCISE_MAPPING[ka_node.mastery_model]
+        else:
+            logger.warning("Unknown mastery model ({}) for exercise with id: {}".format(ka_node.mastery_model, ka_node.id))
+            mastery_model = exercises.M_OF_N
         exercise = nodes.ExerciseNode(
             source_id=ka_node.id,
             title=ka_node.title,
             description=ka_node.description[:400],
-            # exercise_data={'mastery_model': node.get('suggested_completion_criteria')},
+            exercise_data=mastery_model,
             license=licenses.SpecialPermissionsLicense(copyright_holder="Khan Academy", description="Permission granted to distribute through Kolibri for non-commercial use"),  # need to formalize with KA
             thumbnail=ka_node.thumbnail,
         )
@@ -124,7 +139,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         # if download_url is missing, return None for this node
         download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
         if download_url is None:
-            logger.warning("Download urls are missing for youtube_id: {}".format(ka_node.youtube_id))
+            logger.error("Download urls are missing for youtube_id: {}".format(ka_node.youtube_id))
             return None
 
         # for lite languages, replace youtube ids with translated ones
@@ -140,7 +155,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang:
             if target_lang not in subtitle_languages:
-                logger.warning('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
+                logger.error('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
                 return None
 
         for lang_code in subtitle_languages:
@@ -154,7 +169,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             license = LICENSE_MAPPING[ka_node.license]
         else:
             # license = licenses.CC_BY_NC_SA # or?
-            logger.error("Unknown license ({}) on video with youtube id {}".format(ka_node.license, ka_node.translated_youtube_id))
+            logger.error("Unknown license ({}) on video with youtube id: {}".format(ka_node.license, ka_node.translated_youtube_id))
             return None
 
         video = nodes.VideoNode(

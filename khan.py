@@ -8,10 +8,12 @@ from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from html2text import html2text
 from le_utils.constants.languages import getlang, getlang_by_name
 from network import make_request
+from utils import get_video_id_english_mappings
 from youtube_dl.extractor import YoutubeIE
 
 translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
+english_video_map = get_video_id_english_mappings()
 
 
 def get_khan_topic_tree(lang="en", curr_key=None):
@@ -47,6 +49,7 @@ def _recurse_create(node, tree_dict, lang="en"):
                                      slug=node['slug'],
                                      thumbnail=node['imageUrl'],
                                      assessment_items=node['allAssessmentItems'],
+                                     mastery_model=node['suggestedCompletionCriteria'],
                                      source_url=node['kaUrl'],
                                      lang=lang)
         elif node['kind'] == 'Topic':
@@ -76,7 +79,9 @@ def _recurse_create(node, tree_dict, lang="en"):
                                   thumbnail=node['imageUrl'],
                                   license=node['licenseName'],
                                   download_urls=node['downloadUrls'],
-                                  youtube_id=node['youtubeId'],
+                                  # for backwards compatibility, youtubeId is the source_id for chef video nodes
+                                  # these should be the english youtubeIds corresponding to the translated youtubeId
+                                  youtube_id=english_video_map.get(node['id']) or node['youtubeId'],
                                   translated_youtube_id=node['translatedYoutubeId'],
                                   lang=node['translatedYoutubeLang'])
         elif node['kind'] == 'Article':
@@ -122,10 +127,11 @@ class KhanTopic(KhanNode):
 
 class KhanExercise(KhanNode):
 
-    def __init__(self, id, title, description, slug, thumbnail, assessment_items, source_url, lang="en"):
+    def __init__(self, id, title, description, slug, thumbnail, assessment_items, mastery_model, source_url, lang="en"):
         super(KhanExercise, self).__init__(id, title, description, slug, lang=lang)
         self.thumbnail = thumbnail
         self.assessment_items = assessment_items
+        self.mastery_model = mastery_model
         self.source_url = source_url
 
     def get_assessment_items(self):
