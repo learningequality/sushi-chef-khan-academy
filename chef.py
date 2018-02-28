@@ -31,7 +31,10 @@ EXERCISE_MAPPING = {
     "num_problems_4": {"mastery_model": exercises.M_OF_N, 'm': 3, 'n': 4},
     "num_problems_7": {"mastery_model": exercises.M_OF_N, 'm': 5, 'n': 7},
     "num_problems_14": {"mastery_model": exercises.M_OF_N, 'm': 10, 'n': 14},
+    "num_correct_in_a_row_2": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_2},
+    "num_correct_in_a_row_3": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_3},
     "num_correct_in_a_row_5": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_5},
+    "num_correct_in_a_row_10": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_10}
 }
 
 SLUG_BLACKLIST = ["new-and-noteworthy", "talks-and-interviews", "coach-res"]  # not relevant
@@ -78,8 +81,12 @@ class KhanAcademySushiChef(SushiChef):
         lang_code = kwargs.get("lang", "en")
         ka_root_topic = get_khan_topic_tree(lang=lang_code)
 
-        lang_code = getlang(lang_code) or getlang_by_name(lang_code)
-        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang_code.primary_code)
+        lang = getlang(lang_code) or getlang_by_name(lang_code)
+        lang_code = lang.primary_code
+        if lang.subcode:
+            lang_code = lang_code + "-" + lang.subcode
+
+        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang_code)
 
         for topic in root_topic.children:
             channel.add_child(topic)
@@ -138,6 +145,11 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
     elif isinstance(ka_node, KhanVideo):
 
+        if ka_node.youtube_id != ka_node.translated_youtube_id:
+            if ka_node.lang != target_lang.lower():
+                logger.error("Node with youtube id: {} and translated id: {} has wrong language".format(ka_node.youtube_id, ka_node.translated_youtube_id))
+                return None
+
         # if download_url is missing, return None for this node
         download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
         if download_url is None:
@@ -155,7 +167,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         subtitle_languages = ka_node.get_subtitle_languages()
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
-        if ka_node.lang != target_lang:
+        if ka_node.lang != target_lang.lower():
             if target_lang not in subtitle_languages:
                 logger.error('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
                 return None

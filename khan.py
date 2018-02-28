@@ -170,7 +170,10 @@ class KhanVideo(KhanNode):
 
     def get_subtitle_languages(self):
         with youtube_dl.YoutubeDL({"listsubtitles": True}) as ydl:
-            return list(YoutubeIE(ydl).extract(self.translated_youtube_id)["subtitles"].keys())
+            try:
+                return list(YoutubeIE(ydl).extract(self.translated_youtube_id)["subtitles"].keys())
+            except youtube_dl.utils.ExtractorError:
+                return []
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)
