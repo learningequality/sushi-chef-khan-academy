@@ -1,20 +1,40 @@
 #!/usr/bin/env python
+import logging
 
-from le_utils.constants.languages import getlang
+from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
+                  get_khan_topic_tree)
+from le_utils.constants import exercises
+from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import SushiChef
-from ricecooker.classes import nodes, questions, licenses
+from ricecooker.classes import licenses, nodes
+from ricecooker.classes.files import VideoFile, YouTubeSubtitleFile
+from ricecooker.classes.questions import PerseusQuestion
 
-from .khan import get_khan_topic_tree
+logging.basicConfig(filename='sushi_khan_academy.log', filemode='w', level=logging.DEBUG)
 
+logger = logging.getLogger("root")
+logger.setLevel(logging.DEBUG)
 
 LICENSE_MAPPING = {
     "CC BY": licenses.CC_BYLicense(copyright_holder="Khan Academy"),
-    "CC BY-NC": licenses.CC_BY_NCLicense,
-    "CC BY-NC-ND": licenses.CC_BY_NC_NDLicense,
-    "CC BY-NC-SA (KA default)": licenses.CC_BY_NC_SALicense,
-    "CC BY-SA": licenses.CC_BY_SALicense,
+    "CC BY-NC": licenses.CC_BY_NCLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-ND": licenses.CC_BY_NC_NDLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-SA (KA default)": licenses.CC_BY_NC_SALicense(copyright_holder="Khan Academy"),
+    "CC BY-SA": licenses.CC_BY_SALicense(copyright_holder="Khan Academy"),
     "Non-commercial/non-Creative Commons (College Board)": licenses.SpecialPermissionsLicense(copyright_holder="Khan Academy", description="Non-commercial/non-Creative Commons (College Board)"),
     # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,
+}
+
+EXERCISE_MAPPING = {
+    "do-all": exercises.DO_ALL,
+    "skill-check": exercises.SKILL_CHECK,
+    "num_problems_4": {"mastery_model": exercises.M_OF_N, 'm': 3, 'n': 4},
+    "num_problems_7": {"mastery_model": exercises.M_OF_N, 'm': 5, 'n': 7},
+    "num_problems_14": {"mastery_model": exercises.M_OF_N, 'm': 10, 'n': 14},
+    "num_correct_in_a_row_2": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_2},
+    "num_correct_in_a_row_3": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_3},
+    "num_correct_in_a_row_5": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_5},
+    "num_correct_in_a_row_10": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_10}
 }
 
 SLUG_BLACKLIST = ["new-and-noteworthy", "talks-and-interviews", "coach-res"]  # not relevant
@@ -30,6 +50,7 @@ SLUG_BLACKLIST += ["MoMA", "getty-museum", "stanford-medicine", "crash-course1",
 #                    "time-value-of-money", "changing-a-mixed-number-to-an-improper-fraction",
 #                    "applying-the-metric-system"]  # errors on video downloads
 
+
 class KhanAcademySushiChef(SushiChef):
     """
     Khan Academy sushi chef.
@@ -39,14 +60,15 @@ class KhanAcademySushiChef(SushiChef):
 
         lang_code = kwargs.get("lang", "en")
 
-        lang = getlang(lang_code)
+        lang = getlang(lang_code) or getlang_by_name(lang_code)
 
         channel = nodes.ChannelNode(
             source_id="KA ({0})".format(lang_code),
-            source_domain="khanacademy.org-test",
-            title="Khan Academy ({0}) - TEST".format(lang.native_name),
+            source_domain="khanacademy.org",
+            title="Khan Academy ({0})".format(lang.native_name),
             description='Khan Academy content for {}.'.format(lang.name),
             thumbnail="https://upload.wikimedia.org/wikipedia/commons/1/15/Khan_Academy_Logo_Old_version_2015.jpg",
+            language=lang
         )
 
         return channel
@@ -57,10 +79,14 @@ class KhanAcademySushiChef(SushiChef):
         channel = self.get_channel(**kwargs)
 
         lang_code = kwargs.get("lang", "en")
-
         ka_root_topic = get_khan_topic_tree(lang=lang_code)
 
-        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, lang=lang_code)
+        lang = getlang(lang_code) or getlang_by_name(lang_code)
+        lang_code = lang.primary_code
+        if lang.subcode:
+            lang_code = lang_code + "-" + lang.subcode
+
+        root_topic = convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang_code)
 
         for topic in root_topic.children:
             channel.add_child(topic)
@@ -68,7 +94,7 @@ class KhanAcademySushiChef(SushiChef):
         return channel
 
 
-def convert_ka_node_to_ricecooker_node(ka_node):
+def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
     if ka_node.slug in SLUG_BLACKLIST:
         return None
@@ -80,52 +106,92 @@ def convert_ka_node_to_ricecooker_node(ka_node):
             description=ka_node.description[:400],
         )
         for ka_subtopic in ka_node.children:
-            subtopic = convert_ka_node_to_ricecooker_node(ka_subtopic)
+            subtopic = convert_ka_node_to_ricecooker_node(ka_subtopic, target_lang=target_lang)
             if subtopic:
                 topic.add_child(subtopic)
-        return topic
-    
+        topic.derive_thumbnail()
+        if len(topic.children) > 0:
+            return topic
+        else:
+            return None
+
     elif isinstance(ka_node, KhanExercise):
+
+        if ka_node.mastery_model in EXERCISE_MAPPING:
+            mastery_model = EXERCISE_MAPPING[ka_node.mastery_model]
+        else:
+            logger.warning("Unknown mastery model ({}) for exercise with id: {}".format(ka_node.mastery_model, ka_node.id))
+            mastery_model = exercises.M_OF_N
+
         exercise = nodes.ExerciseNode(
             source_id=ka_node.id,
             title=ka_node.title,
             description=ka_node.description[:400],
-            # exercise_data={'mastery_model': node.get('suggested_completion_criteria')},
+            exercise_data=mastery_model,
             license=licenses.SpecialPermissionsLicense(copyright_holder="Khan Academy", description="Permission granted to distribute through Kolibri for non-commercial use"),  # need to formalize with KA
-            thumbnail=node.thumbnail,
+            thumbnail=ka_node.thumbnail,
         )
         for ka_assessment_item in ka_node.get_assessment_items():
             assessment_item = PerseusQuestion(
-                id=assessment_item.id,
-                raw_data=assessment_item.data,
-                source_url=assessment_item.source_url,
+                id=ka_assessment_item.id,
+                raw_data=ka_assessment_item.data,
+                source_url=ka_assessment_item.source_url,
             )
             exercise.add_question(assessment_item)
+        # if there are no questions for this exercise, return None
+        if not exercise.questions:
+            return None
         return exercise
 
     elif isinstance(ka_node, KhanVideo):
-        
+
+        if ka_node.youtube_id != ka_node.translated_youtube_id:
+            if ka_node.lang != target_lang.lower():
+                logger.error("Node with youtube id: {} and translated id: {} has wrong language".format(ka_node.youtube_id, ka_node.translated_youtube_id))
+                return None
+
+        # if download_url is missing, return None for this node
+        download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
+        if download_url is None:
+            logger.error("Download urls are missing for youtube_id: {}".format(ka_node.youtube_id))
+            return None
+
+        # for lite languages, replace youtube ids with translated ones
+        if ka_node.translated_youtube_id not in download_url:
+            download_url = ka_node.download_urls.get("mp4").replace(ka_node.youtube_id, ka_node.translated_youtube_id)
+
         # TODO: Use traditional compression here to avoid breaking existing KA downloads?
-        files = [VideoFile(ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4")))]
-        
-        # if the video is in English, include any subtitles available along with it
-        if ka_node.lang == "en":
-            for lang_code in ka_node.get_subtitle_languages():
-                files.append(YouTubeSubtitleFile(node.id, language=lang_code))
-    
+        files = [VideoFile(download_url)]
+
+        # include any subtitles that are available for this video
+        subtitle_languages = ka_node.get_subtitle_languages()
+
+        # if we dont have video in target lang or subtitle not available in target lang, return None
+        if ka_node.lang != target_lang.lower():
+            if target_lang not in subtitle_languages:
+                logger.error('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
+                return None
+
+        for lang_code in subtitle_languages:
+            if target_lang == 'en':
+                files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
+            elif lang_code == target_lang:
+                files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
+
         # convert KA's license format into our own license classes
         if ka_node.license in LICENSE_MAPPING:
             license = LICENSE_MAPPING[ka_node.license]
         else:
             # license = licenses.CC_BY_NC_SA # or?
-            raise Exception("Unknown license on video {}: {}".format(ka_node.id, ka_node.license))
+            logger.error("Unknown license ({}) on video with youtube id: {}".format(ka_node.license, ka_node.translated_youtube_id))
+            return None
 
         video = nodes.VideoNode(
-            source_id=ka_node.id,
+            source_id=ka_node.youtube_id,
             title=ka_node.title,
             description=ka_node.description[:400],
             license=license,
-            thumbnail=node.thumbnail,
+            thumbnail=ka_node.thumbnail,
             files=files,
         )
 

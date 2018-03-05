@@ -102,3 +102,6 @@ ENV/
 
 # ricecooker
 restore/
+.webcache/
+.ricecookerfilecache/
+storage/
