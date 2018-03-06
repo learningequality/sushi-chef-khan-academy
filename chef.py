@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 import logging
+import os
 
+import youtube_dl
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
                   get_khan_topic_tree)
 from le_utils.constants import exercises
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import SushiChef
 from ricecooker.classes import licenses, nodes
-from ricecooker.classes.files import VideoFile, YouTubeSubtitleFile
+from ricecooker.classes.files import (VideoFile, YouTubeSubtitleFile,
+                                      YouTubeVideoFile)
 from ricecooker.classes.questions import PerseusQuestion
 
 logging.basicConfig(filename='sushi_khan_academy.log', filemode='w', level=logging.DEBUG)
@@ -78,6 +81,11 @@ class KhanAcademySushiChef(SushiChef):
         # create channel
         channel = self.get_channel(**kwargs)
 
+        # build studio channel out of youtube playlist
+        if kwargs.get('youtube_channel_id'):
+            return youtube_playlist_scraper(kwargs.get('youtube_channel_id'), channel)
+
+        # build channel through KA API
         lang_code = kwargs.get("lang", "en")
         ka_root_topic = get_khan_topic_tree(lang=lang_code)
 
@@ -92,6 +100,36 @@ class KhanAcademySushiChef(SushiChef):
             channel.add_child(topic)
 
         return channel
+
+def youtube_playlist_scraper(channel_id, channel):
+    ydl = youtube_dl.YoutubeDL({
+        'no_warnings': True,
+        'writesubtitles': True,
+        'allsubtitles': True,
+        'ignoreerrors': True,  # Skip over deleted videos in a playlist
+        'skip_download': True,
+    })
+    youtube_channel_url = 'https://www.youtube.com/channel/{}/playlists'.format(channel_id)
+    youtube_channel = ydl.extract_info(youtube_channel_url)
+    for playlist in youtube_channel['entries']:
+        if playlist:
+            topic_node = nodes.TopicNode(source_id=playlist['id'],
+                                         title=playlist['title'],
+                                         description='',
+                                         )
+            channel.add_child(topic_node)
+            for video in playlist['entries']:
+                if video:
+                    files = [YouTubeVideoFile(video['id'])]
+                    video_node = nodes.VideoNode(source_id=video['id'],
+                                                 title=video['title'],
+                                                 description='',
+                                                 license=LICENSE_MAPPING['CC BY-NC-ND'],
+                                                 files=files,
+                                                 )
+                    topic_node.add_child(video_node)
+
+    return channel
 
 
 def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
