@@ -124,6 +124,7 @@ def youtube_playlist_scraper(channel_id, channel):
                     video_node = nodes.VideoNode(source_id=video['id'],
                                                  title=video['title'],
                                                  description='',
+                                                 thumbnail=video['thumbnail'],
                                                  license=LICENSE_MAPPING['CC BY-NC-ND'],
                                                  files=files,
                                                  )
