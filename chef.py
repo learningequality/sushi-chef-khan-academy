@@ -10,7 +10,7 @@ from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import SushiChef
 from ricecooker.classes import licenses, nodes
 from ricecooker.classes.files import (VideoFile, YouTubeSubtitleFile,
-                                      YouTubeVideoFile)
+                                      YouTubeVideoFile, is_youtube_subtitle_file_supported_language)
 from ricecooker.classes.questions import PerseusQuestion
 
 logging.basicConfig(filename='sushi_khan_academy.log', filemode='w', level=logging.DEBUG)
@@ -212,10 +212,11 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                 return None
 
         for lang_code in subtitle_languages:
-            if target_lang == 'en':
-                files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
-            elif lang_code == target_lang:
-                files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
+            if is_youtube_subtitle_file_supported_language(lang_code):
+                if target_lang == 'en':
+                    files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
+                elif lang_code == target_lang:
+                    files.append(YouTubeSubtitleFile(ka_node.translated_youtube_id, language=lang_code))
 
         # convert KA's license format into our own license classes
         if ka_node.license in LICENSE_MAPPING:
