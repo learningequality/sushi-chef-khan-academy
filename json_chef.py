@@ -1,14 +1,17 @@
 #!/usr/bin/env python
+import copy
 import logging
 import os
 
+import youtube_dl
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
                   get_khan_topic_tree)
 from le_utils.constants import content_kinds, exercises, licenses
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import JsonTreeChef
+from ricecooker.classes.files import \
+    is_youtube_subtitle_file_supported_language
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
-from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
 
 i = 0
 while os.path.exists("sushi_khan_academy{}.log".format(i)):
@@ -96,8 +99,17 @@ class KhanAcademySushiChef(JsonTreeChef):
             children=[],
         )
         logger.info("downloading KA tree")
+        # build studio channel out of youtube playlist
+        if options.get('youtube_channel_id'):
+            return youtube_playlist_scraper(options.get('youtube_channel_id'), channel_node)
+
         # build channel through KA API
         ka_root_topic = get_khan_topic_tree(lang=language_code)
+
+        if options.get('english_subtitles'):
+            # we will include english videos with target language subtitles
+            duplicate_videos(ka_root_topic)
+
         language_code = lang.primary_code
         if lang.subcode:
             language_code = language_code + "-" + lang.subcode
@@ -112,6 +124,68 @@ class KhanAcademySushiChef(JsonTreeChef):
         logger.info("writing ricecooker json to a file")
         json_tree_path = self.get_json_tree_path(*args, **options)
         write_tree_to_json_tree(json_tree_path, channel_node)
+
+
+def youtube_playlist_scraper(channel_id, channel_node):
+    ydl = youtube_dl.YoutubeDL({
+        'no_warnings': True,
+        'writesubtitles': True,
+        'allsubtitles': True,
+        'ignoreerrors': True,  # Skip over deleted videos in a playlist
+        'skip_download': True,
+    })
+    youtube_channel_url = 'https://www.youtube.com/channel/{}/playlists'.format(channel_id)
+    youtube_channel = ydl.extract_info(youtube_channel_url)
+    for playlist in youtube_channel['entries']:
+        if playlist:
+            topic_node = dict(
+                kind=content_kinds.TOPIC,
+                source_id=playlist['id'],
+                title=playlist['title'],
+                description='',
+                children=[]
+            )
+            channel_node['children'].append(topic_node)
+            entries = []
+            for video in playlist['entries']:
+                if video and video['id'] not in entries:
+                    entries.append(video['id'])
+                    files = [dict(file_type='video',
+                                  youtube_id=video['id'])]
+                    video_node = dict(
+                        kind=content_kinds.VIDEO,
+                        source_id=video['id'],
+                        title=video['title'],
+                        description='',
+                        thumbnail=video['thumbnail'],
+                        license=LICENSE_MAPPING['CC BY-NC-ND'],
+                        files=files,
+                    )
+                    topic_node['children'].append(video_node)
+
+    return channel_node
+
+
+def duplicate_videos(node):
+    """
+    Duplicate any videos that are dubbed, but convert them to being english only
+    in order to add subtitled english videos (if available).
+    """
+    children = list(node.children)
+    add = 0
+    for idx, ka_node in enumerate(children):
+        if isinstance(ka_node, KhanTopic):
+            duplicate_videos(ka_node)
+        if isinstance(ka_node, KhanVideo):
+            if ka_node.lang != "en":
+                replica_node = copy.deepcopy(ka_node)
+                replica_node.translated_youtube_id = ka_node.youtube_id
+                replica_node.lang = "en"
+                ka_node.title = ka_node.title + " -dubbed(KY)"
+                node.children.insert(idx + add, replica_node)
+                add += 1
+
+    return node
 
 
 def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
@@ -205,7 +279,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                 if target_lang == 'en':
                     files.append(dict(file_type='subtitles', youtube_id=ka_node.translated_youtube_id, language=lang_code))
                 elif lang_code == target_lang:
-                    files.append(dict(youtube_id=ka_node.translated_youtube_id, language=lang_code))
+                    files.append(dict(file_type='subtitles', youtube_id=ka_node.translated_youtube_id, language=lang_code))
 
         # convert KA's license format into our own license classes
         if ka_node.license in LICENSE_MAPPING:
@@ -217,7 +291,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         video = dict(
             kind=content_kinds.VIDEO,
-            source_id=ka_node.youtube_id,
+            source_id=ka_node.translated_youtube_id if '-dubbed(KY)' in ka_node.title else ka_node.youtube_id,
             title=ka_node.title,
             description=ka_node.description[:400],
             license=license,
