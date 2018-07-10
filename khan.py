@@ -17,9 +17,12 @@ english_video_map = get_video_id_english_mappings()
 
 
 def get_khan_topic_tree(lang="en", curr_key=None):
-    response = make_request(V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS), timeout=120)
-    topic_tree = ujson.loads(response.content)
+    if lang == 'sw':
+        response = make_request(V2_API_URL.format(lang='swa', projection=PROJECTION_KEYS), timeout=120)
+    else:
+        response = make_request(V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS), timeout=120)
 
+    topic_tree = ujson.loads(response.content)
     # if name of lang is passed in, get language code
     if getlang_by_name(lang):
         lang = getlang_by_name(lang).primary_code
