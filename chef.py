@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 import os
+import copy
 
 import youtube_dl
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
@@ -13,7 +14,11 @@ from ricecooker.classes.files import (VideoFile, YouTubeSubtitleFile,
                                       YouTubeVideoFile, is_youtube_subtitle_file_supported_language)
 from ricecooker.classes.questions import PerseusQuestion
 
-logging.basicConfig(filename='sushi_khan_academy.log', filemode='w', level=logging.DEBUG)
+i = 0
+while os.path.exists("sushi_khan_academy{}.log".format(i)):
+    i += 1
+
+logging.basicConfig(filename='sushi_khan_academy{}.log'.format(i), filemode='w', level=logging.DEBUG)
 
 logger = logging.getLogger("root")
 logger.setLevel(logging.DEBUG)
@@ -89,6 +94,10 @@ class KhanAcademySushiChef(SushiChef):
         lang_code = kwargs.get("lang", "en")
         ka_root_topic = get_khan_topic_tree(lang=lang_code)
 
+        if kwargs.get('english_subtitles'):
+            # we will include english videos with target language subtitles
+            duplicate_videos(ka_root_topic)
+
         lang = getlang(lang_code) or getlang_by_name(lang_code)
         lang_code = lang.primary_code
         if lang.subcode:
@@ -100,6 +109,7 @@ class KhanAcademySushiChef(SushiChef):
             channel.add_child(topic)
 
         return channel
+
 
 def youtube_playlist_scraper(channel_id, channel):
     ydl = youtube_dl.YoutubeDL({
@@ -118,8 +128,10 @@ def youtube_playlist_scraper(channel_id, channel):
                                          description='',
                                          )
             channel.add_child(topic_node)
+            entries = []
             for video in playlist['entries']:
-                if video:
+                if video and video['id'] not in entries:
+                    entries.append(video['id'])
                     files = [YouTubeVideoFile(video['id'])]
                     video_node = nodes.VideoNode(source_id=video['id'],
                                                  title=video['title'],
@@ -131,6 +143,27 @@ def youtube_playlist_scraper(channel_id, channel):
                     topic_node.add_child(video_node)
 
     return channel
+
+def duplicate_videos(node):
+    """
+    Duplicate any videos that are dubbed, but convert them to being english only
+    in order to add subtitled english videos (if available).
+    """
+    children = list(node.children)
+    add = 0
+    for idx, ka_node in enumerate(children):
+        if isinstance(ka_node, KhanTopic):
+            duplicate_videos(ka_node)
+        if isinstance(ka_node, KhanVideo):
+            if ka_node.lang != "en":
+                replica_node = copy.deepcopy(ka_node)
+                replica_node.translated_youtube_id = ka_node.youtube_id
+                replica_node.lang = "en"
+                ka_node.title = ka_node.title + " -dubbed(KY)"
+                node.children.insert(idx + add, replica_node)
+                add += 1
+
+    return node
 
 
 def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
@@ -227,7 +260,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             return None
 
         video = nodes.VideoNode(
-            source_id=ka_node.youtube_id,
+            source_id=ka_node.translated_youtube_id if '-dubbed(KY)' in ka_node.title else ka_node.youtube_id,
             title=ka_node.title,
             description=ka_node.description[:400],
             license=license,
