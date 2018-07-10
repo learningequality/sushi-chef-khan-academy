@@ -98,11 +98,18 @@ class KhanAcademySushiChef(JsonTreeChef):
             language=lang.code,
             children=[],
         )
-        logger.info("downloading KA tree")
         # build studio channel out of youtube playlist
         if options.get('youtube_channel_id'):
-            return youtube_playlist_scraper(options.get('youtube_channel_id'), channel_node)
+            youtube_id = options.get('youtube_channel_id')
+            logger.info("Downloading youtube playlist {} for {} language".format(youtube_id,lang.name))
+            root_node = youtube_playlist_scraper(youtube_id, channel_node)
+            # write to json file
+            logger.info("writing ricecooker json to a file")
+            json_tree_path = self.get_json_tree_path(*args, **options)
+            write_tree_to_json_tree(json_tree_path, root_node)
+            return
 
+        logger.info("downloading KA tree")
         # build channel through KA API
         ka_root_topic = get_khan_topic_tree(lang=language_code)
 
@@ -270,7 +277,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang.lower():
-            # if target_lang not in subtitle_languages:
+            if target_lang not in subtitle_languages:
                 logger.error('Incorrect target language for youtube_id: {}'.format(ka_node.translated_youtube_id))
                 return None
 
