@@ -64,8 +64,9 @@ PROJECTION_KEYS = json.dumps(OrderedDict([
     # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
 ]))
 
+SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-pt']
+
 V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
 KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"
-# EXERCISE_URL = "https://www.khanacademy.org/api/internal/exercises?lang={lang}"
 ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={lang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?key={key}"

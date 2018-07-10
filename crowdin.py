@@ -6,7 +6,7 @@ import tempfile
 import zipfile
 
 import polib
-from constants import CROWDIN_URL
+from constants import CROWDIN_URL, SUPPORTED_LANGS
 from network import make_request
 from ricecooker.utils.caching import (CacheControlAdapter,
                                       CacheForeverHeuristic, FileCache)
@@ -49,6 +49,9 @@ class Catalog(dict):
 
 
 def retrieve_translations(lang_code, includes="*.po"):
+
+    if lang_code in SUPPORTED_LANGS:
+        return {}
 
     r = make_request(CROWDIN_URL.format(key=os.environ['KA_CROWDIN_SECRET_KEY'], lang_code=lang_code), timeout=180)
 
