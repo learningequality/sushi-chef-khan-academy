@@ -64,7 +64,9 @@ PROJECTION_KEYS = json.dumps(OrderedDict([
     # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
 ]))
 
-SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-pt']
+SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-pt', 'pt-BR', 'hy', 'ko', 'und', 'bn', 'gu', 'id']
+
+UNSUPPORTED_LANGS = ['ru', 'zu', 'my', 'fv', 'ur']
 
 V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
 KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"

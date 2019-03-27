@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 import ujson
 import youtube_dl
-from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL
+from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from html2text import html2text
@@ -27,7 +27,7 @@ def get_khan_topic_tree(lang="en", curr_key=None):
     if getlang_by_name(lang):
         lang = getlang_by_name(lang).primary_code
 
-    if lang != "en":
+    if lang not in SUPPORTED_LANGS:
         global translations
         translations = retrieve_translations(lang_code=lang)
 
