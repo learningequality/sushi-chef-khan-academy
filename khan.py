@@ -1,5 +1,3 @@
-from urllib.parse import urlparse
-
 import ujson
 import youtube_dl
 from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS

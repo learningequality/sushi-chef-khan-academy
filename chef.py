@@ -4,6 +4,7 @@ import os
 import copy
 
 import youtube_dl
+from constants import UNSUBTITLED_LANGS
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
                   get_khan_topic_tree)
 from le_utils.constants import exercises
@@ -237,6 +238,11 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         # include any subtitles that are available for this video
         subtitle_languages = ka_node.get_subtitle_languages()
+        # include any subtitles that are available for this video
+        if target_lang not in UNSUBTITLED_LANGS:
+            subtitle_languages = ka_node.get_subtitle_languages()
+        else:
+            subtitle_languages = []
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang.lower():
