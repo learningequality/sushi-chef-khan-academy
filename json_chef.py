@@ -95,7 +95,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             source_domain='khanacademy.org',
             title='Khan Academy ({0})'.format(lang.native_name),
             description='Khan Academy content for {}.'.format(lang.name),
-            thumbnail='https://upload.wikimedia.org/wikipedia/commons/1/15/Khan_Academy_Logo_Old_version_2015.jpg',
+            thumbnail=os.path.join('chefdata', 'khan-academy-logo.png'),
             language=lang.code,
             children=[],
         )
