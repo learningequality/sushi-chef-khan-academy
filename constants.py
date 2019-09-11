@@ -75,3 +75,9 @@ KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2
 ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={lang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?key={key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
+
+CHANNEL_DESCRIPTION_LOOKUP = {
+    "en": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the U.S. curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+    "fr": "Khan Academy propose des vidéos et des exercices sur les maths, la physique, la chimie, la biologie et l'histoire. Chaque sujet est couvert par des explications vidéo intuitives et comprend de nombreux exercices de pratique pour aider les étudiants à maîtriser les sujets. Convient aux élèves des niveaux primaire et secondaire ainsi qu'aux adultes.",
+    "es": "Khan Academy ofrece videos y ejercicios sobre temas de matemáticas, física, química, biología y historia. Cada tema contiene videos explicativos y ejercicios para practicar y revisar. Apropiado para estudiantes de nivel medio y secundario, así para los adultos.",
+}

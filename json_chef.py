@@ -4,7 +4,7 @@ import logging
 import os
 
 import youtube_dl
-from constants import UNSUBTITLED_LANGS
+from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP
 from khan import (KhanArticle, KhanExercise, KhanTopic, KhanVideo,
                   get_khan_topic_tree)
 from le_utils.constants import content_kinds, exercises, licenses
@@ -99,7 +99,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             source_id='KA ({0})'.format(language_code),
             source_domain='khanacademy.org',
             title='Khan Academy ({0})'.format(lang.native_name),
-            description='Khan Academy content for {}.'.format(lang.name),
+            description=CHANNEL_DESCRIPTION_LOOKUP.get(language_code, 'Khan Academy content for {}.'.format(lang.name)),
             thumbnail=os.path.join('chefdata', 'khan-academy-logo.png'),
             language=lang.code,
             children=[],
