@@ -54,6 +54,8 @@ SLUG_BLACKLIST += ["MoMA", "getty-museum", "stanford-medicine", "crash-course1",
                    "metropolitan-museum", "bitcoin", "tate", "crash-course1", "crash-course-bio-ecology",
                    "british-museum", "aspeninstitute", "asian-art-museum", "amnh", "nova"]  # partner content
 
+SLUG_BLACKLIST += ["computing"]  # we don't support scratchpad content
+
 # TODO(jamalex): re-check these videos later and remove them from here if they've recovered
 # SLUG_BLACKLIST += ["mortgage-interest-rates", "factor-polynomials-using-the-gcf", "inflation-overview",
 #                    "time-value-of-money", "changing-a-mixed-number-to-an-improper-fraction",
