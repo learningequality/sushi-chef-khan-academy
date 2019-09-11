@@ -13,6 +13,7 @@ from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import \
     is_youtube_subtitle_file_supported_language
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
+from common_core_tags import generate_common_core_mapping
 
 i = 0
 while os.path.exists("sushi_khan_academy{}.log".format(i)):
@@ -57,6 +58,8 @@ SLUG_BLACKLIST += ["MoMA", "getty-museum", "stanford-medicine", "crash-course1",
 # SLUG_BLACKLIST += ["mortgage-interest-rates", "factor-polynomials-using-the-gcf", "inflation-overview",
 #                    "time-value-of-money", "changing-a-mixed-number-to-an-improper-fraction",
 #                    "applying-the-metric-system"]  # errors on video downloads
+
+CC_MAPPING = generate_common_core_mapping()
 
 
 class KhanAcademySushiChef(JsonTreeChef):
@@ -227,6 +230,11 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             logger.warning("Unknown mastery model ({}) for exercise with id: {}".format(ka_node.mastery_model, ka_node.id))
             mastery_model = exercises.M_OF_N
 
+        # common core tags
+        tags = []
+        if ka_node.slug in CC_MAPPING:
+            tags.append(CC_MAPPING[ka_node.slug])
+
         exercise = dict(
             kind=content_kinds.EXERCISE,
             source_id=ka_node.id,
@@ -236,7 +244,8 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             license=dict(license_id=licenses.SPECIAL_PERMISSIONS, copyright_holder="Khan Academy", description="Permission granted to distribute through Kolibri for non-commercial use"),  # need to formalize with KA
             thumbnail=ka_node.thumbnail,
             slug=ka_node.slug,
-            questions=[]
+            questions=[],
+            tags=tags,
         )
         for ka_assessment_item in ka_node.get_assessment_items():
             if ka_assessment_item.data and ka_assessment_item.data != 'null':
