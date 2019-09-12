@@ -23,7 +23,9 @@ def generate_dubbed_video_mappings_from_csv():
 
         elif row[0] == "SERIAL":
             # Read the header row.
-            header_row = [v.lower() for v in row]  # lcase all header row values (including language names)
+            header_row = [
+                v.lower() for v in row
+            ]  # lcase all header row values (including language names)
             slug_idx = header_row.index("title id")
             english_idx = header_row.index("english")
             assert slug_idx != -1, "Video slug column header should be found."
@@ -31,7 +33,9 @@ def generate_dubbed_video_mappings_from_csv():
 
         else:
             # Rows 6 and beyond are data.
-            assert len(row) == len(header_row), "Values line length equals headers line length"
+            assert len(row) == len(
+                header_row
+            ), "Values line length equals headers line length"
 
             # Grab the slug and english video ID.
             video_slug = row[slug_idx]
@@ -52,7 +56,12 @@ def generate_dubbed_video_mappings_from_csv():
                     video_map[lang] = {}
                 dubbed_youtube_id = row[idx]
                 if english_video_id == dubbed_youtube_id and lang != "english":
-                    print("Removing entry for (%s, %s): dubbed and english youtube ID are the same." % (lang, english_video_id))
+                    print(
+                        "Removing entry for (%s, %s): dubbed and english youtube ID are the same."
+                        % (lang, english_video_id)
+                    )
                 else:
-                    video_map[lang][english_video_id] = row[idx]  # add the corresponding video id for the video, in this language.
+                    video_map[lang][english_video_id] = row[
+                        idx
+                    ]  # add the corresponding video id for the video, in this language.
     return video_map
