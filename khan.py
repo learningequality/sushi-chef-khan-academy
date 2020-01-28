@@ -1,6 +1,6 @@
 import ujson
 import youtube_dl
-from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS
+from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from html2text import html2text
@@ -174,8 +174,9 @@ class KhanExercise(KhanNode):
 
     def get_assessment_items(self):
         items_list = []
+        lang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
         for i in self.assessment_items:
-            item_url = ASSESSMENT_URL.format(assessment_item=i["id"], lang=self.lang)
+            item_url = ASSESSMENT_URL.format(assessment_item=i["id"], lang=lang)
             item = make_request(item_url).json()
             # check if assessment item is fully translated, before adding it to list
             if item["is_fully_translated"]:
