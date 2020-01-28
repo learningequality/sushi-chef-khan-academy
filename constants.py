@@ -83,3 +83,9 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "pt-BR": "Khan Academy oferece cursos em matemática, física, química, biologia e história. Cada matéria contém vídeos explicativos e exercícios para para a prática e revisão. Próprio para alunos do ensino médio e secundário, bem como para adultos.",
     "pt-pt": "Khan Academy oferece cursos em matemática, física, química e biologia. Cada matéria contém vídeos explicativos e exercícios para para a prática e revisão. Próprio para alunos do ensino médio e secundário, bem como para adultos.",
 }
+
+# sometimes videos from youtube do not have the same language code as KA
+VIDEO_LANGUAGE_MAPPING = {
+    "pt-BR": "pt",
+    "zh-CN": "zh-hans"
+}

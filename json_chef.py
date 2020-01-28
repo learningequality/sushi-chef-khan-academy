@@ -4,7 +4,7 @@ import logging
 import os
 
 import youtube_dl
-from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP
+from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP, VIDEO_LANGUAGE_MAPPING
 from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 from le_utils.constants import content_kinds, exercises, licenses
 from le_utils.constants.languages import getlang, getlang_by_name
@@ -254,7 +254,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             kind=content_kinds.TOPIC,
             source_id=ka_node.id,
             title=ka_node.title,
-            description=ka_node.description[:400],
+            description=ka_node.description[:400] if ka_node.description else '',
             slug=ka_node.slug,
             children=[],
         )
@@ -290,7 +290,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             kind=content_kinds.EXERCISE,
             source_id=ka_node.id,
             title=ka_node.title,
-            description=ka_node.description[:400],
+            description=ka_node.description[:400] if ka_node.description else '',
             exercise_data=mastery_model,
             license=dict(
                 license_id=licenses.SPECIAL_PERMISSIONS,
@@ -318,6 +318,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
     elif isinstance(ka_node, KhanVideo):
 
+        target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
         if ka_node.youtube_id != ka_node.translated_youtube_id:
             if ka_node.lang != target_lang.lower():
                 logger.error(
@@ -401,7 +402,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             if "-dubbed(KY)" in ka_node.title
             else ka_node.youtube_id,
             title=ka_node.title,
-            description=ka_node.description[:400],
+            description=ka_node.description[:400] if ka_node.description else '',
             license=license,
             thumbnail=ka_node.thumbnail,
             files=files,
