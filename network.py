@@ -11,6 +11,7 @@ from ricecooker.utils.caching import (
 sess = requests.Session()
 cache = FileCache(".webcache")
 forever_adapter = CacheControlAdapter(heuristic=CacheForeverHeuristic(), cache=cache)
+invalidate_adapter = InvalidatingCacheControlAdapter(cache=cache)
 
 sess.mount("http://www.khanacademy.org/api/v2/topics/topictree", forever_adapter)
 sess.mount("http://www.khanacademy.org/api/v1/assessment_items/", forever_adapter)
