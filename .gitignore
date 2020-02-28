@@ -1,3 +1,13 @@
+# Specific to this chef
+credentials/
+
+# ricecooker
+restore/
+.webcache/
+.ricecookerfilecache/
+storage/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -94,14 +104,13 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# IDEs
+.idea
+.vscode
+
 # mkdocs documentation
 /site
 
 # mypy
 .mypy_cache/
 
-# ricecooker
-restore/
-.webcache/
-.ricecookerfilecache/
-storage/

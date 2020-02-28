@@ -47,3 +47,14 @@ Below is a table which shows the mapping from the Khan data structures to the Ri
 | `KhanAsessmentItem`   | `questions.PerseusQuestion` |
 | `KhanVideo`           | `nodes.VideoNode`           |
 | `KhanArticle`         | Not Supported               |
+| `KhanScratchpad`      | Not Supported               |
+
+
+### TODOs
+ - Respect topics with `doNotPublish` set to `true` in JSON.
+ - Handle `prerequisites` (links to exercises slugs)
+ - Handle `relatedContent` (links to videos, exercises, and scratchpads on the same concept)
+ - Update to use standard `config.LOGGER` for logging
+
+
+
