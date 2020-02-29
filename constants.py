@@ -10,7 +10,8 @@ TOPIC_ATTRIBUTES = [
     'kind',
     'slug',
     'translatedTitle',
-    'translatedDescription'
+    'translatedDescription',
+    'curriculumKey'
 ]
 
 EXERCISE_ATTRIBUTES = [

@@ -57,4 +57,13 @@ Below is a table which shows the mapping from the Khan data structures to the Ri
  - Update to use standard `config.LOGGER` for logging
 
 
+## Curriculum aligned channels
+The KA English channel contains algernative topic hierarchies that correspond to
+the curriculum structure of US (Common Core State Standards) and India curriculum.
+These per-curriculum custom trees occur only in the Math and Science topics.
 
+In order to avoid showing the curriculum from other countries, we build three
+separate channel:
+  - Khan Academy (English - Global): topic tree without `us-cc` and `in-in` topics
+  - Khan Academy (English - US curriculum): tree without `in-in` topics
+  - Khan Academy (English - India curriculum): topic tree without `us-cc` topics

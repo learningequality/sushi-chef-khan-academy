@@ -74,6 +74,7 @@ def _recurse_create(node, tree_dict, lang="en"):
             description=node["translatedDescription"],
             slug=node["slug"],
             lang=lang,
+            curriculum=node["curriculumKey"] if node["curriculumKey"] else None,
         )
     elif node["kind"] == "Video":
 
@@ -145,8 +146,9 @@ class KhanNode(object):
 
 
 class KhanTopic(KhanNode):
-    def __init__(self, id, title, description, slug, lang="en"):
+    def __init__(self, id, title, description, slug, lang="en", curriculum=None):
         super(KhanTopic, self).__init__(id, title, description, slug, lang=lang)
+        self.curriculum = curriculum
         self.children = []
 
     def __repr__(self):
