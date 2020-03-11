@@ -317,7 +317,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         return exercise
 
     elif isinstance(ka_node, KhanVideo):
-
+        le_target_lang = target_lang
         target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
         if ka_node.youtube_id != ka_node.translated_youtube_id:
             if ka_node.lang != target_lang.lower():
@@ -350,7 +350,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         files = [dict(file_type="video", path=download_url)]
 
         # include any subtitles that are available for this video
-        if target_lang not in UNSUBTITLED_LANGS:
+        if le_target_lang not in UNSUBTITLED_LANGS:
             subtitle_languages = ka_node.get_subtitle_languages()
         else:
             subtitle_languages = []
