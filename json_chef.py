@@ -357,7 +357,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang.lower():
-            if target_lang.lower() not in subtitle_languages:
+            if target_lang not in subtitle_languages:
                 logger.error(
                     "Incorrect target language for youtube_id: {}".format(
                         ka_node.translated_youtube_id
