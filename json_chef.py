@@ -367,7 +367,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         for lang_code in subtitle_languages:
             if is_youtube_subtitle_file_supported_language(lang_code):
-                if target_lang.lower() == "en":
+                if target_lang == "en":
                     files.append(
                         dict(
                             file_type="subtitles",
@@ -375,7 +375,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                             language=lang_code,
                         )
                     )
-                elif lang_code == target_lang.lower():
+                elif lang_code == target_lang:
                     files.append(
                         dict(
                             file_type="subtitles",
