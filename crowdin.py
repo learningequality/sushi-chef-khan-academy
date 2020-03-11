@@ -50,7 +50,7 @@ class Catalog(dict):
 
 def retrieve_translations(lang_code, includes="*.po"):
 
-    if lang_code in SUPPORTED_LANGS:
+    if lang_code.lower() in SUPPORTED_LANGS:
         return {}
 
     lang_code = CROWDIN_LANGUAGE_MAPPING.get(lang_code, lang_code)

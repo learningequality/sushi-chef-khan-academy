@@ -317,8 +317,8 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         return exercise
 
     elif isinstance(ka_node, KhanVideo):
-
-        target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
+        orig_target_lang = target_lang
+        target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang.lower(), target_lang)
         if ka_node.youtube_id != ka_node.translated_youtube_id:
             if ka_node.lang != target_lang.lower():
                 logger.error(
@@ -350,14 +350,14 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         files = [dict(file_type="video", path=download_url)]
 
         # include any subtitles that are available for this video
-        if target_lang not in UNSUBTITLED_LANGS:
+        if orig_target_lang.lower() not in UNSUBTITLED_LANGS:
             subtitle_languages = ka_node.get_subtitle_languages()
         else:
             subtitle_languages = []
 
         # if we dont have video in target lang or subtitle not available in target lang, return None
         if ka_node.lang != target_lang.lower():
-            if target_lang not in subtitle_languages:
+            if target_lang.lower() not in subtitle_languages:
                 logger.error(
                     "Incorrect target language for youtube_id: {}".format(
                         ka_node.translated_youtube_id
@@ -367,7 +367,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         for lang_code in subtitle_languages:
             if is_youtube_subtitle_file_supported_language(lang_code):
-                if target_lang == "en":
+                if target_lang.lower() == "en":
                     files.append(
                         dict(
                             file_type="subtitles",
@@ -375,7 +375,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                             language=lang_code,
                         )
                     )
-                elif lang_code == target_lang:
+                elif lang_code == target_lang.lower():
                     files.append(
                         dict(
                             file_type="subtitles",
