@@ -29,7 +29,7 @@ def get_khan_topic_tree(lang="en", curr_key=None):
     if getlang_by_name(lang):
         lang = getlang_by_name(lang).primary_code
 
-    if lang.lower() not in SUPPORTED_LANGS:
+    if lang not in SUPPORTED_LANGS:
         global translations
         translations = retrieve_translations(lang_code=lang)
 
