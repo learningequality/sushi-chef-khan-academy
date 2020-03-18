@@ -1,13 +1,14 @@
+from html2text import html2text
 import ujson
-import youtube_dl
+
+from le_utils.constants.languages import getlang, getlang_by_name
+from pressurecooker.youtube import YouTubeResource
+
 from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
-from html2text import html2text
-from le_utils.constants.languages import getlang, getlang_by_name
 from network import make_request
 from utils import get_video_id_english_mappings
-from youtube_dl.extractor import YoutubeIE
 
 translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
@@ -221,15 +222,20 @@ class KhanVideo(KhanNode):
         self.translated_youtube_id = translated_youtube_id
 
     def get_subtitle_languages(self):
-        with youtube_dl.YoutubeDL({"listsubtitles": True}) as ydl:
-            try:
-                return list(
-                    YoutubeIE(ydl)
-                    .extract(self.translated_youtube_id)["subtitles"]
-                    .keys()
-                )
-            except youtube_dl.utils.ExtractorError:
-                return []
+        youtube_url = 'https://youtube.com/watch?v=' + self.translated_youtube_id
+        yt_resource = YouTubeResource(youtube_url)
+        lang_codes = []
+        try:
+            result = yt_resource.get_resource_subtitles()
+            if result:
+                for lang_code, lang_subs in result['subtitles'].items():
+                    for lang_sub in lang_subs:
+                        if 'ext' in lang_sub and lang_sub['ext'] == 'vtt' and lang_code not in lang_codes:
+                            lang_codes.append(lang_code)
+        except Exception as e:
+            print('get_subtitle_languages failed on youtube URL ' + youtube_url)
+            print(e)
+        return lang_codes
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)
