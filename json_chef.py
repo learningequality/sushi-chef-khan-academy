@@ -319,6 +319,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
     elif isinstance(ka_node, KhanVideo):
         le_target_lang = target_lang
         target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
+
         if ka_node.youtube_id != ka_node.translated_youtube_id:
             if ka_node.lang != target_lang.lower():
                 logger.error(
@@ -329,14 +330,10 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                 return None
 
         # if download_url is missing, return None for this node
-        download_url = ka_node.download_urls.get(
-            "mp4-low", ka_node.download_urls.get("mp4")
-        )
+        download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
         if download_url is None:
             logger.error(
-                "Download urls are missing for youtube_id: {}".format(
-                    ka_node.youtube_id
-                )
+                "No download urls for youtube_id: {}".format(ka_node.youtube_id)
             )
             return None
 
@@ -347,7 +344,15 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             )
 
         # TODO: Use traditional compression here to avoid breaking existing KA downloads?
-        files = [dict(file_type="video", path=download_url)]
+        files = [
+            # Mar 17: special run for Italian: download from youtube instead of from KA CDN
+            dict(
+                file_type="video",
+                # path=download_url,
+                youtube_id=ka_node.translated_youtube_id,
+                high_resolution=False,
+            )
+        ]
 
         # include any subtitles that are available for this video
         if le_target_lang not in UNSUBTITLED_LANGS:
@@ -359,9 +364,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
         if ka_node.lang != target_lang.lower():
             if target_lang not in subtitle_languages:
                 logger.error(
-                    "Incorrect target language for youtube_id: {}".format(
-                        ka_node.translated_youtube_id
-                    )
+                    "Video {} not transalated and no subtitles available. Skipping.".format(ka_node.translated_youtube_id)
                 )
                 return None
 
@@ -398,9 +401,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         video = dict(
             kind=content_kinds.VIDEO,
-            source_id=ka_node.translated_youtube_id
-            if "-dubbed(KY)" in ka_node.title
-            else ka_node.youtube_id,
+            source_id=ka_node.translated_youtube_id if "-dubbed(KY)" in ka_node.title else ka_node.youtube_id,
             title=ka_node.title,
             description=ka_node.description[:400] if ka_node.description else '',
             license=license,
