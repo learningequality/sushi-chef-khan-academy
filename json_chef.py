@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import copy
-import logging
 import os
-
 import youtube_dl
 from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP, VIDEO_LANGUAGE_MAPPING
 from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
@@ -10,19 +8,11 @@ from le_utils.constants import content_kinds, exercises, licenses
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
+from ricecooker.config import LOGGER as logger
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
 from common_core_tags import generate_common_core_mapping
 
-i = 0
-while os.path.exists("sushi_khan_academy{}.log".format(i)):
-    i += 1
 
-logging.basicConfig(
-    filename="sushi_khan_academy{}.log".format(i), filemode="w", level=logging.DEBUG
-)
-
-logger = logging.getLogger("root")
-logger.setLevel(logging.DEBUG)
 
 LICENSE_MAPPING = {
     "CC BY": dict(license_id=licenses.CC_BY, copyright_holder="Khan Academy"),
