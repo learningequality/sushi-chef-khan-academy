@@ -2,15 +2,19 @@
 import copy
 import os
 import youtube_dl
-from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP, VIDEO_LANGUAGE_MAPPING
-from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
+
 from le_utils.constants import content_kinds, exercises, licenses
 from le_utils.constants.languages import getlang, getlang_by_name
+from pressurecooker.youtube import get_language_with_alpha2_fallback
 from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
 from ricecooker.config import LOGGER as logger
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
+
 from common_core_tags import generate_common_core_mapping
+from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP, VIDEO_LANGUAGE_MAPPING
+from curataion import get_slug_blacklist
+from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 
 
 
@@ -44,39 +48,6 @@ EXERCISE_MAPPING = {
     "num_correct_in_a_row_10": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_10},
 }
 
-SLUG_BLACKLIST = [
-    "new-and-noteworthy",
-    "talks-and-interviews",
-    "coach-res",
-]  # not relevant
-SLUG_BLACKLIST += ["cs", "towers-of-hanoi"]  # not (yet) compatible
-# SLUG_BLACKLIST += ["cc-third-grade-math", "cc-fourth-grade-math", "cc-fifth-grade-math", "cc-sixth-grade-math",
-#                    "cc-seventh-grade-math", "cc-eighth-grade-math"]  # common core
-SLUG_BLACKLIST += [
-    "MoMA",
-    "getty-museum",
-    "stanford-medicine",
-    "crash-course1",
-    "mit-k12",
-    "hour-of-code",
-    "metropolitan-museum",
-    "bitcoin",
-    "tate",
-    "crash-course1",
-    "crash-course-bio-ecology",
-    "british-museum",
-    "aspeninstitute",
-    "asian-art-museum",
-    "amnh",
-    "nova",
-]  # partner content
-
-SLUG_BLACKLIST += ["computing"]  # we don't support scratchpad content
-
-# TODO(jamalex): re-check these videos later and remove them from here if they've recovered
-# SLUG_BLACKLIST += ["mortgage-interest-rates", "factor-polynomials-using-the-gcf", "inflation-overview",
-#                    "time-value-of-money", "changing-a-mixed-number-to-an-improper-fraction",
-#                    "applying-the-metric-system"]  # errors on video downloads
 
 CC_MAPPING = generate_common_core_mapping()
 
@@ -86,54 +57,51 @@ class KhanAcademySushiChef(JsonTreeChef):
     Khan Academy sushi chef.
     """
 
-    RICECOOKER_JSON_TREE_TPL = "ricecooker_json_tree_{}.json"
-
     def get_json_tree_path(self, *args, **kwargs):
         """
         Return path to ricecooker json tree file. Override this method to use
         a custom filename, e.g., for channel with multiple languages.
         """
-        # Channel language
+        RICECOOKER_JSON_TREE_TPL = "ricecooker_json_tree_{}.json"
+
+        # Get channel language from kwargs
         if "lang" in kwargs:
             language_code = kwargs["lang"]
         else:
-            language_code = (
-                "en"
-            )  # default to en if no language specified on command line
+            language_code = "en"  # default to en if lang not specifed
 
         lang_obj = getlang(language_code) or getlang_by_name(language_code)
 
-        json_filename = self.RICECOOKER_JSON_TREE_TPL.format(lang_obj.code)
+        json_filename = RICECOOKER_JSON_TREE_TPL.format(lang_obj.code)
         json_tree_path = os.path.join(self.TREES_DATA_DIR, json_filename)
         return json_tree_path
+
 
     def pre_run(self, args, options):
         if "lang" in options:
             language_code = options["lang"]
         else:
-            language_code = (
-                "en"
-            )  # default to en if no language specified on command line
-
-        lang = getlang(language_code) or getlang_by_name(language_code)
+            language_code = "en"  # default to en if lang not specifed
+        lang_obj = getlang(language_code) or getlang_by_name(language_code)
 
         channel_node = dict(
             source_id="KA ({0})".format(language_code),
             source_domain="khanacademy.org",
-            title="Khan Academy ({0})".format(lang.native_name),
+            title="Khan Academy ({0})".format(lang_obj.first_native_name),
             description=CHANNEL_DESCRIPTION_LOOKUP.get(
-                language_code, "Khan Academy content for {}.".format(lang.name)
+                language_code, "Khan Academy content for {}.".format(lang_obj.name)
             ),
             thumbnail=os.path.join("chefdata", "khan-academy-logo.png"),
-            language=lang.code,
+            language=lang_obj.code,
             children=[],
         )
+
         # build studio channel out of youtube playlist
         if options.get("youtube_channel_id"):
             youtube_id = options.get("youtube_channel_id")
             logger.info(
                 "Downloading youtube playlist {} for {} language".format(
-                    youtube_id, lang.name
+                    youtube_id, lang_obj.name
                 )
             )
             root_node = youtube_playlist_scraper(youtube_id, channel_node)
@@ -151,22 +119,20 @@ class KhanAcademySushiChef(JsonTreeChef):
             # we will include english videos with target language subtitles
             duplicate_videos(ka_root_topic)
 
-        language_code = lang.primary_code
-        if lang.subcode:
-            language_code = language_code + "-" + lang.subcode
-
+        language_code = lang_obj.code  # using internal code repr. from le-utils
         logger.info("converting KA nodes to ricecooker json nodes")
         root_topic = convert_ka_node_to_ricecooker_node(
             ka_root_topic, target_lang=language_code
         )
-
         for topic in root_topic["children"]:
             channel_node["children"].append(topic)
 
-        # write to json file
+        # write to ricecooker tree to json file
         logger.info("writing ricecooker json to a file")
         json_tree_path = self.get_json_tree_path(*args, **options)
         write_tree_to_json_tree(json_tree_path, channel_node)
+
+
 
 
 def youtube_playlist_scraper(channel_id, channel_node):
@@ -234,7 +200,27 @@ def duplicate_videos(node):
     return node
 
 
+def should_include_subtitle(youtube_language, target_lang):
+    """
+    Determine whether subtitles with language code `youtube_language` available
+    for a YouTube video should be imported as part of the Khan Academy chef run
+    for language `target_lang` (internal language code).
+    """
+    lang_obj = get_language_with_alpha2_fallback(youtube_language)
+    target_lang_obj = getlang(target_lang)
+    if lang_obj.primary_code == target_lang_obj.primary_code:
+        return True  # accept if the same language code even if different locale
+    else:
+        return False
+
+
 def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
+    """
+    Convert a KA node (a subclass of `KhanNode`) to a ricecooker node (dict).
+    Returns None if node slug is blacklisted or inadmissable for inclusion for
+    some other reason (e.g. video not translated and no subtitles available).
+    """
+    SLUG_BLACKLIST = get_slug_blacklist(lang=target_lang)
 
     if ka_node.slug in SLUG_BLACKLIST:
         return None
@@ -335,7 +321,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
 
         # TODO: Use traditional compression here to avoid breaking existing KA downloads?
         files = [
-            # Mar 17: special run for Italian: download from youtube instead of from KA CDN
+            # Mar 25: special run for Italian and Chinese: download from youtube instead of from KA CDN
             dict(
                 file_type="video",
                 # path=download_url,
@@ -368,7 +354,7 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                             language=lang_code,
                         )
                     )
-                elif lang_code == target_lang:
+                elif should_include_subtitle(lang_code, le_target_lang):
                     files.append(
                         dict(
                             file_type="subtitles",
@@ -376,17 +362,18 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
                             language=lang_code,
                         )
                     )
+                else:
+                    logger.debug(
+                        'Skipping subs with lang_code {} for video {}'.format(
+                            lang_code, ka_node.translated_youtube_id))
 
-        # convert KA's license format into our own license classes
+        # convert KA's license format into our internal license classes
         if ka_node.license in LICENSE_MAPPING:
             license = LICENSE_MAPPING[ka_node.license]
         else:
             # license = licenses.CC_BY_NC_SA # or?
-            logger.error(
-                "Unknown license ({}) on video with youtube id: {}".format(
-                    ka_node.license, ka_node.translated_youtube_id
-                )
-            )
+            logger.error("Unknown license ({}) on video with youtube id: {}".format(
+                ka_node.license, ka_node.translated_youtube_id))
             return None
 
         video = dict(

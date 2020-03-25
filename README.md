@@ -51,10 +51,16 @@ Below is a table which shows the mapping from the Khan data structures to the Ri
 
 
 ### TODOs
- - Respect topics with `doNotPublish` set to `true` in JSON.
+ - Respect topics with `doNotPublish` set to `true` in JSON (rarely used)
  - Handle `prerequisites` (links to exercises slugs)
  - Handle `relatedContent` (links to videos, exercises, and scratchpads on the same concept)
- - Update to use standard `config.LOGGER` for logging
+ - Investigate KA Potugrese math level2 subtopics (ask in KA channel?)
+   How can we know "xb5f47e40446387e5", "translatedTitle": "5º Ano", "slug": "pt-5-ano",
+   is a child of Matemática por ano (brazil-math-grades).
+ - Investigate private videos in zh-CN, e.g.
+   https://zh.khanacademy.org/math/basic-geo/basic-geo-angle#angles-between-lines
+   and https://zh.khanacademy.org/economics-finance-domain/core-finance/money-and-banking
+
 
 
 ## Curriculum aligned channels
@@ -62,8 +68,8 @@ The KA English channel contains algernative topic hierarchies that correspond to
 the curriculum structure of US (Common Core State Standards) and India curriculum.
 These per-curriculum custom trees occur only in the Math and Science topics.
 
-In order to avoid showing the curriculum from other countries, we build three
-separate channel:
+In order to avoid showing the curriculum from other countries, we could build
+three separate channel:
   - Khan Academy (English - Global): topic tree without `us-cc` and `in-in` topics
   - Khan Academy (English - US curriculum): tree without `in-in` topics
   - Khan Academy (English - India curriculum): topic tree without `us-cc` topics
