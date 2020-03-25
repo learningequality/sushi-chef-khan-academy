@@ -13,7 +13,7 @@ from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
 from common_core_tags import generate_common_core_mapping
 from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP, VIDEO_LANGUAGE_MAPPING
-from curataion import get_slug_blacklist
+from curation import get_slug_blacklist
 from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 
 
