@@ -43,6 +43,13 @@ GLOBAL_SLUG_BLACKLIST += [
 ]
 
 
+# Skip NWEA duplicate MAP Growth trees, see https://www.nwea.org/map-growth/
+GLOBAL_SLUG_BLACKLIST += [
+    'mappers',      # https://www.khanacademy.org/mappers
+    'kmap'          # https://www.khanacademy.org/kmap
+]
+
+
 # common core
 # GLOBAL_SLUG_BLACKLIST += ["cc-third-grade-math", "cc-fourth-grade-math", "cc-fifth-grade-math", "cc-sixth-grade-math",
 #                    "cc-seventh-grade-math", "cc-eighth-grade-math"]
