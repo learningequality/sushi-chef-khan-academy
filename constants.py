@@ -88,16 +88,19 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "it": "Khan Academy offre i video e gli esercizi di matematica, allineati al curriculum degli Stati Uniti. Ogni argomento è trattato in modo intuitivo attraverso spiegazioni video, e fornisce numerosi esercizi pratici per aiutare gli studenti raggiungere la competenza sulla materia. Adatto agli studenti di scuola elementare, media e secondaria, nonché agli adulti.",
 }
 
+# map from le-utils language codes to language codes used on CROWDIN
 CROWDIN_LANGUAGE_MAPPING = {
-    "fuv": "fv"
+    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
 }
 
+# map  to codes used to get assesment items from the KA API
 ASSESSMENT_LANGUAGE_MAPPING = {
-    "fuv": "fv"
+    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
 }
 
-# sometimes videos from youtube do not have the same language code as le-utils
+# map from le-utils codes to language codes for video nodes translated_  from youtube do not have the same language code as le-utils
 VIDEO_LANGUAGE_MAPPING = {
+    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
     "pt-BR": "pt",
     "zh-CN": "zh-hans"
 }
