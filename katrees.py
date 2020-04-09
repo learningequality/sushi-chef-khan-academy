@@ -168,6 +168,31 @@ def export_khantree(lang, khantree, report, variant=None, all_en_topic_slugs=[])
     os.remove(path_md)
 
 
+def get_ka_learn_menu_topics(lang, curriculum=None):
+    post_data = {
+        "operationName": "learnMenuTopicsQuery",
+        "variables": {},
+        "query":"query learnMenuTopicsQuery($curriculum: String) {\n  learnMenuTopics(curriculum: $curriculum) {\n    slug\n    translatedTitle\n    href\n    children {\n      slug\n      translatedTitle\n      href\n      loggedOutHref\n      nonContentLink\n      __typename\n    }\n    __typename\n  }\n}\n"
+    }
+    if curriculum:
+        post_data["variables"]["curriculum"] = curriculum
+
+    url = 'https://www.khanacademy.org/api/internal/graphql/learnMenuTopicsQuery'
+    url += '?lang=' + lang
+    response = requests.post(url, json=post_data)
+    response_data = response.json()
+    menu_topics = response_data['data']['learnMenuTopics']
+    for top_menu in menu_topics:
+        del top_menu['__typename']
+        top_menu['slug'] = top_menu['href'].split('/')[-1]
+        for menu in top_menu['children']:
+            del menu['loggedOutHref']
+            del menu['nonContentLink']
+            del menu['__typename']
+            menu['slug'] = menu['href'].split('/')[-1]
+    return menu_topics
+
+
 if __name__ == '__main__':
     ka_info_path = os.path.join(KA_CHEF_DIR, "reports", "ka_channels_info.json")
     khan_channels_info = json.load(open(ka_info_path))
