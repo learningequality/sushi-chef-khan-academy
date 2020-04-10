@@ -4,7 +4,7 @@ import os
 import youtube_dl
 
 from le_utils.constants import content_kinds, exercises, licenses
-from le_utils.constants.languages import getlang, getlang_by_name
+from le_utils.constants.languages import getlang
 from pressurecooker.youtube import get_language_with_alpha2_fallback
 from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
@@ -12,8 +12,11 @@ from ricecooker.config import LOGGER as logger
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
 from common_core_tags import generate_common_core_mapping
-from constants import UNSUBTITLED_LANGS, CHANNEL_DESCRIPTION_LOOKUP, VIDEO_LANGUAGE_MAPPING
+from constants import CHANNEL_DESCRIPTION_LOOKUP
+from constants import UNSUBTITLED_LANGS
+from constants import VIDEO_LANGUAGE_MAPPING
 from curation import get_slug_blacklist
+from curation import get_topic_tree_replacements
 from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 
 
@@ -65,12 +68,11 @@ class KhanAcademySushiChef(JsonTreeChef):
         RICECOOKER_JSON_TREE_TPL = "ricecooker_json_tree_{}.json"
 
         # Get channel language from kwargs
-        if "lang" in kwargs:
-            language_code = kwargs["lang"]
-        else:
-            language_code = "en"  # default to en if lang not specifed
-
-        lang_obj = getlang(language_code) or getlang_by_name(language_code)
+        if "lang" not in kwargs:
+            raise ValueError('Khan Academy chef must be run with lang=<code>')
+        language_code = kwargs["lang"]
+        lang_obj = getlang(language_code)
+        assert lang_obj, 'Language code ' + language_code + ' not recognized'
 
         json_filename = RICECOOKER_JSON_TREE_TPL.format(lang_obj.code)
         json_tree_path = os.path.join(self.TREES_DATA_DIR, json_filename)
@@ -78,11 +80,17 @@ class KhanAcademySushiChef(JsonTreeChef):
 
 
     def pre_run(self, args, options):
-        if "lang" in options:
-            language_code = options["lang"]
+        if "lang" not in options:
+            raise ValueError('Khan Academy chef must be run with lang=<code>')
+        language_code = options["lang"]
+        lang_obj = getlang(language_code)
+        assert lang_obj, 'Language code ' + language_code + ' not recognized'
+        
+        if "variant" in options:
+            variant = options["variant"]
         else:
-            language_code = "en"  # default to en if lang not specifed
-        lang_obj = getlang(language_code) or getlang_by_name(language_code)
+            variant = None
+        # TODO(ivan): set different title and source_id if variant is not None
 
         channel_node = dict(
             source_id="KA ({0})".format(language_code),
@@ -112,8 +120,9 @@ class KhanAcademySushiChef(JsonTreeChef):
             return
 
         logger.info("downloading KA tree")
-        # build channel through KA API
-        ka_root_topic = get_khan_topic_tree(lang=language_code)
+        # Obtain the complete topic tree for lang=language_code from the KA API
+        ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=language_code)
+        self.topics_by_slug = topics_by_slug  # to be used for topic replacments
 
         if options.get("english_subtitles"):
             # we will include english videos with target language subtitles
@@ -122,7 +131,7 @@ class KhanAcademySushiChef(JsonTreeChef):
         language_code = lang_obj.code  # using internal code repr. from le-utils
         logger.info("converting KA nodes to ricecooker json nodes")
         root_topic = convert_ka_node_to_ricecooker_node(
-            ka_root_topic, target_lang=language_code
+            ka_root_topic, target_lang=language_code, variant=variant
         )
         for topic in root_topic["children"]:
             channel_node["children"].append(topic)
@@ -214,13 +223,14 @@ def should_include_subtitle(youtube_language, target_lang):
         return False
 
 
-def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
+def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None, variant=None):
     """
     Convert a KA node (a subclass of `KhanNode`) to a ricecooker node (dict).
     Returns None if node slug is blacklisted or inadmissable for inclusion for
     some other reason (e.g. video not translated and no subtitles available).
     """
-    SLUG_BLACKLIST = get_slug_blacklist(lang=target_lang)
+    SLUG_BLACKLIST = get_slug_blacklist(lang=target_lang, variant=variant)
+    TOPIC_REPLACEMENTS = get_topic_tree_replacements(lang=target_lang, variant=variant)
 
     if ka_node.slug in SLUG_BLACKLIST:
         return None
@@ -235,11 +245,17 @@ def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None):
             children=[],
         )
         for ka_subtopic in ka_node.children:
-            subtopic = convert_ka_node_to_ricecooker_node(
-                ka_subtopic, target_lang=target_lang
-            )
-            if subtopic:
-                topic["children"].append(subtopic)
+            if isinstance(ka_subtopic, KhanTopic) and ka_subtopic.slug in TOPIC_REPLACEMENTS:
+                # This topic must be replaced by a list of other topic nodes
+                replacements = TOPIC_REPLACEMENTS[ka_node.slug]
+                # CODE TO BE CONTINUED HERE...
+            else: 
+                subtopic = convert_ka_node_to_ricecooker_node(
+                    ka_subtopic, target_lang=target_lang, variant=variant
+                )
+                if subtopic:
+                    topic["children"].append(subtopic)
+        # Skip empty topics
         if len(topic["children"]) > 0:
             return topic
         else:

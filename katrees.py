@@ -111,7 +111,7 @@ def report_from_raw_data(lang, data, all_en_topic_slugs=set()):
     return report
 
 
-def get_khan_topic_tree(lang="en", curr_key=None):
+def get_khan_topic_tree(lang="en"):
     """
     Copied from khan.get_khan_topic_tree --- adapted to use caching API results.
     """

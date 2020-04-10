@@ -3,7 +3,7 @@ This file contains special instructions for selection, subsetting, and hoisting
 rules for the Khan Academy nodes that are applied as part of the creation of the
 corresponding Kolibri channel.
 """
-
+from ricecooker.config import LOGGER
 
 # these topics are not relevant or importable
 GLOBAL_SLUG_BLACKLIST = [
@@ -115,12 +115,16 @@ SLUG_BLACKLIST_PER_LANG = {
 def get_slug_blacklist(lang=None, variant=None):
     """
     Returns a list of KA slugs to skip when creating the channel.
-    Combines the "global" slug blacklist that applies for all channels, and 
+    Combines the "global" slug blacklist that applies for all channels, and
     additional customization for specific languages or curriculum variants.
     """
     SLUG_BLACKLIST = GLOBAL_SLUG_BLACKLIST
-    if lang in SLUG_BLACKLIST_PER_LANG.keys():
+    if variant and (lang, variant) in SLUG_BLACKLIST_PER_LANG:
         SLUG_BLACKLIST.extend(SLUG_BLACKLIST_PER_LANG[(lang, variant)])
+    elif lang in SLUG_BLACKLIST_PER_LANG:
+        SLUG_BLACKLIST.extend(SLUG_BLACKLIST_PER_LANG[lang])
+    else:
+        LOGGER.warning('No slugs for lang=' + lang + ' variant=' + str(variant))
     return SLUG_BLACKLIST
 
 
@@ -341,3 +345,15 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
     }
 }
 
+def get_topic_tree_replacements(lang=None, variant=None):
+    """
+    Returns a dictionary of replacements directives for the KA language `lang`
+    and channel variant `variant` taken from TOPIC_TREE_REPLACMENTS_PER_LANG.
+    """
+    if variant and (lang, variant) in TOPIC_TREE_REPLACMENTS_PER_LANG:
+        return TOPIC_TREE_REPLACMENTS_PER_LANG[(lang, variant)]
+    elif lang in TOPIC_TREE_REPLACMENTS_PER_LANG:
+        return TOPIC_TREE_REPLACMENTS_PER_LANG[lang]
+    else:
+        LOGGER.warning('No replacements found for lang=' + lang + ' variant=' + str(variant))
+        return {}

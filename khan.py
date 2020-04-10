@@ -3,6 +3,7 @@ import ujson
 
 from le_utils.constants.languages import getlang, getlang_by_name
 from pressurecooker.youtube import YouTubeResource
+from ricecooker.config import LOGGER
 
 from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
@@ -15,7 +16,14 @@ video_map = generate_dubbed_video_mappings_from_csv()
 english_video_map = get_video_id_english_mappings()
 
 
-def get_khan_topic_tree(lang="en", curr_key=None):
+def get_khan_topic_tree(lang="en"):
+    """
+    Build the complete topic tree based on the results obtained from the KA API.
+    Note this topic tree contains a combined topic strcuture that includes all
+    curriculum variants, curation pages, and child data may be in wrong order.
+    Returns: tuple (root_node, topics_by_slug) for further processing according
+    based on SLUG_BLACKLIST and TOPIC_TREE_REPLACMENTS specified in curation.py
+    """
     if lang == "sw":
         response = make_request(
             V2_API_URL.format(lang="swa", projection=PROJECTION_KEYS), timeout=120
@@ -34,16 +42,22 @@ def get_khan_topic_tree(lang="en", curr_key=None):
         global translations
         translations = retrieve_translations(lang_code=lang)
 
-    # Flatten node_data
+    # Flatten node_data (combine topics, videos, and exercises in a single list)
     flattened_tree = [node for node_list in topic_tree.values() for node in node_list]
 
-    # convert to dict with ids as keys
+    # Convert to dict with ids as keys (for fast lookups by id)
     tree_dict = {node["id"]: node for node in flattened_tree}
 
-    return _recurse_create(tree_dict["x00000000"], tree_dict, lang=lang)
+    # Build a lookup table {slug --> KhanTopic} to be used for replacement logic
+    topics_by_slug = {}
+
+    root_node = tree_dict["x00000000"]
+    root = _recurse_create(root_node, tree_dict, topics_by_slug, lang=lang)
+
+    return root, topics_by_slug
 
 
-def _recurse_create(node, tree_dict, lang="en"):
+def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
 
     node["translatedTitle"] = translations.get(
         node["translatedTitle"], node["translatedTitle"]
@@ -54,9 +68,7 @@ def _recurse_create(node, tree_dict, lang="en"):
 
     if node["kind"] == "Exercise":
         khan_node = KhanExercise(
-            id=node[
-                "name"
-            ],  # ID is the name of exercise node, for backwards compatibility
+            id=node["name"],  # set id to name for backwards compatibility
             title=node["translatedTitle"],
             description=node["translatedDescription"],
             slug=node["slug"],
@@ -66,19 +78,19 @@ def _recurse_create(node, tree_dict, lang="en"):
             source_url=node["kaUrl"],
             lang=lang,
         )
+
     elif node["kind"] == "Topic":
         khan_node = KhanTopic(
-            id=node[
-                "slug"
-            ],  # ID is the slug of topic node, for backwards compatibility
+            id=node["slug"],  # set topic id to slug for backwards compatibility
             title=node["translatedTitle"],
             description=node["translatedDescription"],
             slug=node["slug"],
             lang=lang,
             curriculum=node["curriculumKey"] if node["curriculumKey"] else None,
         )
-    elif node["kind"] == "Video":
+        topics_by_slug[node["slug"]] = khan_node
 
+    elif node["kind"] == "Video":
         name = getlang(lang).name.lower()
         if node["translatedYoutubeLang"] != lang:
             if video_map.get(name):
@@ -114,6 +126,7 @@ def _recurse_create(node, tree_dict, lang="en"):
             translated_youtube_id=node["translatedYoutubeId"],
             lang=node["translatedYoutubeLang"],
         )
+
     elif node["kind"] == "Article":
         khan_node = KhanArticle(
             id=node["id"],
@@ -123,13 +136,13 @@ def _recurse_create(node, tree_dict, lang="en"):
             lang=lang,
         )
 
-    for c in node.get("childData", []):
-        # if key is missing, we don't add it to list of children of topic node
-        try:
-            child_node = tree_dict[c["id"]]
-            khan_node.children.append(_recurse_create(child_node, tree_dict, lang=lang))
-        except KeyError:
-            pass
+    for child_pointer in node.get("childData", []):
+        if "id" in child_pointer and child_pointer["id"] in tree_dict:
+            child_node = tree_dict[child_pointer["id"]]
+            child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang)
+            khan_node.children.append(child)
+        else:
+            LOGGER.warning('Missing id in childData of node ' + node["id"])
 
     return khan_node
 
