@@ -70,6 +70,9 @@ GLOBAL_SLUG_BLACKLIST += [
     "science-hindi",
     "science-india",
     "in-math-by-grade",
+    #
+    "brazil-math-grades",  # Special empty topics in pt-BR topic tree
+    "ciencias-por-ano",
 ]
 
 
@@ -88,7 +91,7 @@ SLUG_BLACKLIST_PER_LANG = {
         "money-and-banking",    # Mar 25: contains mostly non-public youtube videos
     ],
     "en": [
-        # Note: no need for in-in math topics since handled by tree replacement
+        # Note: no need to list in math topics since handled by tree replacement
         "in-in-class9th-physics-india",       # specific to the in-in curriculum
         "in-in-class10th-physics",
         "in-in-class-10-biology",
@@ -104,6 +107,9 @@ SLUG_BLACKLIST_PER_LANG = {
         "talent-search",
     ],
     ("en", "in-in"): [],
+    "pt-BR": [
+        "art-history",
+    ]
 }
 
 def get_slug_blacklist(lang=None, variant=None):
@@ -257,6 +263,79 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
+    },
+    "pt-BR": {
+        "math": [
+            {"slug": "math", "translatedTitle": "Matemática", "children": [
+                {"slug": "early-math", "translatedTitle": "Fundamentos de matemática"},
+                {"slug": "arithmetic-home", "translatedTitle": "Aritmética"},
+                {"slug": "pre-algebra", "translatedTitle": "Pré-álgebra"},
+                {"slug": "algebra-basics", "translatedTitle": "Noções de álgebra"},
+                {"slug": "basic-geo", "translatedTitle": "Geometria básica"},
+                {"slug": "geometry-home", "translatedTitle": "Geometria"},
+                {"slug": "geometry", "translatedTitle": "Geometria do Ensino Médio"},
+                {"slug": "trigonometry", "translatedTitle": "Trigonometria"},
+                {"slug": "statistics-probability", "translatedTitle": "Estatística e probabilidade"},
+                {"slug": "math1", "translatedTitle": "Matemática I (Ensino Médio)"},
+                {"slug": "math2", "translatedTitle": "Matemática II (Ensino Médio)"},
+                {"slug": "math3", "translatedTitle": "Matemática III (Ensino Médio)"},
+                {"slug": "probability", "translatedTitle": "Estatística do Ensino Médio"},
+            ]},
+            {"slug": "math", "translatedTitle": "Matemática avançada", "children": [
+                {"slug": "precalculus", "translatedTitle": "Pré-cálculo"},
+                {"slug": "differential-calculus", "translatedTitle": "Cálculo diferencial"},
+                {"slug": "integral-calculus", "translatedTitle": "Cálculo integral"},
+                {"slug": "differential-equations", "translatedTitle": "Equações diferenciais"},
+                {"slug": "multivariable-calculus", "translatedTitle": "Cálculo multivariável"},
+                {"slug": "linear-algebra", "translatedTitle": "Álgebra linear"},
+            ]},
+            {"slug": "brazil-math-grades", "translatedTitle": "Matemática por ano (BNCC)", "children": [
+                {"slug": "pt-1-ano", "translatedTitle": "1° ano"},
+                {"slug": "pt-2-ano", "translatedTitle": "2° ano"},
+                {"slug": "pt-3-ano", "translatedTitle": "3° ano"},
+                {"slug": "pt-4-ano", "translatedTitle": "4° ano"},
+                {"slug": "pt-5-ano", "translatedTitle": "5° ano"},
+                {"slug": "6-ano-matematica", "translatedTitle": "6° ano"},
+                {"slug": "pt-7-ano", "translatedTitle": "7° ano"},
+                {"slug": "pt-8-ano", "translatedTitle": "8° ano"},
+                {"slug": "pt-9-ano", "translatedTitle": "9° ano"},
+            ]},
+        ],
+        "science": [
+            {"slug": "science", "translatedTitle": "Ciências e engenharia", "children": [
+                {"slug": "physics", "translatedTitle": "Física"},
+                {"slug": "chemistry", "translatedTitle": "Química"},
+                {"slug": "organic-chemistry", "translatedTitle": "Química orgânica"},
+                {"slug": "biology", "translatedTitle": "Biologia"},
+                {"slug": "health-and-medicine", "translatedTitle": "Saúde e medicina"},
+                {"slug": "electrical-engineering", "translatedTitle": "Engenharia elétrica"},
+            ]},
+            {"slug": "ciencias-por-ano", "translatedTitle": "Ciências por ano (BNCC)", "children": [
+                {"slug": "1-ano", "translatedTitle": "1° ano"},
+                {"slug": "2-ano", "translatedTitle": "2° ano"},
+                {"slug": "3-ano", "translatedTitle": "3° ano"},
+                {"slug": "4-ano", "translatedTitle": "4° ano"},
+                {"slug": "5-ano", "translatedTitle": "5° ano"},
+                {"slug": "6-ano", "translatedTitle": "6° ano"},
+                {"slug": "7-ano", "translatedTitle": "7° ano"},
+                {"slug": "8-ano", "translatedTitle": "8° ano"},
+                {"slug": "9-ano", "translatedTitle": "9° ano"},
+            ]},
+        ],
+        "humanities": [
+            {"slug": "humanities", "translatedTitle": "Ciências humanas", "children": [
+                {"slug": "art-history", "translatedTitle": "História da arte", "children": [
+                    {"slug": "art-history-basics"},
+                    {"slug": "prehistoric-art"},
+                ]},
+                {"slug": "lp-3-ano"},
+                {"slug": "lp-4-ano"},
+            ]},
+            {"slug": "portugues-por-ano-bncc-ef", "translatedTitle": "Português por ano (BNCC)", "children": [
+                {"slug": "lp-3-ano"},
+                {"slug": "lp-4-ano"},
             ]},
         ],
     }
