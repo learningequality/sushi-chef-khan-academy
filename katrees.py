@@ -192,6 +192,27 @@ def get_ka_learn_menu_topics(lang, curriculum=None):
             menu['slug'] = menu['href'].split('/')[-1]
     return menu_topics
 
+def print_curation_topic_tree(menu_topics, slugs=[]):
+    """
+    Print dict tree structure suitable for inclusion in curaiton.py for the slugs
+    specified in `slugs` (list).
+    """
+    print('[')
+    for top_menu in menu_topics:
+        if top_menu['slug'] in slugs:
+            line = '    {'
+            line += '"slug": "' + top_menu['slug'] + '", '
+            line += '"translatedTitle": "' + top_menu['translatedTitle'] + '", '
+            line += '"children": ['
+            print(line)
+            for menu in top_menu['children']:
+                subline = '        {'
+                subline += '"slug": "' + menu['slug'] + '", '
+                subline += '"translatedTitle": "' + menu['translatedTitle'] + '"},'
+                print(subline)
+            print('    ]},')
+    print(']')
+
 
 if __name__ == '__main__':
     ka_info_path = os.path.join(KA_CHEF_DIR, "reports", "ka_channels_info.json")
