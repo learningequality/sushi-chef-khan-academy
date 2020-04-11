@@ -59,6 +59,10 @@ class KhanAcademySushiChef(JsonTreeChef):
     """
     Khan Academy sushi chef.
     """
+    slug_blacklist = []      # spec about `KhanTopic`s to be skipped
+    topics_by_slug = {}      # lookup table { slug --> KhanTopic }
+    topic_replacements = {}  # spec about `KhanTopic`s to be replaced
+
 
     def get_json_tree_path(self, *args, **kwargs):
         """
@@ -104,7 +108,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             children=[],
         )
 
-        # build studio channel out of youtube playlist
+        # Handle special case of building Kolibri channel from youtube playlists
         if options.get("youtube_channel_id"):
             youtube_id = options.get("youtube_channel_id")
             logger.info(
@@ -114,8 +118,8 @@ class KhanAcademySushiChef(JsonTreeChef):
             )
             root_node = youtube_playlist_scraper(youtube_id, channel_node)
             # write to json file
-            logger.info("writing ricecooker json to a file")
             json_tree_path = self.get_json_tree_path(*args, **options)
+            logger.info("Writing youtube ricecooker tree to " + json_tree_path)
             write_tree_to_json_tree(json_tree_path, root_node)
             return
 
@@ -123,6 +127,8 @@ class KhanAcademySushiChef(JsonTreeChef):
         # Obtain the complete topic tree for lang=language_code from the KA API
         ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=language_code)
         self.topics_by_slug = topics_by_slug  # to be used for topic replacments
+        self.slug_blacklist = get_slug_blacklist(lang=language_code, variant=variant)
+        self.topic_replacements = get_topic_tree_replacements(lang=language_code, variant=variant)
 
         if options.get("english_subtitles"):
             # we will include english videos with target language subtitles
@@ -130,16 +136,238 @@ class KhanAcademySushiChef(JsonTreeChef):
 
         language_code = lang_obj.code  # using internal code repr. from le-utils
         logger.info("converting KA nodes to ricecooker json nodes")
-        root_topic = convert_ka_node_to_ricecooker_node(
-            ka_root_topic, target_lang=language_code, variant=variant
+        root_topic = self.convert_ka_node_to_ricecooker_node(
+            ka_root_topic, target_lang=language_code,
         )
         for topic in root_topic["children"]:
             channel_node["children"].append(topic)
 
         # write to ricecooker tree to json file
-        logger.info("writing ricecooker json to a file")
         json_tree_path = self.get_json_tree_path(*args, **options)
+        logger.info("Writing ricecooker json tree to " + json_tree_path)
         write_tree_to_json_tree(json_tree_path, channel_node)
+
+
+    def convert_ka_node_to_ricecooker_node(self, ka_node, target_lang=None):
+        """
+        Convert a KA node (a subclass of `KhanNode`) to a ricecooker node (dict).
+        Returns None if node slug is blacklisted or inadmissable for inclusion
+        due to another reason (e.g. undtranslated video and no subs available).
+        """
+
+        if ka_node.slug in self.slug_blacklist:
+            return None
+
+        if isinstance(ka_node, KhanTopic):
+            topic = dict(
+                kind=content_kinds.TOPIC,
+                source_id=ka_node.id,
+                title=ka_node.title,
+                description=ka_node.description[:400] if ka_node.description else '',
+                slug=ka_node.slug,
+                children=[],
+            )
+            for ka_node_child in ka_node.children:
+                if isinstance(ka_node_child, KhanTopic) and ka_node_child.slug in self.topic_replacements:
+                    # This topic must be replaced by a list of other topic nodes
+                    replacements = self.topic_replacements[ka_node_child.slug]
+                    for r in replacements:
+                        rtopic = dict(
+                            kind=content_kinds.TOPIC,
+                            source_id=r['slug'],
+                            title=r['translatedTitle'],        # guaranteed to exist
+                            description=r.get('description'),  # (optional)
+                            slug=r['slug'],
+                            children=[],
+                        )
+                        for rchild in r['children']:  # guaranteed to exist
+                            rchild_slug = rchild['slug']
+                            if 'children' not in rchild:
+                                # CASE A: two-level replacement hierarchy
+                                rchild_ka_node = self.topics_by_slug[rchild_slug]
+                                rchildtopic = self.convert_ka_node_to_ricecooker_node(
+                                    rchild_ka_node, target_lang=target_lang)
+                                if rchildtopic:
+                                    rtopic["children"].append(rchildtopic)
+                            else:
+                                # CASE B: three-level replacement hierarchy
+                                rchildtopic = dict(
+                                    kind=content_kinds.TOPIC,
+                                    source_id=rchild['slug'],
+                                    title=rchild['translatedTitle'],   # guaranteed to exist
+                                    description=r.get('description'),  # (optional)
+                                    slug=rchild['slug'],
+                                    children=[],
+                                )
+                                for rgrandchild in rchild['children']:
+                                    rgrandchild_slug = rchild['slug']
+                                    rgrandchild_ka_node = self.topics_by_slug[rgrandchild_slug]
+                                    rgrandchildtopic = self.convert_ka_node_to_ricecooker_node(
+                                        rgrandchild_ka_node, target_lang=target_lang)
+                                    if rgrandchildtopic:
+                                        rchildtopic["children"].append(rgrandchildtopic)
+                                if rchildtopic["children"]:
+                                    rtopic["children"].append(rchildtopic)
+                        if rtopic["children"]:
+                            topic["children"].append(rtopic)
+                else:
+                    # This is the more common case (no replacement), just add...
+                    child = self.convert_ka_node_to_ricecooker_node(
+                        ka_node_child, target_lang=target_lang,
+                    )
+                    if child:
+                        topic["children"].append(child)
+            # Skip empty topics
+            if topic["children"]:
+                return topic
+            else:
+                return None
+
+        elif isinstance(ka_node, KhanExercise):
+            if ka_node.mastery_model in EXERCISE_MAPPING:
+                mastery_model = EXERCISE_MAPPING[ka_node.mastery_model]
+            else:
+                logger.warning(
+                    "Unknown mastery model ({}) for exercise with id: {}".format(
+                        ka_node.mastery_model, ka_node.id
+                    )
+                )
+                mastery_model = exercises.M_OF_N
+
+            # common core tags
+            tags = []
+            if ka_node.slug in CC_MAPPING:
+                tags.append(CC_MAPPING[ka_node.slug])
+
+            exercise = dict(
+                kind=content_kinds.EXERCISE,
+                source_id=ka_node.id,
+                title=ka_node.title,
+                description=ka_node.description[:400] if ka_node.description else '',
+                exercise_data=mastery_model,
+                license=dict(
+                    license_id=licenses.SPECIAL_PERMISSIONS,
+                    copyright_holder="Khan Academy",
+                    description="Permission granted to distribute through Kolibri for non-commercial use",
+                ),  # need to formalize with KA
+                thumbnail=ka_node.thumbnail,
+                slug=ka_node.slug,
+                questions=[],
+                tags=tags,
+            )
+            for ka_assessment_item in ka_node.get_assessment_items():
+                if ka_assessment_item.data and ka_assessment_item.data != "null":
+                    assessment_item = dict(
+                        question_type=exercises.PERSEUS_QUESTION,
+                        id=ka_assessment_item.id,
+                        item_data=ka_assessment_item.data,
+                        source_url=ka_assessment_item.source_url,
+                    )
+                exercise["questions"].append(assessment_item)
+            # if there are no questions for this exercise, return None
+            if not exercise["questions"]:
+                return None
+            return exercise
+
+        elif isinstance(ka_node, KhanVideo):
+            le_target_lang = target_lang
+            target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
+
+            if ka_node.youtube_id != ka_node.translated_youtube_id:
+                if ka_node.lang != target_lang.lower():
+                    logger.error(
+                        "Node with youtube id: {} and translated id: {} has wrong language".format(
+                            ka_node.youtube_id, ka_node.translated_youtube_id
+                        )
+                    )
+                    return None
+
+            # if download_url is missing, return None for this node
+            download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
+            if download_url is None:
+                logger.error(
+                    "No download urls for youtube_id: {}".format(ka_node.youtube_id)
+                )
+                return None
+
+            # for lite languages, replace youtube ids with translated ones
+            if ka_node.translated_youtube_id not in download_url:
+                download_url = ka_node.download_urls.get("mp4").replace(
+                    ka_node.youtube_id, ka_node.translated_youtube_id
+                )
+
+            # TODO: Use traditional compression here to avoid breaking existing KA downloads?
+            files = [
+                # Mar 25: special run for Italian and Chinese: download from youtube instead of from KA CDN
+                dict(
+                    file_type="video",
+                    # path=download_url,
+                    youtube_id=ka_node.translated_youtube_id,
+                    high_resolution=False,
+                )
+            ]
+
+            # include any subtitles that are available for this video
+            if le_target_lang not in UNSUBTITLED_LANGS:
+                subtitle_languages = ka_node.get_subtitle_languages()
+            else:
+                subtitle_languages = []
+
+            # if we dont have video in target lang or subtitle not available in target lang, return None
+            if ka_node.lang != target_lang.lower():
+                if target_lang not in subtitle_languages:
+                    logger.error(
+                        "Video {} not transalated and no subtitles available. Skipping.".format(ka_node.translated_youtube_id)
+                    )
+                    return None
+
+            for lang_code in subtitle_languages:
+                if is_youtube_subtitle_file_supported_language(lang_code):
+                    if target_lang == "en":
+                        files.append(
+                            dict(
+                                file_type="subtitles",
+                                youtube_id=ka_node.translated_youtube_id,
+                                language=lang_code,
+                            )
+                        )
+                    elif should_include_subtitle(lang_code, le_target_lang):
+                        files.append(
+                            dict(
+                                file_type="subtitles",
+                                youtube_id=ka_node.translated_youtube_id,
+                                language=lang_code,
+                            )
+                        )
+                    else:
+                        logger.debug(
+                            'Skipping subs with lang_code {} for video {}'.format(
+                                lang_code, ka_node.translated_youtube_id))
+
+            # convert KA's license format into our internal license classes
+            if ka_node.license in LICENSE_MAPPING:
+                license = LICENSE_MAPPING[ka_node.license]
+            else:
+                # license = licenses.CC_BY_NC_SA # or?
+                logger.error("Unknown license ({}) on video with youtube id: {}".format(
+                    ka_node.license, ka_node.translated_youtube_id))
+                return None
+
+            video = dict(
+                kind=content_kinds.VIDEO,
+                source_id=ka_node.translated_youtube_id if "-dubbed(KY)" in ka_node.title else ka_node.youtube_id,
+                title=ka_node.title,
+                description=ka_node.description[:400] if ka_node.description else '',
+                license=license,
+                thumbnail=ka_node.thumbnail,
+                files=files,
+            )
+
+            return video
+
+        elif isinstance(ka_node, KhanArticle):
+            # TODO
+            return None
 
 
 
@@ -223,190 +451,6 @@ def should_include_subtitle(youtube_language, target_lang):
         return False
 
 
-def convert_ka_node_to_ricecooker_node(ka_node, target_lang=None, variant=None):
-    """
-    Convert a KA node (a subclass of `KhanNode`) to a ricecooker node (dict).
-    Returns None if node slug is blacklisted or inadmissable for inclusion for
-    some other reason (e.g. video not translated and no subtitles available).
-    """
-    SLUG_BLACKLIST = get_slug_blacklist(lang=target_lang, variant=variant)
-    TOPIC_REPLACEMENTS = get_topic_tree_replacements(lang=target_lang, variant=variant)
-
-    if ka_node.slug in SLUG_BLACKLIST:
-        return None
-
-    if isinstance(ka_node, KhanTopic):
-        topic = dict(
-            kind=content_kinds.TOPIC,
-            source_id=ka_node.id,
-            title=ka_node.title,
-            description=ka_node.description[:400] if ka_node.description else '',
-            slug=ka_node.slug,
-            children=[],
-        )
-        for ka_subtopic in ka_node.children:
-            if isinstance(ka_subtopic, KhanTopic) and ka_subtopic.slug in TOPIC_REPLACEMENTS:
-                # This topic must be replaced by a list of other topic nodes
-                replacements = TOPIC_REPLACEMENTS[ka_node.slug]
-                # CODE TO BE CONTINUED HERE...
-            else: 
-                subtopic = convert_ka_node_to_ricecooker_node(
-                    ka_subtopic, target_lang=target_lang, variant=variant
-                )
-                if subtopic:
-                    topic["children"].append(subtopic)
-        # Skip empty topics
-        if len(topic["children"]) > 0:
-            return topic
-        else:
-            return None
-
-    elif isinstance(ka_node, KhanExercise):
-
-        if ka_node.mastery_model in EXERCISE_MAPPING:
-            mastery_model = EXERCISE_MAPPING[ka_node.mastery_model]
-        else:
-            logger.warning(
-                "Unknown mastery model ({}) for exercise with id: {}".format(
-                    ka_node.mastery_model, ka_node.id
-                )
-            )
-            mastery_model = exercises.M_OF_N
-
-        # common core tags
-        tags = []
-        if ka_node.slug in CC_MAPPING:
-            tags.append(CC_MAPPING[ka_node.slug])
-
-        exercise = dict(
-            kind=content_kinds.EXERCISE,
-            source_id=ka_node.id,
-            title=ka_node.title,
-            description=ka_node.description[:400] if ka_node.description else '',
-            exercise_data=mastery_model,
-            license=dict(
-                license_id=licenses.SPECIAL_PERMISSIONS,
-                copyright_holder="Khan Academy",
-                description="Permission granted to distribute through Kolibri for non-commercial use",
-            ),  # need to formalize with KA
-            thumbnail=ka_node.thumbnail,
-            slug=ka_node.slug,
-            questions=[],
-            tags=tags,
-        )
-        for ka_assessment_item in ka_node.get_assessment_items():
-            if ka_assessment_item.data and ka_assessment_item.data != "null":
-                assessment_item = dict(
-                    question_type=exercises.PERSEUS_QUESTION,
-                    id=ka_assessment_item.id,
-                    item_data=ka_assessment_item.data,
-                    source_url=ka_assessment_item.source_url,
-                )
-            exercise["questions"].append(assessment_item)
-        # if there are no questions for this exercise, return None
-        if not exercise["questions"]:
-            return None
-        return exercise
-
-    elif isinstance(ka_node, KhanVideo):
-        le_target_lang = target_lang
-        target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
-
-        if ka_node.youtube_id != ka_node.translated_youtube_id:
-            if ka_node.lang != target_lang.lower():
-                logger.error(
-                    "Node with youtube id: {} and translated id: {} has wrong language".format(
-                        ka_node.youtube_id, ka_node.translated_youtube_id
-                    )
-                )
-                return None
-
-        # if download_url is missing, return None for this node
-        download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
-        if download_url is None:
-            logger.error(
-                "No download urls for youtube_id: {}".format(ka_node.youtube_id)
-            )
-            return None
-
-        # for lite languages, replace youtube ids with translated ones
-        if ka_node.translated_youtube_id not in download_url:
-            download_url = ka_node.download_urls.get("mp4").replace(
-                ka_node.youtube_id, ka_node.translated_youtube_id
-            )
-
-        # TODO: Use traditional compression here to avoid breaking existing KA downloads?
-        files = [
-            # Mar 25: special run for Italian and Chinese: download from youtube instead of from KA CDN
-            dict(
-                file_type="video",
-                # path=download_url,
-                youtube_id=ka_node.translated_youtube_id,
-                high_resolution=False,
-            )
-        ]
-
-        # include any subtitles that are available for this video
-        if le_target_lang not in UNSUBTITLED_LANGS:
-            subtitle_languages = ka_node.get_subtitle_languages()
-        else:
-            subtitle_languages = []
-
-        # if we dont have video in target lang or subtitle not available in target lang, return None
-        if ka_node.lang != target_lang.lower():
-            if target_lang not in subtitle_languages:
-                logger.error(
-                    "Video {} not transalated and no subtitles available. Skipping.".format(ka_node.translated_youtube_id)
-                )
-                return None
-
-        for lang_code in subtitle_languages:
-            if is_youtube_subtitle_file_supported_language(lang_code):
-                if target_lang == "en":
-                    files.append(
-                        dict(
-                            file_type="subtitles",
-                            youtube_id=ka_node.translated_youtube_id,
-                            language=lang_code,
-                        )
-                    )
-                elif should_include_subtitle(lang_code, le_target_lang):
-                    files.append(
-                        dict(
-                            file_type="subtitles",
-                            youtube_id=ka_node.translated_youtube_id,
-                            language=lang_code,
-                        )
-                    )
-                else:
-                    logger.debug(
-                        'Skipping subs with lang_code {} for video {}'.format(
-                            lang_code, ka_node.translated_youtube_id))
-
-        # convert KA's license format into our internal license classes
-        if ka_node.license in LICENSE_MAPPING:
-            license = LICENSE_MAPPING[ka_node.license]
-        else:
-            # license = licenses.CC_BY_NC_SA # or?
-            logger.error("Unknown license ({}) on video with youtube id: {}".format(
-                ka_node.license, ka_node.translated_youtube_id))
-            return None
-
-        video = dict(
-            kind=content_kinds.VIDEO,
-            source_id=ka_node.translated_youtube_id if "-dubbed(KY)" in ka_node.title else ka_node.youtube_id,
-            title=ka_node.title,
-            description=ka_node.description[:400] if ka_node.description else '',
-            license=license,
-            thumbnail=ka_node.thumbnail,
-            files=files,
-        )
-
-        return video
-
-    elif isinstance(ka_node, KhanArticle):
-        # TODO
-        return None
 
 
 if __name__ == "__main__":
