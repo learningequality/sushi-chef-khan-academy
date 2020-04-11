@@ -182,11 +182,13 @@ class KhanAcademySushiChef(JsonTreeChef):
                             slug=r['slug'],
                             children=[],
                         )
+                        topic["children"].append(rtopic)
+                        LOGGER.debug('  >>> rtopic = ' + rtopic["slug"])
                         for rchild in r['children']:  # guaranteed to exist
-                            rchild_slug = rchild['slug']
+                            LOGGER.debug('      >>>> rchild["slug"] = ' + rchild["slug"])
                             if 'children' not in rchild:
                                 # CASE A: two-level replacement hierarchy
-                                rchild_ka_node = self.topics_by_slug[rchild_slug]
+                                rchild_ka_node = self.topics_by_slug[rchild['slug']]
                                 rchildtopic = self.convert_ka_node_to_ricecooker_node(
                                     rchild_ka_node, target_lang=target_lang)
                                 if rchildtopic:
@@ -197,21 +199,19 @@ class KhanAcademySushiChef(JsonTreeChef):
                                     kind=content_kinds.TOPIC,
                                     source_id=rchild['slug'],
                                     title=rchild['translatedTitle'],   # guaranteed to exist
-                                    description=r.get('description'),  # (optional)
+                                    description=rchild.get('description'),  # (optional)
                                     slug=rchild['slug'],
                                     children=[],
                                 )
+                                rtopic["children"].append(rchildtopic)
                                 for rgrandchild in rchild['children']:
-                                    rgrandchild_slug = rchild['slug']
+                                    rgrandchild_slug = rgrandchild['slug']
+                                    LOGGER.debug('               >>> rgrandchild_slug = ' + rgrandchild_slug)
                                     rgrandchild_ka_node = self.topics_by_slug[rgrandchild_slug]
                                     rgrandchildtopic = self.convert_ka_node_to_ricecooker_node(
                                         rgrandchild_ka_node, target_lang=target_lang)
                                     if rgrandchildtopic:
                                         rchildtopic["children"].append(rgrandchildtopic)
-                                if rchildtopic["children"]:
-                                    rtopic["children"].append(rchildtopic)
-                        if rtopic["children"]:
-                            topic["children"].append(rtopic)
                 else:
                     # This is the more common case (no replacement), just add...
                     child = self.convert_ka_node_to_ricecooker_node(
@@ -277,26 +277,28 @@ class KhanAcademySushiChef(JsonTreeChef):
 
             if ka_node.youtube_id != ka_node.translated_youtube_id:
                 if ka_node.lang != target_lang.lower():
-                    LOGGER.error(
+                    LOGGER.info(
                         "Node with youtube id: {} and translated id: {} has wrong language".format(
                             ka_node.youtube_id, ka_node.translated_youtube_id
                         )
                     )
                     return None
 
-            # if download_url is missing, return None for this node
-            download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
-            if download_url is None:
-                LOGGER.error(
-                    "No download urls for youtube_id: {}".format(ka_node.youtube_id)
-                )
-                return None
+            # Apr 11:  commenting out old download_url logic --> download from youtube instead
 
-            # for lite languages, replace youtube ids with translated ones
-            if ka_node.translated_youtube_id not in download_url:
-                download_url = ka_node.download_urls.get("mp4").replace(
-                    ka_node.youtube_id, ka_node.translated_youtube_id
-                )
+            # if download_url is missing, return None for this node
+            # download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
+            # if download_url is None:
+            #     LOGGER.info(
+            #         "No download urls for youtube_id: {}".format(ka_node.youtube_id)
+            #     )
+            #     return None
+
+            # # for lite languages, replace youtube ids with translated ones
+            # if ka_node.translated_youtube_id not in download_url:
+            #     download_url = ka_node.download_urls.get("mp4").replace(
+            #         ka_node.youtube_id, ka_node.translated_youtube_id
+            #     )
 
             # TODO: Use traditional compression here to avoid breaking existing KA downloads?
             files = [
@@ -310,17 +312,21 @@ class KhanAcademySushiChef(JsonTreeChef):
             ]
 
             # include any subtitles that are available for this video
-            if le_target_lang not in UNSUBTITLED_LANGS:
-                subtitle_languages = ka_node.get_subtitle_languages()
-            else:
-                subtitle_languages = []
+            subtitle_languages = ka_node.get_subtitle_languages()
+
+            # Apr 11: getting subtitles for ALL langauges
+            # previously the above line was bypassed for langs in UNSUBTITLED_LANGS
+            # which have mostly dubbed videos (very good KA translation teams)
+            # but I have encountered videos in these languages that only have subs
+            # so best to get all --- even if the video is dubbed it doesn't hurt
+            # to have the subtitles as well...
+            # if le_target_lang not in UNSUBTITLED_LANGS:
+            #      subtitle_languages = []
 
             # if we dont have video in target lang or subtitle not available in target lang, return None
             if ka_node.lang != target_lang.lower():
-                if target_lang not in subtitle_languages:
-                    LOGGER.error(
-                        "Video {} not transalated and no subtitles available. Skipping.".format(ka_node.translated_youtube_id)
-                    )
+                if not any(should_include_subtitle(sub_code, le_target_lang) for sub_code in subtitle_languages):
+                    LOGGER.error("Untranslated video {} and no subs available. Skipping.".format(ka_node.translated_youtube_id))
                     return None
 
             for lang_code in subtitle_languages:

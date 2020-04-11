@@ -15,6 +15,8 @@ translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
 english_video_map = get_video_id_english_mappings()
 
+SUPPORTED_KINDS = ["Topic", "Exercise", "Video"]
+
 
 def get_khan_topic_tree(lang="en"):
     """
@@ -142,8 +144,13 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang)
             khan_node.children.append(child)
         else:
-            LOGGER.debug('Missing id=' + child_pointer.get('id', '(no id key)') + \
-                         ' in childData of topic node with id=' + node["id"])
+            if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
+                # silentry skip unsupported content kinds like Article, Project,
+                # Talkthrough, Challenge, Interactive,  TopicQuiz, TopicUnitTest
+                pass
+            else:
+                LOGGER.warning('Missing id=' + child_pointer.get('id', 'noid') + \
+                               ' in childData of topic node with id=' + node["id"])
 
     return khan_node
 
@@ -241,6 +248,9 @@ class KhanVideo(KhanNode):
         lang_codes = []
         try:
             result = yt_resource.get_resource_subtitles()
+            # TODO(ivan) Consider including auto-generated subtitles to increase
+            #       coverage and handle edge cases of videos that are transalted
+            #       but no metadata: https://www.youtube.com/watch?v=qlGjA9p1UAM
             if result:
                 for lang_code, lang_subs in result['subtitles'].items():
                     for lang_sub in lang_subs:

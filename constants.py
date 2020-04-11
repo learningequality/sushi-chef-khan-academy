@@ -64,6 +64,8 @@ PROJECTION_KEYS = json.dumps(OrderedDict([
     # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
 ]))
 
+
+
 SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'ko', 'und', 'bn', 'gu', 'id']
 
 # UNSUPPORTED_LANGS = ['ru', 'zu', 'my', 'fv', 'ur']
