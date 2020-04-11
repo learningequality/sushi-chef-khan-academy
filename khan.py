@@ -29,9 +29,9 @@ def get_khan_topic_tree(lang="en"):
             V2_API_URL.format(lang="swa", projection=PROJECTION_KEYS), timeout=120
         )
     else:
-        response = make_request(
-            V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS), timeout=120
-        )
+        url = V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS)
+        LOGGER.debug('khan url=' + url)
+        response = make_request(url, timeout=120)
 
     topic_tree = ujson.loads(response.content)
     # if name of lang is passed in, get language code
@@ -142,7 +142,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang)
             khan_node.children.append(child)
         else:
-            LOGGER.warning('Missing id in childData of node ' + node["id"])
+            LOGGER.debug('Missing id=' + child_pointer.get('id', '(no id key)') + \
+                         ' in childData of topic node with id=' + node["id"])
 
     return khan_node
 
@@ -246,8 +247,8 @@ class KhanVideo(KhanNode):
                         if 'ext' in lang_sub and lang_sub['ext'] == 'vtt' and lang_code not in lang_codes:
                             lang_codes.append(lang_code)
         except Exception as e:
-            print('get_subtitle_languages failed on youtube URL ' + youtube_url)
-            print(e)
+            LOGGER.error('get_subtitle_languages failed for URL ' + youtube_url)
+            LOGGER.error(str(e))
         return lang_codes
 
     def __repr__(self):

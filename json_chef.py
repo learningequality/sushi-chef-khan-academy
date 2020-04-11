@@ -8,7 +8,7 @@ from le_utils.constants.languages import getlang
 from pressurecooker.youtube import get_language_with_alpha2_fallback
 from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
-from ricecooker.config import LOGGER as logger
+from ricecooker.config import LOGGER
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
 from common_core_tags import generate_common_core_mapping
@@ -111,7 +111,7 @@ class KhanAcademySushiChef(JsonTreeChef):
         # Handle special case of building Kolibri channel from youtube playlists
         if options.get("youtube_channel_id"):
             youtube_id = options.get("youtube_channel_id")
-            logger.info(
+            LOGGER.info(
                 "Downloading youtube playlist {} for {} language".format(
                     youtube_id, lang_obj.name
                 )
@@ -119,11 +119,11 @@ class KhanAcademySushiChef(JsonTreeChef):
             root_node = youtube_playlist_scraper(youtube_id, channel_node)
             # write to json file
             json_tree_path = self.get_json_tree_path(*args, **options)
-            logger.info("Writing youtube ricecooker tree to " + json_tree_path)
+            LOGGER.info("Writing youtube ricecooker tree to " + json_tree_path)
             write_tree_to_json_tree(json_tree_path, root_node)
             return
 
-        logger.info("downloading KA tree")
+        LOGGER.info("downloading KA tree")
         # Obtain the complete topic tree for lang=language_code from the KA API
         ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=language_code)
         self.topics_by_slug = topics_by_slug  # to be used for topic replacments
@@ -135,7 +135,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             duplicate_videos(ka_root_topic)
 
         language_code = lang_obj.code  # using internal code repr. from le-utils
-        logger.info("converting KA nodes to ricecooker json nodes")
+        LOGGER.info("Converting KA nodes to ricecooker json nodes")
         root_topic = self.convert_ka_node_to_ricecooker_node(
             ka_root_topic, target_lang=language_code,
         )
@@ -144,7 +144,7 @@ class KhanAcademySushiChef(JsonTreeChef):
 
         # write to ricecooker tree to json file
         json_tree_path = self.get_json_tree_path(*args, **options)
-        logger.info("Writing ricecooker json tree to " + json_tree_path)
+        LOGGER.info("Writing ricecooker json tree to " + json_tree_path)
         write_tree_to_json_tree(json_tree_path, channel_node)
 
 
@@ -159,6 +159,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             return None
 
         if isinstance(ka_node, KhanTopic):
+            LOGGER.debug('Converting ka_node ' + ka_node.slug + ' to ricecooker json')
             topic = dict(
                 kind=content_kinds.TOPIC,
                 source_id=ka_node.id,
@@ -171,6 +172,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                 if isinstance(ka_node_child, KhanTopic) and ka_node_child.slug in self.topic_replacements:
                     # This topic must be replaced by a list of other topic nodes
                     replacements = self.topic_replacements[ka_node_child.slug]
+                    LOGGER.debug('Replacing ka_node ' + ka_node.slug + ' with replacements=' + str(replacements))
                     for r in replacements:
                         rtopic = dict(
                             kind=content_kinds.TOPIC,
@@ -227,7 +229,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             if ka_node.mastery_model in EXERCISE_MAPPING:
                 mastery_model = EXERCISE_MAPPING[ka_node.mastery_model]
             else:
-                logger.warning(
+                LOGGER.warning(
                     "Unknown mastery model ({}) for exercise with id: {}".format(
                         ka_node.mastery_model, ka_node.id
                     )
@@ -275,7 +277,7 @@ class KhanAcademySushiChef(JsonTreeChef):
 
             if ka_node.youtube_id != ka_node.translated_youtube_id:
                 if ka_node.lang != target_lang.lower():
-                    logger.error(
+                    LOGGER.error(
                         "Node with youtube id: {} and translated id: {} has wrong language".format(
                             ka_node.youtube_id, ka_node.translated_youtube_id
                         )
@@ -285,7 +287,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             # if download_url is missing, return None for this node
             download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
             if download_url is None:
-                logger.error(
+                LOGGER.error(
                     "No download urls for youtube_id: {}".format(ka_node.youtube_id)
                 )
                 return None
@@ -316,7 +318,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             # if we dont have video in target lang or subtitle not available in target lang, return None
             if ka_node.lang != target_lang.lower():
                 if target_lang not in subtitle_languages:
-                    logger.error(
+                    LOGGER.error(
                         "Video {} not transalated and no subtitles available. Skipping.".format(ka_node.translated_youtube_id)
                     )
                     return None
@@ -340,7 +342,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                             )
                         )
                     else:
-                        logger.debug(
+                        LOGGER.debug(
                             'Skipping subs with lang_code {} for video {}'.format(
                                 lang_code, ka_node.translated_youtube_id))
 
@@ -349,7 +351,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                 license = LICENSE_MAPPING[ka_node.license]
             else:
                 # license = licenses.CC_BY_NC_SA # or?
-                logger.error("Unknown license ({}) on video with youtube id: {}".format(
+                LOGGER.error("Unknown license ({}) on video with youtube id: {}".format(
                     ka_node.license, ka_node.translated_youtube_id))
                 return None
 

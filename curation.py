@@ -287,7 +287,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "math3", "translatedTitle": "Matemática III (Ensino Médio)"},
                 {"slug": "probability", "translatedTitle": "Estatística do Ensino Médio"},
             ]},
-            {"slug": "math", "translatedTitle": "Matemática avançada", "children": [
+            {"slug": "math-avancada", "translatedTitle": "Matemática avançada", "children": [
                 {"slug": "precalculus", "translatedTitle": "Pré-cálculo"},
                 {"slug": "differential-calculus", "translatedTitle": "Cálculo diferencial"},
                 {"slug": "integral-calculus", "translatedTitle": "Cálculo integral"},

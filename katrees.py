@@ -29,7 +29,7 @@ def get_khan_api_json(lang, update=False):
     else:
         print('Downloading KA API json to', filepath)
         url = V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS)
-        print('url=', url)
+        print('katrees url=', url)
         retry_count = 0
         max_retry = 3
         while retry_count < max_retry:
@@ -40,7 +40,6 @@ def get_khan_api_json(lang, update=False):
             except json.decoder.JSONDecodeError as e:
                 print('Network error retrying', str(retry_count+1)+'/'+str(max_retry), 'HTTP code', response.status_code)
                 retry_count += 1
-        data = {}
         json.dump(data, open(filepath, 'w'), ensure_ascii=False, indent=4)
     return data
 
@@ -121,7 +120,8 @@ def get_khan_topic_tree(lang="en"):
     flattened_tree = [node for node_list in topic_tree.values() for node in node_list]
     # convert to dict with ids as keys
     tree_dict = {node["id"]: node for node in flattened_tree}
-    return _recurse_create(tree_dict["x00000000"], tree_dict, lang=lang)
+    topics_by_slug = {}
+    return _recurse_create(tree_dict["x00000000"], tree_dict, topics_by_slug, lang=lang)
 
 
 def print_subtree(subtree, level=0, SLUG_BLACKLIST=[], all_en_topic_slugs=[]):
