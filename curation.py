@@ -42,6 +42,8 @@ GLOBAL_SLUG_BLACKLIST += [
     "asian-art-museum",
     "amnh",
     "nova",
+    "pixar",
+    "pixar-latam",
 ]
 
 
@@ -295,7 +297,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "multivariable-calculus", "translatedTitle": "Cálculo multivariável"},
                 {"slug": "linear-algebra", "translatedTitle": "Álgebra linear"},
             ]},
-            {"slug": "brazil-math-grades", "translatedTitle": "Matemática por ano (BNCC)", "children": [
+            {"slug": "brazil-math-grades", "translatedTitle": "Matemática por ano (Alinhada à BNCC)", "children": [
                 {"slug": "pt-1-ano", "translatedTitle": "1° ano"},
                 {"slug": "pt-2-ano", "translatedTitle": "2° ano"},
                 {"slug": "pt-3-ano", "translatedTitle": "3° ano"},
@@ -316,7 +318,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "health-and-medicine", "translatedTitle": "Saúde e medicina"},
                 {"slug": "electrical-engineering", "translatedTitle": "Engenharia elétrica"},
             ]},
-            {"slug": "ciencias-por-ano", "translatedTitle": "Ciências por ano (BNCC)", "children": [
+            {"slug": "ciencias-por-ano", "translatedTitle": "Ciências por ano (Alinhada à BNCC)", "children": [
                 {"slug": "1-ano", "translatedTitle": "1° ano"},
                 {"slug": "2-ano", "translatedTitle": "2° ano"},
                 {"slug": "3-ano", "translatedTitle": "3° ano"},
@@ -337,7 +339,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "lp-3-ano"},
                 {"slug": "lp-4-ano"},
             ]},
-            {"slug": "portugues-por-ano-bncc-ef", "translatedTitle": "Português por ano (BNCC)", "children": [
+            {"slug": "portugues-por-ano-bncc-ef", "translatedTitle": "Português por ano (Alinhado à BNCC)", "children": [
                 {"slug": "lp-3-ano"},
                 {"slug": "lp-4-ano"},
             ]},
