@@ -274,6 +274,17 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
     },
     "pt-BR": {
         "math": [
+            {"slug": "brazil-math-grades", "translatedTitle": "Matemática por ano (Alinhada à BNCC)", "children": [
+                {"slug": "pt-1-ano", "translatedTitle": "1° ano"},
+                {"slug": "pt-2-ano", "translatedTitle": "2° ano"},
+                {"slug": "pt-3-ano", "translatedTitle": "3° ano"},
+                {"slug": "pt-4-ano", "translatedTitle": "4° ano"},
+                {"slug": "pt-5-ano", "translatedTitle": "5° ano"},
+                {"slug": "6-ano-matematica", "translatedTitle": "6° ano"},
+                {"slug": "pt-7-ano", "translatedTitle": "7° ano"},
+                {"slug": "pt-8-ano", "translatedTitle": "8° ano"},
+                {"slug": "pt-9-ano", "translatedTitle": "9° ano"},
+            ]},
             {"slug": "math", "translatedTitle": "Matemática", "children": [
                 {"slug": "early-math", "translatedTitle": "Fundamentos de matemática"},
                 {"slug": "arithmetic-home", "translatedTitle": "Aritmética"},
@@ -297,27 +308,8 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "multivariable-calculus", "translatedTitle": "Cálculo multivariável"},
                 {"slug": "linear-algebra", "translatedTitle": "Álgebra linear"},
             ]},
-            {"slug": "brazil-math-grades", "translatedTitle": "Matemática por ano (Alinhada à BNCC)", "children": [
-                {"slug": "pt-1-ano", "translatedTitle": "1° ano"},
-                {"slug": "pt-2-ano", "translatedTitle": "2° ano"},
-                {"slug": "pt-3-ano", "translatedTitle": "3° ano"},
-                {"slug": "pt-4-ano", "translatedTitle": "4° ano"},
-                {"slug": "pt-5-ano", "translatedTitle": "5° ano"},
-                {"slug": "6-ano-matematica", "translatedTitle": "6° ano"},
-                {"slug": "pt-7-ano", "translatedTitle": "7° ano"},
-                {"slug": "pt-8-ano", "translatedTitle": "8° ano"},
-                {"slug": "pt-9-ano", "translatedTitle": "9° ano"},
-            ]},
         ],
         "science": [
-            {"slug": "science", "translatedTitle": "Ciências e engenharia", "children": [
-                {"slug": "physics", "translatedTitle": "Física"},
-                {"slug": "chemistry", "translatedTitle": "Química"},
-                {"slug": "organic-chemistry", "translatedTitle": "Química orgânica"},
-                {"slug": "biology", "translatedTitle": "Biologia"},
-                {"slug": "health-and-medicine", "translatedTitle": "Saúde e medicina"},
-                {"slug": "electrical-engineering", "translatedTitle": "Engenharia elétrica"},
-            ]},
             {"slug": "ciencias-por-ano", "translatedTitle": "Ciências por ano (Alinhada à BNCC)", "children": [
                 {"slug": "1-ano", "translatedTitle": "1° ano"},
                 {"slug": "2-ano", "translatedTitle": "2° ano"},
@@ -328,6 +320,14 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "7-ano", "translatedTitle": "7° ano"},
                 {"slug": "8-ano", "translatedTitle": "8° ano"},
                 {"slug": "9-ano", "translatedTitle": "9° ano"},
+            ]},
+            {"slug": "science", "translatedTitle": "Ciências e engenharia", "children": [
+                {"slug": "physics", "translatedTitle": "Física"},
+                {"slug": "chemistry", "translatedTitle": "Química"},
+                {"slug": "organic-chemistry", "translatedTitle": "Química orgânica"},
+                {"slug": "biology", "translatedTitle": "Biologia"},
+                {"slug": "health-and-medicine", "translatedTitle": "Saúde e medicina"},
+                {"slug": "electrical-engineering", "translatedTitle": "Engenharia elétrica"},
             ]},
         ],
         "humanities": [
