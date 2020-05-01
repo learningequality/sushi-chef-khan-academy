@@ -51,7 +51,6 @@ def dbex(conn, query):
     print('Running DB query', query)
     cursor.execute(query)
     results = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
-    conn.close()
     return results
 
 

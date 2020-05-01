@@ -9,7 +9,6 @@ import pprint
 import subprocess
 
 from constants import TOPIC_ATTRIBUTES, EXERCISE_ATTRIBUTES, VIDEO_ATTRIBUTES
-
 from constants import CROWDIN_LANGUAGE_MAPPING, ASSESSMENT_LANGUAGE_MAPPING, VIDEO_LANGUAGE_MAPPING
 from constants import V2_API_URL, PROJECTION_KEYS
 from curation import get_slug_blacklist
@@ -124,20 +123,35 @@ def get_khan_topic_tree(lang="en"):
     return _recurse_create(tree_dict["x00000000"], tree_dict, topics_by_slug, lang=lang)
 
 
+
+
+def get_kind(node):
+    if isinstance(node, KhanTopic):
+        return 'topic'
+    elif isinstance(node, KhanExercise):
+        return 'exercise'
+    elif isinstance(node, KhanVideo):
+        return 'video'
+    else:
+        return 'unknownkind'
+
+
 def print_subtree(subtree, level=0, SLUG_BLACKLIST=[], all_en_topic_slugs=[]):
     if subtree.slug in SLUG_BLACKLIST:
         return
     if level == 4:
         return
     extra = ''
-    if subtree.curriculum:
+    if hasattr(subtree, 'curriculum') and subtree.curriculum:
         extra = 'CURRICULUM='+ subtree.curriculum
         if level > 2:
             raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
     isbold = '**' if subtree.slug not in all_en_topic_slugs else ''
-    print(' '*2*level + '   -', isbold+subtree.title.strip(), '(' + subtree.id + ')'+isbold, extra)
-    for child in subtree.children:
-        if isinstance(child, KhanTopic):
+    print(' '*2*level + '   -', isbold+subtree.title.strip()+isbold,
+        '[' + get_kind(subtree) + ']',
+        '(' + subtree.id + ')', extra)
+    if hasattr(subtree, 'children'):
+        for child in subtree.children:
             print_subtree(child, level=level+1, SLUG_BLACKLIST=SLUG_BLACKLIST, all_en_topic_slugs=all_en_topic_slugs)
 
 
@@ -191,6 +205,7 @@ def get_ka_learn_menu_topics(lang, curriculum=None):
             del menu['__typename']
             menu['slug'] = menu['href'].split('/')[-1]
     return menu_topics
+
 
 def print_curation_topic_tree(menu_topics, slugs=[]):
     """
