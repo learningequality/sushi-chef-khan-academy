@@ -36,7 +36,7 @@ LICENSE_MAPPING = {
         copyright_holder="Khan Academy",
         description="Non-commercial/non-Creative Commons (College Board)",
     ),
-    # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,
+    # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
 }
 
 EXERCISE_MAPPING = {
@@ -298,7 +298,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                         'postprocessors': [
                             {
                                 'key': 'ExecAfterDownload',
-                                'exec_cmd': 'echo "Compressing audio to 32kbps" && ffmpeg -i {} -b:a 32k {}_tmp.mp4 && mv {}_tmp.mp4 {}',
+                                'exec_cmd': 'ffmpeg -hide_banner -loglevel panic -i {} -b:a 32k {}_tmp.mp4 && mv {}_tmp.mp4 {}',
                             }
                         ]
                     }
