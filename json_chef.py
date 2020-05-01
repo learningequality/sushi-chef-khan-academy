@@ -18,7 +18,7 @@ from constants import VIDEO_LANGUAGE_MAPPING
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
 from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
-
+from network import get_subtitle_languages
 
 
 LICENSE_MAPPING = {
@@ -289,28 +289,9 @@ class KhanAcademySushiChef(JsonTreeChef):
                     )
                     return None
 
-            # Apr 11:  commenting out old download_url logic --> download from youtube instead
-
-            # if download_url is missing, return None for this node
-            # download_url = ka_node.download_urls.get("mp4-low", ka_node.download_urls.get("mp4"))
-            # if download_url is None:
-            #     LOGGER.info(
-            #         "No download urls for youtube_id: {}".format(ka_node.youtube_id)
-            #     )
-            #     return None
-
-            # # for lite languages, replace youtube ids with translated ones
-            # if ka_node.translated_youtube_id not in download_url:
-            #     download_url = ka_node.download_urls.get("mp4").replace(
-            #         ka_node.youtube_id, ka_node.translated_youtube_id
-            #     )
-
-            # TODO: Use traditional compression here to avoid breaking existing KA downloads?
             files = [
-                # Mar 25: special run for Italian and Chinese: download from youtube instead of from KA CDN
                 dict(
                     file_type="video",
-                    # path=download_url,
                     youtube_id=ka_node.translated_youtube_id,
                     high_resolution=False,
                     download_settings = {
@@ -324,17 +305,8 @@ class KhanAcademySushiChef(JsonTreeChef):
                 )
             ]
 
-            # include any subtitles that are available for this video
-            subtitle_languages = ka_node.get_subtitle_languages()
-
-            # Apr 11: getting subtitles for ALL langauges
-            # previously the above line was bypassed for langs in UNSUBTITLED_LANGS
-            # which have mostly dubbed videos (very good KA translation teams)
-            # but I have encountered videos in these languages that only have subs
-            # so best to get all --- even if the video is dubbed it doesn't hurt
-            # to have the subtitles as well...
-            # if le_target_lang not in UNSUBTITLED_LANGS:
-            #      subtitle_languages = []
+            # Find all subtitles that are available for this video
+            subtitle_languages = get_subtitle_languages(ka_node.translated_youtube_id)
 
             # if we dont have video in target lang or subtitle not available in target lang, return None
             if ka_node.lang != target_lang.lower():
