@@ -313,6 +313,14 @@ class KhanAcademySushiChef(JsonTreeChef):
                     # path=download_url,
                     youtube_id=ka_node.translated_youtube_id,
                     high_resolution=False,
+                    download_settings = {
+                        'postprocessors': [
+                            {
+                                'key': 'ExecAfterDownload',
+                                'exec_cmd': 'echo "Compressing audio to 32kbps" && ffmpeg -i {} -b:a 32k {}_tmp.mp4 && mv {}_tmp.mp4 {}',
+                            }
+                        ]
+                    }
                 )
             ]
 
