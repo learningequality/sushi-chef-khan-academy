@@ -2,7 +2,6 @@ from html2text import html2text
 import ujson
 
 from le_utils.constants.languages import getlang, getlang_by_name
-from pressurecooker.youtube import YouTubeResource
 from ricecooker.config import LOGGER
 
 from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
@@ -241,25 +240,6 @@ class KhanVideo(KhanNode):
         self.download_urls = download_urls
         self.youtube_id = youtube_id
         self.translated_youtube_id = translated_youtube_id
-
-    def get_subtitle_languages(self):
-        youtube_url = 'https://youtube.com/watch?v=' + self.translated_youtube_id
-        yt_resource = YouTubeResource(youtube_url)
-        lang_codes = []
-        try:
-            result = yt_resource.get_resource_subtitles()
-            # TODO(ivan) Consider including auto-generated subtitles to increase
-            #       coverage and handle edge cases of videos that are transalted
-            #       but no metadata: https://www.youtube.com/watch?v=qlGjA9p1UAM
-            if result:
-                for lang_code, lang_subs in result['subtitles'].items():
-                    for lang_sub in lang_subs:
-                        if 'ext' in lang_sub and lang_sub['ext'] == 'vtt' and lang_code not in lang_codes:
-                            lang_codes.append(lang_code)
-        except Exception as e:
-            LOGGER.error('get_subtitle_languages failed for URL ' + youtube_url)
-            LOGGER.error(str(e))
-        return lang_codes
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)
