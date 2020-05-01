@@ -103,7 +103,7 @@ def get_subtitles_using_api(youtube_id):
     YouTube API call to get the subtitles langs available for video `youtube_id`.
     Raises `HttpError` in case video is Private, Unlisted, or has been removed.
     """
-    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+    youtube = build("youtube", "v3", cache_discovery=False, developerKey=YOUTUBE_API_KEY)
     request = youtube.captions().list(part="snippet", videoId=youtube_id)
     response = request.execute()
     all_subs = [item['snippet'] for item in response['items']]
