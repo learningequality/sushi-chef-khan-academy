@@ -52,7 +52,7 @@ EXERCISE_MAPPING = {
 }
 
 
-CC_MAPPING = generate_common_core_mapping()
+CC_MAPPING = {}  # Common Core State Standards slug -> list(tag) to apply
 
 
 class KhanAcademySushiChef(JsonTreeChef):
@@ -95,6 +95,11 @@ class KhanAcademySushiChef(JsonTreeChef):
         else:
             variant = None
         # TODO(ivan): set different title and source_id if variant is not None
+
+        if language_code == "en" and variant is None:
+            # Load the CCSSM tags for the KA en channel (but not in-in variant)
+            global CC_MAPPING
+            CC_MAPPING = generate_common_core_mapping()
 
         channel_node = dict(
             source_id="KA ({0})".format(language_code),
