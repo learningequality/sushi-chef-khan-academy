@@ -44,6 +44,7 @@ GLOBAL_SLUG_BLACKLIST += [
     "nova",
     "pixar",
     "pixar-latam",
+    "wi-phi",  # see https://wi-phi.com/videos/ could not find info on licensing
 ]
 
 
@@ -138,7 +139,7 @@ def get_slug_blacklist(lang=None, variant=None):
 # one or more "Math by Grade" topic subtrees populated from localized topic trees.
 #
 # The keys are either internal lang codes (str) or (lang, variant) tuples (str, str)
-# For most channels there is only one variant --- the None variant,
+# For most channels there is only one variant --- the `None` variant,
 # except for English where the "in-in" variant contains materials specialized to
 # the India curriculum, with certain videos available both in English and Hindi.
 TOPIC_TREE_REPLACMENTS_PER_LANG = {
@@ -393,6 +394,78 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
     },
+
+
+    "bg": {
+        "math": [
+
+            {"slug": "math", "translatedTitle": "Математика", "children": [
+                {"slug": "early-math", "translatedTitle": "Начална математика"},
+                {"slug": "arithmetic", "translatedTitle": "Аритметика"},
+                {"slug": "pre-algebra", "translatedTitle": "Въведение в алгебрата"},
+                {"slug": "algebra-basics", "translatedTitle": "Основи на алгебрата"},
+                {"slug": "algebra", "translatedTitle": "Алгебра I"},
+                {"slug": "algebra2", "translatedTitle": "Алгебра II"},
+                {"slug": "basic-geo", "translatedTitle": "Основи на геометрията"},
+                {"slug": "geometry", "translatedTitle": "Геометрия"},
+                {"slug": "trigonometry", "translatedTitle": "Тригонометрия"},
+                {"slug": "precalculus", "translatedTitle": "Въведение в математически анализ"},
+                {"slug": "statistics-probability", "translatedTitle": "Статистика и вероятности"},
+                {"slug": "differential-calculus", "translatedTitle": "Диференциално смятане"},
+                {"slug": "arithmetic-home", "translatedTitle": "Аритметика (цялото съдържание)"},
+                {"slug": "algebra-home", "translatedTitle": "Алгебра (цялото съдържание)"},
+                {"slug": "geometry-home", "translatedTitle": "Геометрия (цялото съдържание)"},
+            ]},
+            {"slug": "bg-math-by-grade", "translatedTitle": "Математика (България)", "children": [
+                {"slug": "preduchilishtna", "translatedTitle": "Предучилищна подготовка"},
+                {"slug": "1-klas", "translatedTitle": "1. клас (България)"},
+                {"slug": "2-klas", "translatedTitle": "2. клас (България)"},
+                {"slug": "3-klas", "translatedTitle": "3. клас (България)"},
+                {"slug": "4-klas", "translatedTitle": "4. клас (България)"},
+                {"slug": "5-klas", "translatedTitle": "5. клас (България)"},
+                {"slug": "6-klas", "translatedTitle": "6. клас (България)"},
+                {"slug": "7-klas", "translatedTitle": "7. клас (България)"},
+                {"slug": "8-klas", "translatedTitle": "8. клас (България)"},
+                {"slug": "9-klas", "translatedTitle": "9. клас (България)"},
+                {"slug": "10-klas", "translatedTitle": "10. клас (България)"},
+                {"slug": "11-klas", "translatedTitle": "11. клас (България)"},
+                {"slug": "geometry", "translatedTitle": "Гимназиална геометрия"},
+                {"slug": "probability", "translatedTitle": "Гимназиална статистика"},
+            ]},
+        ],
+        "science": [
+            {"slug": "science", "translatedTitle": "Наука", "children": [
+                {"slug": "cosmology-and-astronomy", "translatedTitle": "Астрономия и космология"},
+                {"slug": "physics", "translatedTitle": "Физика"},
+                {"slug": "chemistry", "translatedTitle": "Химия"},
+                {"slug": "organic-chemistry", "translatedTitle": "Органична химия"},
+                {"slug": "biology", "translatedTitle": "Биология"},
+                {"slug": "health-and-medicine", "translatedTitle": "Здраве и медицина"},
+            ]},
+            {"slug": "science", "translatedTitle": "Физика (България)", "children": [
+                {"slug": "fizika-7-klas", "translatedTitle": "7. клас (България)"},
+                {"slug": "8-klas-fizika", "translatedTitle": "8. клас (България)"},
+                {"slug": "9-klas-fizika", "translatedTitle": "9. клас (България)"},
+                {"slug": "fizika-10-klas", "translatedTitle": "10. клас (България)"},
+                {"slug": "fizika-11-klas", "translatedTitle": "11. клас (България)"},
+                {"slug": "fizika-12-klas", "translatedTitle": "12. клас (България)"},
+            ]},
+        ],
+        "resources": [
+            {"slug": "resources", "translatedTitle": "Ресурси", "children": [
+                {"slug": "teacher-essentials", "translatedTitle": "Първи стъпки за учители"},
+                {"slug": "students", "translatedTitle": "Първи стъпки за ученици"},
+                {"slug": "parents-mentors-1", "translatedTitle": "Първи стъпки за родители"},
+            ]},
+        ],
+    },
+
+
+
+
+
+
+
 }
 
 def get_topic_tree_replacements(lang=None, variant=None):
