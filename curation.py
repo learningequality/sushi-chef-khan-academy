@@ -394,11 +394,8 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
     },
-
-
     "bg": {
         "math": [
-
             {"slug": "math", "translatedTitle": "Математика", "children": [
                 {"slug": "early-math", "translatedTitle": "Начална математика"},
                 {"slug": "arithmetic", "translatedTitle": "Аритметика"},
@@ -442,7 +439,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Биология"},
                 {"slug": "health-and-medicine", "translatedTitle": "Здраве и медицина"},
             ]},
-            {"slug": "science", "translatedTitle": "Физика (България)", "children": [
+            {"slug": "bg-physics-by-grade", "translatedTitle": "Физика (България)", "children": [
                 {"slug": "fizika-7-klas", "translatedTitle": "7. клас (България)"},
                 {"slug": "8-klas-fizika", "translatedTitle": "8. клас (България)"},
                 {"slug": "9-klas-fizika", "translatedTitle": "9. клас (България)"},
@@ -459,13 +456,36 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
     },
-
-
-
-
-
-
-
+    "de": {
+        "math": [
+            {"slug": "math", "translatedTitle": "Mathe nach Themen", "children": [
+                {"slug": "early-math", "translatedTitle": "Einstieg in die Mathematik"},
+                {"slug": "arithmetic", "translatedTitle": "Arithmetik"},
+                {"slug": "pre-algebra", "translatedTitle": "Algebra - Vorkenntnisse"},
+                {"slug": "algebra-basics", "translatedTitle": "Algebra - Grundlagen"},
+                {"slug": "algebra", "translatedTitle": "Algebra 1"},
+                {"slug": "algebra2", "translatedTitle": "Algebra 2"},
+                {"slug": "basic-geo", "translatedTitle": "Geometrie - Grundlagen"},
+                {"slug": "geometry", "translatedTitle": "Geometrie - Weiterführende Kenntnisse"},
+                {"slug": "trigonometry", "translatedTitle": "Trigonometrie"},
+                {"slug": "probability", "translatedTitle": "Statistik - Weiterführende Kenntnisse"},
+                {"slug": "precalculus", "translatedTitle": "Analysis - Vorkenntnisse"},
+                {"slug": "statistics-probability", "translatedTitle": "Statistik und Wahrscheinlichkeitsrechnung"},
+                {"slug": "geometry-home", "translatedTitle": "Geometrie (alle Inhalte)"},
+            ]},
+            {"slug": "de-math-by-grade", "translatedTitle": "Mathe nach Klassen", "children": [
+                {"slug": "cc-kindergarten-math", "translatedTitle": "Vorschule"},
+                {"slug": "cc-1st-grade-math", "translatedTitle": "1. Klasse"},
+                {"slug": "cc-2nd-grade-math", "translatedTitle": "2. Klasse"},
+                {"slug": "cc-third-grade-math", "translatedTitle": "3. Klasse"},
+                {"slug": "cc-fourth-grade-math", "translatedTitle": "4. Klasse"},
+                {"slug": "cc-fifth-grade-math", "translatedTitle": "5. Klasse"},
+                {"slug": "cc-sixth-grade-math", "translatedTitle": "6. Klasse"},
+                {"slug": "cc-seventh-grade-math", "translatedTitle": "7. Klasse"},
+                {"slug": "cc-eighth-grade-math", "translatedTitle": "8. Klasse"},
+            ]},
+        ],
+    },
 }
 
 def get_topic_tree_replacements(lang=None, variant=None):
