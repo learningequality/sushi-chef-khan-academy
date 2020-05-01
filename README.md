@@ -13,22 +13,40 @@ Sushi Chef for khanacademy.org
   and activate it using `source venv/bin/activate`
 * Run `pip install -r requirements.txt`
 
+
 ### Step 1: Obtaining an Authorization Token ###
+
 You will need an authorization token to create a channel on Kolibri Studio. In order to obtain one:
 
 1. Create an account on [Kolibri Studio](https://contentworkshop.learningequality.org/).
 2. Navigate to the Tokens tab under your Settings page.
 3. Copy the given authorization token (you will need this for later).
 
+
 ### Step 2: Running the chef ###
-Run `./json_chef.py --reset --token=<token> --thumbnails lang=<lang_code>`,
-replacing `<token>` with the token you copied earlier and `<lang_code>` with a 
-le-utils language code for one of the Khan Academy lanugages. (ex. '**en**')
+
+Running the KA sushi chef script requires loading some environment variables,
+and a single command:
+
+```bash
+source venv/bin/activate
+
+source credentials/proxy_list.env
+source credentials/crowdinkeys.env
+source credentials/youtube_api_key.env
+
+./json_chef.py --reset --token=<token> --thumbnails lang=<lang_code>
+```
+You'll need to replace `<token>` with your Studio access token obtained earlier
+and `<lang_code>` with a le_utils code for the channel (e.g. `en`, `es`, `pt-BR`, etc.).
+When running the KA chef command on a remote server, use `nohup ... &` so that
+the long-running chef process will not exit when you "hang up" the ssh sesssion.
 
 <!--
  * Supported Language Codes: en, es, pt-BR, pt-PT, fr, sw
  * Lite Language Codes: zu
 -->
+
 
 # Implementation Overview
 
