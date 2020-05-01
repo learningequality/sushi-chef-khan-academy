@@ -130,14 +130,17 @@ def get_slug_blacklist(lang=None, variant=None):
     return SLUG_BLACKLIST
 
 
-# Topic tree replacments (slug --> list of subtrees of slug includes)
+# Topic tree replacments (slug --> list of subtrees of slug include directives)
 # If a slug is encountered in the tree replacements data for the current channel
 # the KhanNode is dropped from the tree and replced by the list of TopicNodes
-# which are then populated with children from list of slugs
-# e.g. "math" KhanNode gets replaced by "Math by Subject" and "Math by Grade"
-#      topic nodes populated with appropriate subsets of the math node.
+# which are then populated with children from the list of include directives.
+# Usually the "math" KhanNode gets replaced by usual "Math by Subject" and
+# one or more "Math by Grade" topic subtrees populated from localized topic trees.
 #
 # The keys are either internal lang codes (str) or (lang, variant) tuples (str, str)
+# For most channels there is only one variant --- the None variant,
+# except for English where the "in-in" variant contains materials specialized to
+# the India curriculum, with certain videos available both in English and Hindi.
 TOPIC_TREE_REPLACMENTS_PER_LANG = {
     "en": {
         "math": [
@@ -344,7 +347,52 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "lp-4-ano"},
             ]},
         ],
-    }
+    },
+    "fr": {
+        "math": [
+            {"slug": "math", "translatedTitle": "Maths", "children": [
+                {"slug": "early-math", "translatedTitle": "Bases en calcul"},
+                {"slug": "arithmetic-home", "translatedTitle": "Arithmétique"},
+                {"slug": "algebra-home", "translatedTitle": "Algèbre"},
+                {"slug": "geometry-home", "translatedTitle": "Géométrie"},
+                {"slug": "trigonometry", "translatedTitle": "Trigonométrie"},
+                {"slug": "statistics-probability", "translatedTitle": "Probabilités et statistiques"},
+                {"slug": "calculus-home", "translatedTitle": "Analyse"},
+                {"slug": "differential-equations", "translatedTitle": "Équations différentielles"},
+                {"slug": "linear-algebra", "translatedTitle": "Algèbre linéaire"},
+            ]},
+            {"slug": "k-8-grades", "translatedTitle": "Maths (France)", "children": [
+                {"slug": "cycle-1b", "translatedTitle": "Cycle 1"},
+                {"slug": "fr-v2-cycle-2", "translatedTitle": "Cycle 2 (CP, CE1, CE2)"},
+                {"slug": "cycle-3-v2", "translatedTitle": "Cycle 3 (CM1, CM2, 6e)"},
+                {"slug": "cycle-4-v2", "translatedTitle": "Cycle 4 (5e, 4e, 3e)"},
+                {"slug": "fr-v2-seconde-s", "translatedTitle": "Seconde"},
+                {"slug": "fr-v2-premiere-s", "translatedTitle": "Première générale"},
+                {"slug": "fr-v2-terminale-s", "translatedTitle": "Terminale S"},
+                {"slug": "fr-terminale-es-et-l", "translatedTitle": "Terminale ES et L"},
+            ]},
+            {"slug": "grades-belges", "translatedTitle": "Maths (Belgique)", "children": [
+                {"slug": "be-1ere-primaire2", "translatedTitle": "1ère primaire"},
+                {"slug": "be-2eme-primaire2", "translatedTitle": "2ème primaire"},
+                {"slug": "be-3eme-primaire2", "translatedTitle": "3ème primaire"},
+                {"slug": "be-4eme-primaire2", "translatedTitle": "4ème primaire"},
+                {"slug": "be-5eme-primaire2", "translatedTitle": "5ème primaire"},
+                {"slug": "be-6eme-primaire2", "translatedTitle": "6ème primaire"},
+                {"slug": "revisions-ceb", "translatedTitle": "Révisions CEB"},
+                {"slug": "be-1ere-secondaire2", "translatedTitle": "1ère année secondaire"},
+                {"slug": "be-2eme-secondaire2", "translatedTitle": "2ème année secondaire"},
+                {"slug": "revisions-ce1dv2", "translatedTitle": "Révisions CE1D "},
+                {"slug": "3eme-annee-secondaire", "translatedTitle": "3ème année secondaire"},
+                {"slug": "be-4eme-secondaire2", "translatedTitle": "4ème année secondaire"},
+                {"slug": "be-5eme-secondaire2h2", "translatedTitle": "5ème année secondaire - 2h"},
+                {"slug": "be-5eme-secondaire4h2", "translatedTitle": "5ème année secondaire - 4h"},
+                {"slug": "be-5eme-secondaire6h2", "translatedTitle": "5ème année secondaire - 6h"},
+                {"slug": "be-6eme-secondaire2h2", "translatedTitle": "6ème année secondaire - 2h"},
+                {"slug": "be-6eme-secondaire4h2", "translatedTitle": "6ème année secondaire - 4h"},
+                {"slug": "be-6eme-secondaire6h2", "translatedTitle": "6ème année secondaire - 6h"},
+            ]},
+        ],
+    },
 }
 
 def get_topic_tree_replacements(lang=None, variant=None):
