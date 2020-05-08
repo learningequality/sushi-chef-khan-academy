@@ -46,6 +46,7 @@ VIDEO_ATTRIBUTES = [
     'downloadUrls',
     'imageUrl'
 ]
+# Note (May 2020): we also want `sourceLanguage` but not avail. thorugh /api/v2/
 
 # ARTICLE_ATTRIBUTES = [
 #     'id',
@@ -106,3 +107,45 @@ VIDEO_LANGUAGE_MAPPING = {
     "pt-BR": "pt",
     "zh-CN": "zh-hans"
 }
+
+
+# Videos with misleading translatedYoutubeLang organized by le-utils lang code.
+# Use this list to override the should-be-included logic and include the videos.
+# TODO: read the `sourceLanguage` property from the future KA API insead of list
+DUBBED_VIDEOS_BY_LANG = {
+    'pt-BR': [
+        'UnPpFw3natI', 'LYUmHD__MRg', 'N8qRX_7po9U', 'VjhbocJYyOI', 'awyS59G8uZA',
+        'DfBjGvdUMVM', '39m4SSfP2Y0', 'rsoMED7zHME', 'fFRvZI0K4wQ', 'mO4senTBFbc',
+        'uikYPJw0tnE', '50q4iKwnLe8', 'R--9PJ355jY', 'CPhXo-7Qilk', 'TSZ4H5Hd9-M',
+        'VdIlzUigamE', 'dGZTQxyfwPI', '9HZz32sBAvA', 'pliaCSX-B4I', 'NSZ8oGkfO14',
+        '5rkJ4Ve_2gc', 'iheXqmtLhts', 'WzHBBfxl6zo', '19G_f9oHIeg', 'Bvq4pfmP03s',
+        '7sp1--UsVoY', 'eviU0iRKcck', 'v_joLaJ-cfM', 'kfikcE4eJMI', '9_o8Lw9BU_U',
+        'N0IO9b-xnzc', 'GCTea37THw0', 'FllpnWMCeCw', 'seR3m7RNRRA', 'QM13R2YhyD0',
+        'P4n36FnlQ18', '5j7QWssTZTM', 'C7Uw4g8GCkU', 'Y3qLdwRY5RY', 'rp1E8idtvJY',
+        'bDxYr6LWL5A', 'v1RBFkoLD0w', 'L2Z-1EeXAjo', 'x5j19Dd5jWU', 'OLkz5WfQHG4',
+        'cQT8ZZAbrow', 'XCaw6TxgLoQ', 'Z7nh2e5dVYE', 'eQNhW0t_R-k', 'q1-7lYXirHs',
+        '296y0W2lu4w', '3dOVJCtN1kE', 'Qne5wRW20VA', 'dTsUyXXudvA', 'Iya-2bS14ho',
+        'bm65xCS5ivo', 'oW8Ts9N5E-o', 'ENc3fmAQG5Q', 'a4o-3vvTOkU', 'o9e7U1IQ7Ek',
+        '1jJBfzVQ-qQ', 'jnyOVKseNNw', 'Z3xs9saGdTQ', 'sSNu75F5JeQ', 'TXHr1h356Ps',
+        'BWjWEDvTB7g', 'B8HhdnIhAVg', 'wXQ3vPrKer0', 'XZ9Zw9_cTII', 'r2mm0vTjD3k',
+        'B-vlVXbS_4Y', 'Qz2-5pi1PcM', '0uPgRLUAiuU', 'J8Pvc6JB5ts', 'W6w5S-bAmwM',
+        'yRh_Pah7AHo', 'qlGjA9p1UAM', '36Xv2JyPyqA', 'OKc64ezg1uU', 'vPj9S6XsLUM',
+        'AmUiEjPEaiM', 'lrnXQXCLpAQ', 'Qite1chTX2s', 'ngQ_luLpeWI', 'BnxcORk2tLc',
+        'X4MaFYJUYYk', 'e3H_nqrPuUQ', 'kTgKXsA_klo', 'g6NEzuwZ-0Q', 'FqxyxAq4OMU',
+        'Z4sirIWw3Lk', '7AQ3rUb3gWg', 'gYHUrpmB-L4', 'h1bG6zy8ENY', '5MOn8X-tyFw',
+        '7JuoW8Pz7gU', 'qtbb4YBJbJM', '2HZKYXXyHJQ', '8BBcQ67myf0', 'NUG1JzxL7jw',
+        'e7Cf9eepOTQ', 'o4bXSA7vrd8', 'bsIzwvKHZPc', 'xx8w1WStqpg', 'Om5nvig9Ahs',
+        'tO6UMCo8LVU', '4YB_zVM23XA', 'lZiEcMJaw5c', 'oJ4PhVSkEzg', 'LnA0NhBB7pk',
+        '50f8X_52O-E', 'YXL6IFa1TJg', 'DJVJQAgXsGg', '2B4A4kigi4Q', 'kXSyFWk_0T4',
+        'oeAvj4P6S8o', 'EOPbuL73G4s', 'T2hO0qO3qLc', '-J41zkn-HlU', 'l4oStl_JYlU',
+        'U5vAO_f2LDQ', '9REQTbtrwpc', 'm0tdMIz_UHA', 'Qd2n_vZdXuA', 'Z5GoBku8hUo',
+        'MyEFnkuxViU', 'eRN2gy-Je18', 'c2-kabi2_ao', 'FS3FSxG_Am0', 'h2NKJK8wjU0',
+        'KpK5GVXtF8g', 'YhzH8iVMHl0', '1XlW-7WdHfA', '1U6Aqc0U3OM', 'GMLP5jOnqAI',
+        'tYP_e2IitEA', 'JVOU_sh0qpA', 'z7hVq6OdwOg', 'BTudzgYleUI', 'CYJ5sq8AZFI',
+        'JeuaB4iryqU', 'H51OAPifRiw', 'TPqE9qP7aHU', 'J2reLNBqoK0', 'HkZ7y05ycEo',
+        '_1RUYZ8Ic0E', '1l2yttNDYtc', '402Irx3SMRc',
+    ]
+}
+# To add to this list, look for ERROR message in the logs after a complete chef
+# like "Untranslated video {youtube_id} and no subs available. Skipping." and
+# add the `{youtube_id}` to the above list if the video is actually transalted.

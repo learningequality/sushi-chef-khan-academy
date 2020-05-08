@@ -13,6 +13,7 @@ from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
 from common_core_tags import generate_common_core_mapping
 from constants import CHANNEL_DESCRIPTION_LOOKUP
+from constants import DUBBED_VIDEOS_BY_LANG
 from constants import UNSUBTITLED_LANGS
 from constants import VIDEO_LANGUAGE_MAPPING
 from curation import get_slug_blacklist
@@ -278,6 +279,7 @@ class KhanAcademySushiChef(JsonTreeChef):
 
         elif isinstance(ka_node, KhanVideo):
             le_target_lang = target_lang
+            DUBBED_VIDEOS = DUBBED_VIDEOS_BY_LANG.get(le_target_lang, [])
             target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
 
             if ka_node.youtube_id != ka_node.translated_youtube_id:
@@ -310,7 +312,9 @@ class KhanAcademySushiChef(JsonTreeChef):
 
             # if we dont have video in target lang or subtitle not available in target lang, return None
             if ka_node.lang != target_lang.lower():
-                if not any(should_include_subtitle(sub_code, le_target_lang) for sub_code in subtitle_languages):
+                if ka_node.translated_youtube_id in DUBBED_VIDEOS:
+                    pass  # videos known to be transalted and should be included
+                elif not any(should_include_subtitle(sub_code, le_target_lang) for sub_code in subtitle_languages):
                     LOGGER.error("Untranslated video {} and no subs available. Skipping.".format(ka_node.translated_youtube_id))
                     return None
 
