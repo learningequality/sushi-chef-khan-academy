@@ -10,6 +10,7 @@ GLOBAL_SLUG_BLACKLIST = [
     "new-and-noteworthy",
     "talks-and-interviews",
     "coach-res",
+    "teacher-essentials",
     "khan-kids-page",       # link to KA Kids app (skip to avoid empty topic)
     "khan-kids-app-page",   # link to KA Kids app (skip to avoid empty topic)
 ]
