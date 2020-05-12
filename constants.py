@@ -1,6 +1,8 @@
 import json
 from collections import OrderedDict
 
+from le_utils.constants.languages import getlang
+
 TOPIC_ATTRIBUTES = [
     'childData',
     'deleted',
@@ -73,7 +75,10 @@ SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'ko', 'und', 
 # These KA channels are not fully supported on the KA website, but content
 # may be available as YouTube playlists and CrowdIn translations
 
-UNSUBTITLED_LANGS = ['es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'bn', 'id']
+# UNSUBTITLED_LANGS = ['es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'bn', 'id']
+# Deprecated: previously we were skipping the download of subtitles for these
+# KA channels because most of the videos are translated/dubbed. But we decided
+# that it's better to include subtitles when available even videos are dubbed.
 
 V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
 KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"
@@ -81,8 +86,31 @@ ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?key={key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
 
+
+CHANNEL_TITLE_LOOKUP = {
+    "en": "Khan Academy (English)",
+    ("en", "us-cc"): "Khan Academy (English - US curriculum)",
+    ("en", "in-in"): "Khan Academy (English - India curriculum)",
+}
+
+def get_channel_title(lang=None, variant=None):
+    """
+    Return KA channel title for le-utils code `lang` and variant `variant`.
+    """
+    if variant and (lang, variant) in CHANNEL_TITLE_LOOKUP:
+        return CHANNEL_TITLE_LOOKUP[(lang, variant)]
+    elif lang in CHANNEL_TITLE_LOOKUP:
+        return CHANNEL_TITLE_LOOKUP[lang]
+    else:
+        lang_obj = getlang(lang)
+        title = "Khan Academy ({})".format(lang_obj.first_native_name)
+        return title
+
+
 CHANNEL_DESCRIPTION_LOOKUP = {
-    "en": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the U.S. curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+    "en": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to U.S. and India curricular standards. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+    ("en", "us-cc"): "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the U.S. curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+    ("en", "in-in"): "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the India curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
     "fr": "Khan Academy propose des vidéos et des exercices sur les maths, la physique, la chimie, la biologie et l'histoire. Chaque sujet est couvert par des explications vidéo intuitives et comprend de nombreux exercices de pratique pour aider les étudiants à maîtriser les sujets. Convient aux élèves des niveaux primaire et secondaire ainsi qu'aux adultes.",
     "es": "Khan Academy ofrece videos y ejercicios sobre temas de matemáticas, física, química, biología y historia. Cada tema contiene videos explicativos y ejercicios para practicar y revisar. Apropiado para estudiantes de nivel medio y secundario, así para los adultos.",
     "pt-BR": "Khan Academy oferece cursos em matemática, física, química, biologia e história. Cada matéria contém vídeos explicativos e exercícios para para a prática e revisão. Próprio para alunos do ensino médio e secundário, bem como para adultos.",
@@ -90,6 +118,20 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "zh-CN": "可汗学院提供与美国课程一致的视频和习题，涵盖数学、物理、化学、生物和历史。每一个主题都包括了直观的视频解释和大量的练习题目以帮助学生掌握这些学科。这些内容适合初中生、高中生和成年人学习。",
     "it": "Khan Academy offre i video e gli esercizi di matematica, allineati al curriculum degli Stati Uniti. Ogni argomento è trattato in modo intuitivo attraverso spiegazioni video, e fornisce numerosi esercizi pratici per aiutare gli studenti raggiungere la competenza sulla materia. Adatto agli studenti di scuola elementare, media e secondaria, nonché agli adulti.",
 }
+
+def get_channel_description(lang=None, variant=None):
+    """
+    Find KA channel description for le-utils code `lang` and variant `variant`.
+    """
+    if variant and (lang, variant) in CHANNEL_DESCRIPTION_LOOKUP:
+        return CHANNEL_DESCRIPTION_LOOKUP[(lang, variant)]
+    elif lang in CHANNEL_DESCRIPTION_LOOKUP:
+        return CHANNEL_DESCRIPTION_LOOKUP[lang]
+    else:
+        lang_obj = getlang(lang)
+        description = "Khan Academy content for {}.".format(lang_obj.name)
+        return description
+
 
 # map from le-utils language codes to language codes used on CROWDIN
 CROWDIN_LANGUAGE_MAPPING = {

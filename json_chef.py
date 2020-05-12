@@ -12,10 +12,10 @@ from ricecooker.config import LOGGER
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
 from common_core_tags import generate_common_core_mapping
-from constants import CHANNEL_DESCRIPTION_LOOKUP
 from constants import DUBBED_VIDEOS_BY_LANG
-from constants import UNSUBTITLED_LANGS
 from constants import VIDEO_LANGUAGE_MAPPING
+from constants import get_channel_title
+from constants import get_channel_description
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
 from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
@@ -93,9 +93,10 @@ class KhanAcademySushiChef(JsonTreeChef):
         
         if "variant" in options:
             variant = options["variant"]
+            channel_source_id = "KA ({}/{})".format(language_code, variant)
         else:
             variant = None
-        # TODO(ivan): set different title and source_id if variant is not None
+            channel_source_id = "KA ({})".format(language_code)
 
         if language_code == "en" and variant is None:
             # Load the CCSSM tags for the KA en channel (but not in-in variant)
@@ -103,15 +104,13 @@ class KhanAcademySushiChef(JsonTreeChef):
             CC_MAPPING = generate_common_core_mapping()
 
         channel_node = dict(
-            source_id="KA ({0})".format(language_code),
-            source_domain="khanacademy.org",
-            title="Khan Academy ({0})".format(lang_obj.first_native_name),
-            description=CHANNEL_DESCRIPTION_LOOKUP.get(
-                language_code, "Khan Academy content for {}.".format(lang_obj.name)
-            ),
-            thumbnail=os.path.join("chefdata", "khan-academy-logo.png"),
-            language=lang_obj.code,
-            children=[],
+            source_id = channel_source_id,
+            source_domain = "khanacademy.org",
+            title = get_channel_title(lang=language_code, variant=variant),
+            description = get_channel_description(lang=language_code, variant=variant),
+            thumbnail = os.path.join("chefdata", "khan-academy-logo.png"),
+            language = lang_obj.code,
+            children = [],
         )
 
         # Handle special case of building Kolibri channel from youtube playlists
