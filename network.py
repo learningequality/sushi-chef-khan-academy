@@ -1,5 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import json
 import os
 import requests
 import time
@@ -13,8 +14,6 @@ from ricecooker.utils.caching import (
     InvalidatingCacheControlAdapter,
 )
 
-if 'YOUTUBE_API_KEY' not in os.environ:
-    LOGGER.warning('Specify YOUTUBE_API_KEY env var for faster operation.')
 YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', None)
 
 sess = requests.Session()
@@ -26,6 +25,10 @@ sess.mount("http://www.khanacademy.org/api/v2/topics/topictree", forever_adapter
 sess.mount("http://www.khanacademy.org/api/v1/assessment_items/", forever_adapter)
 sess.mount("https://api.crowdin.com", forever_adapter)
 
+# Directory to store list-of-subtitles-available-for-
+SUBTITLE_LANGUAGES_CACHE_DIR = 'chefdata/sublangscache'
+if not os.path.exists(SUBTITLE_LANGUAGES_CACHE_DIR):
+    os.makedirs(SUBTITLE_LANGUAGES_CACHE_DIR)
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0",
@@ -88,6 +91,14 @@ def get_subtitle_languages(youtube_id):
     1. The Youtube API (works for public videos when YOUTUBE_API_KEY defined)
     2. Slow by using YouTubeResource, which in turn calls youtube_dl
     """
+    # Check if we already have the lang_codes list for this youtube_id cached...
+    cache_filename = '{}__lang_codes.json'.format(youtube_id)
+    cache_filepath = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, cache_filename)
+    if os.path.exists(cache_filepath):        # Cache hit!
+        with open(cache_filepath) as jsonf:
+            cache_data = json.load(jsonf)
+            return cache_data['lang_codes']
+
     if YOUTUBE_API_KEY:
         try:
             lang_codes = get_subtitles_using_api(youtube_id)
@@ -95,6 +106,12 @@ def get_subtitle_languages(youtube_id):
         except HttpError as e:
             LOGGER.info("Can't access API for video {} ...".format(youtube_id))
     lang_codes = get_subtitles_using_youtube_dl(youtube_id)
+
+    # Cache the results in chefdata/sublangscache/{youtube_id}__lang_codes.json
+    cache_data = {"lang_codes": lang_codes}
+    with open(cache_filepath, 'w') as jsonf:
+        json.dump(cache_data, jsonf, ensure_ascii=True)
+
     return lang_codes
 
 
