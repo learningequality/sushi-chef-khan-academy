@@ -300,7 +300,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                         'postprocessors': [
                             {
                                 'key': 'ExecAfterDownload',
-                                'exec_cmd': 'ffmpeg -hide_banner -loglevel panic -i {} -b:a 32k {}_tmp.mp4 && mv {}_tmp.mp4 {}',
+                                'exec_cmd': 'ffmpeg -hide_banner -loglevel panic -i {} -b:a 32k -ac 1 {}_tmp.mp4 && mv {}_tmp.mp4 {}',
                             }
                         ]
                     }
