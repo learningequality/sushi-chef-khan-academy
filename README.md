@@ -123,15 +123,20 @@ Here is a complete list of channels and command line options lang/variant for th
 - Bengali: `lang=bn` https://bn.khanacademy.org/
 - Bulgarian: `lang=bg` https://bg.khanacademy.org/
 - German: `lang=de` https://de.khanacademy.org/
-- English: `lang=en`
-  - Khan Academy (English): `lang=en`, `variant=None`. This is the regular topic
-    tree including "Math by subject" and "Math by grade" hierarchies, but not
-    the the `in-in` topics. Should be similar to https://www.khanacademy.org/
-- Khan Academy (English - India): `lang=en`, `variant=in-in` which is based on the
-  topic tree for the Indian curriculum https://www.khanacademy.org/?curriculum=in-in
+- English: `lang=en` https://www.khanacademy.org/ comes in three variants:
+  - Khan Academy (English): `lang=en`, `variant=None`. This is the "origina" channel
+    that contains all the content available through the API, includes hierarchies
+    for both USA and India. The choice to include all content was made for backward
+    compatibility, in case content was curated from this channel (May 2020).
+  - Khan Academy (English - US curriculum): `lang=en`, `variant=us-cc` is based
+    on the menu of https://www.khanacademy.org/?curriculum=us-cc and including
+    "Math by subject" and "Math by grade" hierarchies aligned to the US common core.
+  - Khan Academy (English - India curriculum): `lang=en`, `variant=in-in` which
+    is based on the topic tree for the Indian curriculum https://www.khanacademy.org/?curriculum=in-in
 - Spanish: `lang=es`: the default Spanish content from https://es.khanacademy.org/
   that also includes the Mexico-aligned math "Matemáticas por grado (México)"
-  taken from https://es.khanacademy.org/?curriculum=mx-eb
+  taken from https://es.khanacademy.org/?curriculum=mx-eb and 
+  "Matemáticas por grado (Perú)" taken from https://es.khanacademy.org/?curriculum=pe-pe
 - Français: `lang=fr` channel that combines the topic both French and Belgian topic trees
   - Maths accès par classe (France): https://fr.khanacademy.org/?curriculum=fr-fr
   - Maths accès par classe (Belgique): https://fr.khanacademy.org/?curriculum=be-be
