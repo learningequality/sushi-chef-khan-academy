@@ -96,18 +96,17 @@ Below is a table which shows the mapping from the Khan data structures to the Ri
    and https://zh.khanacademy.org/economics-finance-domain/core-finance/money-and-banking
 
 
-
 ## Channel variants and Localized Topic Trees (LTTs)
 The Khan Academy content is available under different topic structures. The KA
-content in English was originally organized around high-level Subjects. Later,
-an additional "Math by grade" topic structure was added that contains the same
-videos and lessons but organized according to the US Common Core Math standards.
-Certain KA languages offer an additional topic structure aligned to local grade
-levels and curriculula called Localized Topic Trees (LTTs). The KA website offers
-multiple top-level menu topics that can vary with both language and region.
-All the topic trees are available through the KA API, but the different topic
-trees co-exist within the same tree structure as returned by the KA API, which
-can be overwhelming for users (same repeated content and unepected organization).
+content in English was originally organized around high-level Subjects.
+Later, an additional "Math by grade" topic structure was added that contains the
+same videos and lessons but organized according to the US Common Core Math standards.
+Certain KA languages offer an additional topic structure aligned to local grade levels
+called Localized Topic Trees (LTTs). The KA website offers multiple top-level menu
+topics that can vary with both language and region. All the topic trees are available
+through the KA API, but the different topic trees co-exist within the same tree
+structure as returned by the KA API, which can be overwhelming for users since
+the same content appears repeatedly and organization is unexpected.
 
 The `SLUG_BLACKLIST` and `TOPIC_TREE_FOR_LANG_AND_VARIANT` info in `curation.py`
 allows us to take advantage of these multiple topics trees and present Kolibri

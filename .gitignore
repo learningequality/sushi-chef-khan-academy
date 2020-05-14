@@ -6,6 +6,9 @@ crowdin.zip
 # Reports and curation-related printouts
 reports
 
+# Dev notebooks and debugging -- no need to commit bcs janky
+notebooks
+
 # ricecooker
 restore/
 .webcache/

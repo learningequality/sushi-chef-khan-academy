@@ -5,14 +5,20 @@ corresponding Kolibri channel.
 """
 from ricecooker.config import LOGGER
 
-# these topics are not relevant or importable
+# these topics are not relevant or impossible to import through the API
 GLOBAL_SLUG_BLACKLIST = [
     "new-and-noteworthy",
     "talks-and-interviews",
     "coach-res",
-    "teacher-essentials",
-    "khan-kids-page",       # link to KA Kids app (skip to avoid empty topic)
-    "khan-kids-app-page",   # link to KA Kids app (skip to avoid empty topic)
+    "teacher-essentials",      # Contains info specific to KA website
+    "khan-kids-page",          # Link to KA Kids app (skip to avoid empty topic)
+    "khan-kids-app-page",      # Link to KA Kids app (skip to avoid empty topic)
+    "indiacourse",             # India-specific KA resources
+    "talent-search",           # India-specific KA resources
+    "students",                # login-requiring page on KA site
+    "parents-mentors-1",       # articles-only (revisit once we support article)
+    "teacher-toolbox",         # special info webpage on KA site
+    "educator-toolbox",        # special info webpage on KA site
 ]
 
 
@@ -24,7 +30,8 @@ GLOBAL_SLUG_BLACKLIST += [
 ]  
 
 
-# TODO(ivan): review recent tree to check for new parner content to add to this list
+# TODO(ivan): review tree to check for new partner content to add to this list
+# TODO(ivan): followup with KA ppl to check if OK to distribute partner content
 # KA partner content for which we don't have explicit permission to redistribute
 GLOBAL_SLUG_BLACKLIST += [
     "MoMA",
@@ -46,6 +53,9 @@ GLOBAL_SLUG_BLACKLIST += [
     "pixar",
     "pixar-latam",
     "wi-phi",  # see https://wi-phi.com/videos/ could not find info on licensing
+    "science-engineering-partners",
+    "arts-humanities-partners",
+    "computing-partners",
 ]
 
 
@@ -56,27 +66,23 @@ GLOBAL_SLUG_BLACKLIST += [
 ]
 
 
-# common core
-# GLOBAL_SLUG_BLACKLIST += ["cc-third-grade-math", "cc-fourth-grade-math", "cc-fifth-grade-math", "cc-sixth-grade-math",
-#                    "cc-seventh-grade-math", "cc-eighth-grade-math"]
-
-
-# Empty placeholders from the API; handled in TOPIC_TREE_REPLACMENTS_PER_LANG
+# Empty/placeholder topics that are handled by TOPIC_TREE_REPLACMENTS_PER_LANG
 GLOBAL_SLUG_BLACKLIST += [
     "k-8-grades",
     "engageny",
     "topic-foundations-engageny",
     "on-grade-engageny",
     "high-school-math",
+    "illustrative-math",
     #
-    "hindi",                # Parallel structure for in-in curriculum in Hindi
+    "brazil-math-grades",                      # empty topic in pt-BR topic tree
+    "ciencias-por-ano",                        # empty topic in pt-BR topic tree
+    #
+    "in-math-by-grade",                   # empty topics in the in-in curriculum
+    "hindi",
     "math-hindi",
     "science-hindi",
     "science-india",
-    "in-math-by-grade",
-    #
-    "brazil-math-grades",  # Special empty topics in pt-BR topic tree
-    "ciencias-por-ano",
 ]
 
 
@@ -92,25 +98,21 @@ GLOBAL_SLUG_BLACKLIST += [
 # The keys are either internal lang codes (str) or (lang, variant) tuples (str, str)
 SLUG_BLACKLIST_PER_LANG = {
     "zh-CN": [
-        "money-and-banking",    # Mar 25: contains mostly non-public youtube videos
+        "money-and-banking",  # Mar 25 contains mostly non-public youtube videos
     ],
-    "en": [
-        # Note: no need to list in math topics since handled by tree replacement
-        "in-in-class9th-physics-india",       # specific to the in-in curriculum
-        "in-in-class10th-physics",
-        "in-in-class-10-biology",
-        "in-in-class-10-chemistry-india",
-        "in-in-class11th-physics",
-        "in-in-class-12th-physics-india",
-        "in-in-class-10-physics-india-hindi",
-        "in-in-class-11-physics-cbse-hindi",
-        "science-hindi",
-        "science-india",
-        "class-11-chemistry-india",
-        "indiacourse",
-        "talent-search",
+    "en": [],       # put general skippable things from the English channel here
+    ("en", "us-cc"): [
+        # Note: no need to list math and science topics since these are handled
+        #       by the tree replacement logic in TOPIC_TREE_REPLACMENTS_PER_LANG
+        "iit-jee-subject",
     ],
-    ("en", "in-in"): [],
+    ("en", "in-in"): [
+        # Note: no need to list math and science topics since these are handled
+        #       by the tree replacement logic in TOPIC_TREE_REPLACMENTS_PER_LANG
+        "ap-us-history",                           # US-specific history lessons
+        "ap-us-government-and-politics",           # US-specific history lessons
+        "cahsee-subject",              # California High School Exit Examination
+    ],
     "pt-BR": [
         "art-history",
     ]
@@ -232,6 +234,36 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "in-in-class-11-math-cbse-hindi"},
             ]},
         ],
+        "science": [
+            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+                {"slug": "physics", "translatedTitle": "Physics"},
+                {"slug": "ap-physics-1", "translatedTitle": "AP®︎ Physics 1"},
+                {"slug": "ap-physics-2", "translatedTitle": "AP®︎ Physics 2"},
+                {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmology & astronomy"},
+                {"slug": "chemistry", "translatedTitle": "Chemistry"},
+                {"slug": "ap-chemistry-beta", "translatedTitle": "AP®︎ Chemistry beta"},
+                {"slug": "ap-chemistry", "translatedTitle": "AP®︎ Chemistry"},
+                {"slug": "organic-chemistry", "translatedTitle": "Organic chemistry"},
+                {"slug": "biology", "translatedTitle": "Biology"},
+                {"slug": "high-school-biology", "translatedTitle": "High school biology"},
+                {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
+                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
+                {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+            {"slug": "science-india", "translatedTitle": "Science (India)", "children": [
+                {"slug": "in-in-class9th-physics-india", "translatedTitle": "Physics class 9"},
+                {"slug": "in-in-class10th-physics", "translatedTitle": "Physics class 10"},
+                {"slug": "in-in-class-10-chemistry-india", "translatedTitle": "Chemistry class 10"},
+                {"slug": "class-10-biology", "translatedTitle": "Biology class 10"},
+                {"slug": "in-in-class11th-physics", "translatedTitle": "Physics class 11"},
+                {"slug": "class-11-chemistry-india", "translatedTitle": "Chemistry class 11"},
+                {"slug": "in-in-class-12th-physics-india", "translatedTitle": "Physics class 12"},
+            ]},
+            {"slug": "science-hindi", "translatedTitle": "Learn science with Hindi videos", "children": [
+                {"slug": "in-in-class-10-physics-india-hindi"},
+                {"slug": "in-in-class-11-physics-cbse-hindi"},
+            ]},
+        ],
     },
     ("en", "us-cc"): {
         "math": [
@@ -252,7 +284,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "differential-equations", "translatedTitle": "Differential equations"},
                 {"slug": "linear-algebra", "translatedTitle": "Linear algebra"},
             ]},
-            {"slug": "k-8-grades", "translatedTitle": "Math by grade (USA)", "children": [
+            {"slug": "k-8-grades", "translatedTitle": "Math by grade", "children": [
                 {"slug": "kids", "translatedTitle": "Preschool app"},
                 {"slug": "cc-kindergarten-math", "translatedTitle": "Kindergarten"},
                 {"slug": "cc-1st-grade-math", "translatedTitle": "1st grade"},
@@ -298,7 +330,24 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                     {"slug": "precalculus"},
                 ]},
             ]},
-        ]
+        ],
+        "science": [
+            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+                {"slug": "physics", "translatedTitle": "Physics"},
+                {"slug": "ap-physics-1", "translatedTitle": "AP®︎ Physics 1"},
+                {"slug": "ap-physics-2", "translatedTitle": "AP®︎ Physics 2"},
+                {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmology & astronomy"},
+                {"slug": "chemistry", "translatedTitle": "Chemistry"},
+                {"slug": "ap-chemistry-beta", "translatedTitle": "AP®︎ Chemistry beta"},
+                {"slug": "ap-chemistry", "translatedTitle": "AP®︎ Chemistry"},
+                {"slug": "organic-chemistry", "translatedTitle": "Organic chemistry"},
+                {"slug": "biology", "translatedTitle": "Biology"},
+                {"slug": "high-school-biology", "translatedTitle": "High school biology"},
+                {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
+                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
+                {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
     },
     ("en", "in-in"): {
         "math": [
