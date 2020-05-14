@@ -1,9 +1,10 @@
-import sqlite3
 from collections import defaultdict
-import os
-import requests
 from itertools import groupby
 from operator import itemgetter
+import os
+import requests
+import sqlite3
+import uuid
 
 
 
@@ -189,13 +190,64 @@ def get_tree(channel_id):
     return root
 
 
-def print_subtree(subtree, level=0, extrakeys=None):
+# NODE_ID UTILS
+################################################################################
+
+def node_id_from_source_ids(source_domain, channel_source_id, source_ids):
+    """
+    Compute the node_id (str) for the node whose path is  `source_ids` (list)
+    in a channel identified by `source_domain` and `channel_source_id`.
+    """
+    domain_namespace = uuid.uuid5(uuid.NAMESPACE_DNS, source_domain)
+    content_ids = [uuid.uuid5(domain_namespace, source_id).hex for source_id in source_ids]
+    print('computed content_ids =', content_ids)
+    channel_id = uuid.uuid5(domain_namespace, channel_source_id)
+    print('Computed channel_id =', channel_id.hex)
+    node_id = channel_id
+    for content_id in content_ids:
+        node_id = uuid.uuid5(node_id, content_id)
+    return node_id.hex
+
+
+
+# TREE PRINTING
+################################################################################
+
+def get_stats(subtree):
+    """
+    Recusively compute kind-counts and total file_size (non-deduplicated).
+    """
+    if 'children' in subtree:
+        stats = {'topic': 1, 'video':0, 'exercise':0, 'size': 0}
+        for child in subtree['children']:
+            child_stats = get_stats(child)
+            for k, v in child_stats.items():
+                stats[k] += v
+        return stats
+    else:
+        size = sum([f['file_size'] for f in subtree['files']])
+        return {subtree['kind']: 1, 'size': size}
+
+def stats_to_str(stats):
+    stats_str = '  '
+    for key in ['topic', 'video', 'exercise']:
+        if stats[key]:
+            stats_str += str(stats[key]) + ' ' + key + 's, '
+    size_mb_str = "%.2f" % (float(stats['size'])/1024/1024) + 'MB'
+    stats_str += size_mb_str
+    return stats_str
+
+def print_subtree(subtree, level=0, extrakeys=None, maxlevel=2, printstats=True):
     extra = ''
+    if level > maxlevel:
+        return
     if extrakeys:
         for key in extrakeys:
             extra = extra + ' ' + key + '=' + subtree[key]
+    if printstats:
+        stats = get_stats(subtree)
+        extra += stats_to_str(stats)
     print(' '*2*level + '   -', subtree['title'] + ' (' + subtree['id'][0:7] + ')', extra)
     if 'children' in subtree:
         for child in subtree['children']:
-            print_subtree(child, level=level+1, extrakeys=extrakeys)
-
+            print_subtree(child, level=level+1, extrakeys=extrakeys, maxlevel=maxlevel, printstats=printstats)
