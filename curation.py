@@ -166,7 +166,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "linear-algebra", "translatedTitle": "Linear algebra"},
             ]},
             {"slug": "k-8-grades", "translatedTitle": "Math by grade (USA)", "children": [
-                {"slug": "kids", "translatedTitle": "Preschool app"},
                 {"slug": "cc-kindergarten-math", "translatedTitle": "Kindergarten"},
                 {"slug": "cc-1st-grade-math", "translatedTitle": "1st grade"},
                 {"slug": "cc-2nd-grade-math", "translatedTitle": "2nd grade"},
@@ -285,7 +284,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "linear-algebra", "translatedTitle": "Linear algebra"},
             ]},
             {"slug": "k-8-grades", "translatedTitle": "Math by grade", "children": [
-                {"slug": "kids", "translatedTitle": "Preschool app"},
                 {"slug": "cc-kindergarten-math", "translatedTitle": "Kindergarten"},
                 {"slug": "cc-1st-grade-math", "translatedTitle": "1st grade"},
                 {"slug": "cc-2nd-grade-math", "translatedTitle": "2nd grade"},
