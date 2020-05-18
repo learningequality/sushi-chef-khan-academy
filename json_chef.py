@@ -8,6 +8,7 @@ from le_utils.constants.languages import getlang
 from pressurecooker.youtube import get_language_with_alpha2_fallback
 from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
+from ricecooker.classes.nodes import ChannelNode
 from ricecooker.config import LOGGER
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
@@ -65,85 +66,103 @@ class KhanAcademySushiChef(JsonTreeChef):
     topic_replacements = {}  # spec about `KhanTopic`s to be replaced
 
 
-    def get_json_tree_path(self, *args, **kwargs):
+    def parse_lang_and_variant_from_kwargs(self, kwargs):
         """
-        Return path to ricecooker json tree file. Override this method to use
-        a custom filename, e.g., for channel with multiple languages.
+        Helper method to parse and validate the `lang` and `variant` options.
+        Returns: (lang, variant), where `lang` uses internal repr. from le-utils
+        and `variant` (str or None) identifies different channel version.
         """
-        RICECOOKER_JSON_TREE_TPL = "ricecooker_json_tree_{}.json"
-
-        # Get channel language from kwargs
         if "lang" not in kwargs:
             raise ValueError('Khan Academy chef must be run with lang=<code>')
-        language_code = kwargs["lang"]
-        lang_obj = getlang(language_code)
-        assert lang_obj, 'Language code ' + language_code + ' not recognized'
+        lang = kwargs["lang"]
+        assert getlang(lang), 'Language code ' + lang + ' not recognized'
+        variant = kwargs.get("variant", None)
+        return lang, variant
 
-        json_filename = RICECOOKER_JSON_TREE_TPL.format(lang_obj.code)
+
+    def get_channel_dict(self, kwargs):
+        """
+        Returns the channel info as a Python dictionary (to avoid duplication).
+        """
+        lang, variant = self.parse_lang_and_variant_from_kwargs(kwargs)
+        if variant:
+            channel_source_id = "KA ({}/{})".format(lang, variant)
+        else:
+            channel_source_id = "KA ({})".format(lang)
+        # Build dict with all the info required to create the ChannelNode object
+        channel_dict = dict(
+            source_id=channel_source_id,
+            source_domain="khanacademy.org",
+            title=get_channel_title(lang=lang, variant=variant),
+            description=get_channel_description(lang=lang, variant=variant),
+            thumbnail=os.path.join("chefdata", "khan-academy-logo.png"),
+            language=lang,
+        )
+        return channel_dict
+
+    def get_channel(self, **kwargs):
+        """
+        Override the base class method to load the same data as in `pre_run`.
+        """
+        channel_dict = self.get_channel_dict(kwargs)
+        return ChannelNode(**channel_dict)
+
+
+    def get_json_tree_path(self, **kwargs):
+        """
+        Return path to file that contains the ricecooker json tree.
+        """
+        lang, variant = self.parse_lang_and_variant_from_kwargs(kwargs)
+        if variant:
+            filename_suffix = "{}_{}".format(lang, variant)
+        else:
+            filename_suffix = lang
+        RICECOOKER_JSON_TREE_TPL = "ricecooker_json_tree_{}.json"
+        json_filename = RICECOOKER_JSON_TREE_TPL.format(filename_suffix)
         json_tree_path = os.path.join(self.TREES_DATA_DIR, json_filename)
         return json_tree_path
 
 
     def pre_run(self, args, options):
-        if "lang" not in options:
-            raise ValueError('Khan Academy chef must be run with lang=<code>')
-        language_code = options["lang"]
-        lang_obj = getlang(language_code)
-        assert lang_obj, 'Language code ' + language_code + ' not recognized'
-        
-        if "variant" in options:
-            variant = options["variant"]
-            channel_source_id = "KA ({}/{})".format(language_code, variant)
-        else:
-            variant = None
-            channel_source_id = "KA ({})".format(language_code)
+        """
+        This is where all the works happens for this chef:
+        - Load the source tree from the Khan Academy API
+        - Convert the tree of Khan-objects in ricecooker_json dicts objects
+        - Write ricecooker json tree to the appropriate file
+        """
+        lang, variant = self.parse_lang_and_variant_from_kwargs(options)
 
-        if language_code == "en" and variant is None:
+        if lang == "en" and variant != "in-in":
             # Load the CCSSM tags for the KA en channel (but not in-in variant)
             global CC_MAPPING
             CC_MAPPING = generate_common_core_mapping()
 
-        channel_node = dict(
-            source_id = channel_source_id,
-            source_domain = "khanacademy.org",
-            title = get_channel_title(lang=language_code, variant=variant),
-            description = get_channel_description(lang=language_code, variant=variant),
-            thumbnail = os.path.join("chefdata", "khan-academy-logo.png"),
-            language = lang_obj.code,
-            children = [],
-        )
+        channel_node = self.get_channel_dict(options)
+        channel_node["children"] = []
 
         # Handle special case of building Kolibri channel from youtube playlists
         if options.get("youtube_channel_id"):
-            youtube_id = options.get("youtube_channel_id")
-            LOGGER.info(
-                "Downloading youtube playlist {} for {} language".format(
-                    youtube_id, lang_obj.name
-                )
-            )
-            root_node = youtube_playlist_scraper(youtube_id, channel_node)
-            # write to json file
-            json_tree_path = self.get_json_tree_path(*args, **options)
+            youtube_channel_id = options.get("youtube_channel_id")
+            LOGGER.info("Found YouTube channel {}".format(youtube_channel_id))
+            root_node = youtube_playlist_scraper(youtube_channel_id, channel_node)
+            json_tree_path = self.get_json_tree_path(**options)
             LOGGER.info("Writing youtube ricecooker tree to " + json_tree_path)
             write_tree_to_json_tree(json_tree_path, root_node)
-            return
+            return None
 
-        LOGGER.info("downloading KA tree")
-        # Obtain the complete topic tree for lang=language_code from the KA API
-        ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=language_code)
+        LOGGER.info("Downloading KA topic tree")
+        # Obtain the complete topic tree for lang=lang from the KA API
+        ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=lang)
         self.topics_by_slug = topics_by_slug  # to be used for topic replacments
-        self.slug_blacklist = get_slug_blacklist(lang=language_code, variant=variant)
-        self.topic_replacements = get_topic_tree_replacements(lang=language_code, variant=variant)
+        self.slug_blacklist = get_slug_blacklist(lang=lang, variant=variant)
+        self.topic_replacements = get_topic_tree_replacements(lang=lang, variant=variant)
 
         if options.get("english_subtitles"):
             # we will include english videos with target language subtitles
             duplicate_videos(ka_root_topic)
 
-        language_code = lang_obj.code  # using internal code repr. from le-utils
         LOGGER.info("Converting KA nodes to ricecooker json nodes")
-        root_topic = self.convert_ka_node_to_ricecooker_node(
-            ka_root_topic, target_lang=language_code,
-        )
+        root_topic = self.convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang)
         for topic in root_topic["children"]:
             channel_node["children"].append(topic)
 
