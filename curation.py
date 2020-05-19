@@ -21,7 +21,6 @@ GLOBAL_SLUG_BLACKLIST = [
     "educator-toolbox",        # special info webpage on KA site
 ]
 
-
 # we don't support scratchpad content so we skip the programming topics
 GLOBAL_SLUG_BLACKLIST += [
     "cs",
@@ -112,6 +111,18 @@ SLUG_BLACKLIST_PER_LANG = {
         "ap-us-history",                           # US-specific history lessons
         "ap-us-government-and-politics",           # US-specific history lessons
         "cahsee-subject",              # California High School Exit Examination
+    ],
+    "es": [
+        "matematicas-innova-schools",  # specialized for private schools in Perú
+        "4-grado-innova-schools",
+        "5-grado-innova-schools",
+        "6-grado-innova-schools",
+        "10-grado-innova-schools",
+        "piloto-innova-4-grado",
+        "recursos",                       # Contains info specific to KA website
+        "khan-for-educators",             # Contains info specific to KA website
+        "khan-para-maestros",             # Contains info specific to KA website
+        "new-spanish-content-es",         # seems to be a draft/unfinished topic
     ],
     "pt-BR": [
         "art-history",
@@ -410,6 +421,93 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
+    },
+    "es": {
+        "math": [
+            {"slug": "math", "translatedTitle": "Matemáticas", "children": [
+                {"slug": "early-math", "translatedTitle": "Matemáticas elementales"},
+                {"slug": "arithmetic", "translatedTitle": "Aritmética"},
+                {"slug": "pre-algebra", "translatedTitle": "Preálgebra"},
+                {"slug": "algebra-basics", "translatedTitle": "Fundamentos de álgebra"},
+                {"slug": "algebra", "translatedTitle": "Álgebra I"},
+                {"slug": "algebra2", "translatedTitle": "Álgebra II"},
+                {"slug": "basic-geo", "translatedTitle": "Geometría básica"},
+                {"slug": "geometry", "translatedTitle": "Geometría"},
+                {"slug": "trigonometry", "translatedTitle": "Trigonometría"},
+                {"slug": "precalculus", "translatedTitle": "Precálculo"},
+                {"slug": "probability", "translatedTitle": "Probabilidad y estadística"},
+                {"slug": "ap-calculus-ab", "translatedTitle": "Cálculo I"},
+                {"slug": "ap-calculus-bc", "translatedTitle": "Cálculo II"},
+                {"slug": "ap-statistics", "translatedTitle": "Estadística avanzada"},
+                {"slug": "multivariable-calculus", "translatedTitle": "Cálculo multivariable"},
+                {"slug": "differential-equations", "translatedTitle": "Ecuaciones diferenciales"},
+                {"slug": "linear-algebra", "translatedTitle": "Álgebra linear"},
+            ]},
+            {"slug": "mx-math-by-grade", "translatedTitle": "Matemáticas por grado (México)", "children": [
+                {"slug": "eb-1-primaria", "translatedTitle": "1° Primaria"},
+                {"slug": "eb-2-primaria", "translatedTitle": "2° Primaria"},
+                {"slug": "eb-3-primaria", "translatedTitle": "3° Primaria"},
+                {"slug": "eb-4-primaria", "translatedTitle": "4° Primaria"},
+                {"slug": "eb-5-primaria", "translatedTitle": "5° Primaria"},
+                {"slug": "eb-6-primaria", "translatedTitle": "6° Primaria"},
+                {"slug": "eb-1-secundaria", "translatedTitle": "1° Secundaria"},
+                {"slug": "eb-2-secundaria", "translatedTitle": "2° Secundaria"},
+                {"slug": "eb-3-secundaria", "translatedTitle": "3° Secundaria"},
+                {"slug": "eb-1-semestre-bachillerato", "translatedTitle": "1° Semestre Bachillerato"},
+                {"slug": "eb-2-semestre-bachillerato", "translatedTitle": "2° Semestre Bachillerato"},
+                {"slug": "eb-3-semestre-bachillerato", "translatedTitle": "3° Semestre Bachillerato"},
+                {"slug": "eb-4-semestre-bachillerato", "translatedTitle": "4° Semestre Bachillerato"},
+                {"slug": "eb-5-semestre-bachillerato", "translatedTitle": "5° Semestre Bachillerato"},
+                {"slug": "eb-6-semestre-bachillerato", "translatedTitle": "6° Semestre Bachillerato"},
+            ]},
+            {"slug": "matematicas-por-grado-pe", "translatedTitle": "Matemáticas por grado (Perú)", "children": [
+                {"slug": "1-primaria-pe", "translatedTitle": "1º Primaria"},
+                {"slug": "2-primaria-pe", "translatedTitle": "2° Primaria"},
+                {"slug": "3-primaria-pe", "translatedTitle": "3° Primaria"},
+                {"slug": "4-primaria-pe", "translatedTitle": "4° Primaria"},
+                {"slug": "5-primaria-pe", "translatedTitle": "5° Primaria"},
+                {"slug": "6-primaria-pe", "translatedTitle": "6° Primaria"},
+                {"slug": "1-secundaria-pe", "translatedTitle": "1º Secundaria"},
+                {"slug": "2-secundaria-pe", "translatedTitle": "2º Secundaria"},
+                {"slug": "3-secundaria-pe", "translatedTitle": "3º Secundaria"},
+                {"slug": "4-secundaria-pe", "translatedTitle": "4º Secundaria"},
+                {"slug": "5-secundaria-pe", "translatedTitle": "5º Secundaria"},
+            ]},
+            {"slug": "matematicas-avanzadas", "translatedTitle": "Matemáticas avanzadas", "children": [
+                {"slug": "ap-calculus-ab", "translatedTitle": "Cálculo I"},
+                {"slug": "ap-calculus-bc", "translatedTitle": "Cálculo II"},
+                {"slug": "ap-statistics", "translatedTitle": "Estadística avanzada"},
+            ]},
+            {"slug": "preparacion-para-la-educacion-superior", "translatedTitle": "Preparación Educación Superior (Perú)", "children": [
+                {"slug": "matematicas-preparacion-educacion-superior", "translatedTitle": "Matemáticas", "children": [
+                    {"slug": "aritmetica-pe-pre-u", "translatedTitle": "Aritmética"},
+                    {"slug": "estadistica-y-probabilidad-pe-pre-u", "translatedTitle": "Estadística y probabilidad"},
+                    {"slug": "geometria-pe-pre-u", "translatedTitle": "Geometría"},
+                    {"slug": "algebra-i-pe-pre-u", "translatedTitle": "Algebra I"},
+                    {"slug": "algebra-ii-pe-pre-u", "translatedTitle": "Algebra II"},
+                    {"slug": "trigonometria-pe-pre-u", "translatedTitle": "Trigonometría"},
+                    {"slug": "razonamiento-matematico-pe-pre-u", "translatedTitle": "Razonamiento matemático"},
+                ]},
+                {"slug": "ciencias-preparacion-educacion-superior", "translatedTitle": "Ciencias", "children": [
+                    {"slug": "biologia-pe-pre-u", "translatedTitle": "Biología"},
+                    {"slug": "fisica-pe-pre-u", "translatedTitle": "Física"},
+                    {"slug": "quimica-pe-pre-u", "translatedTitle": "Química"},
+                ]},
+            ]},
+        ],
+        "science": [
+            {"slug": "science", "translatedTitle": "Ciencia", "children": [
+                {"slug": "physics", "translatedTitle": "Física"},
+                {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmología y astronomía"},
+                {"slug": "chemistry", "translatedTitle": "Química"},
+                {"slug": "ap-chemistry", "translatedTitle": "Química avanzada"},
+                {"slug": "organic-chemistry", "translatedTitle": "Química orgánica"},
+                {"slug": "biology", "translatedTitle": "Biología"},
+                {"slug": "high-school-biology", "translatedTitle": "Biología de secundaria"},
+                {"slug": "ap-biology", "translatedTitle": "Biología avanzada"},
+                {"slug": "electrical-engineering", "translatedTitle": "Ingeniería eléctrica"},
             ]},
         ],
     },
