@@ -500,13 +500,16 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
         "science": [
             {"slug": "science", "translatedTitle": "Ciencia", "children": [
                 {"slug": "physics", "translatedTitle": "Física"},
-                {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmología y astronomía"},
+                # May24: does not seem to be available form API
+                # {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmología y astronomía"},
                 {"slug": "chemistry", "translatedTitle": "Química"},
-                {"slug": "ap-chemistry", "translatedTitle": "Química avanzada"},
+                # May24: does not seem to be available form API
+                # {"slug": "ap-chemistry", "translatedTitle": "Química avanzada"},
                 {"slug": "organic-chemistry", "translatedTitle": "Química orgánica"},
                 {"slug": "biology", "translatedTitle": "Biología"},
                 {"slug": "high-school-biology", "translatedTitle": "Biología de secundaria"},
-                {"slug": "ap-biology", "translatedTitle": "Biología avanzada"},
+                # May24: does not seem to be available form API
+                # {"slug": "ap-biology", "translatedTitle": "Biología avanzada"},
                 {"slug": "electrical-engineering", "translatedTitle": "Ingeniería eléctrica"},
             ]},
         ],

@@ -167,7 +167,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             channel_node["children"].append(topic)
 
         # write to ricecooker tree to json file
-        json_tree_path = self.get_json_tree_path(*args, **options)
+        json_tree_path = self.get_json_tree_path(**options)
         LOGGER.info("Writing ricecooker json tree to " + json_tree_path)
         write_tree_to_json_tree(json_tree_path, channel_node)
 
