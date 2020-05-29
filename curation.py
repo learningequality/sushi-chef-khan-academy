@@ -480,7 +480,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "ap-calculus-bc", "translatedTitle": "Cálculo II"},
                 {"slug": "ap-statistics", "translatedTitle": "Estadística avanzada"},
             ]},
-            {"slug": "preparacion-para-la-educacion-superior", "translatedTitle": "Preparación Educación Superior (Perú)", "children": [
+            {"slug": "preparacion-para-la-educacion-superior", "translatedTitle": "Preparación para la educación superior", "children": [
                 {"slug": "matematicas-preparacion-educacion-superior", "translatedTitle": "Matemáticas", "children": [
                     {"slug": "aritmetica-pe-pre-u", "translatedTitle": "Aritmética"},
                     {"slug": "estadistica-y-probabilidad-pe-pre-u", "translatedTitle": "Estadística y probabilidad"},
