@@ -36,7 +36,6 @@ GLOBAL_SLUG_BLACKLIST += [
     "MoMA",
     "getty-museum",
     "stanford-medicine",
-    "crash-course1",
     "mit-k12",
     "hour-of-code",
     "metropolitan-museum",
