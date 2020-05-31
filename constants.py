@@ -118,6 +118,7 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "zh-CN": "可汗学院提供与美国课程一致的视频和习题，涵盖数学、物理、化学、生物和历史。每一个主题都包括了直观的视频解释和大量的练习题目以帮助学生掌握这些学科。这些内容适合初中生、高中生和成年人学习。",
     "it": "Khan Academy offre i video e gli esercizi di matematica, allineati al curriculum degli Stati Uniti. Ogni argomento è trattato in modo intuitivo attraverso spiegazioni video, e fornisce numerosi esercizi pratici per aiutare gli studenti raggiungere la competenza sulla materia. Adatto agli studenti di scuola elementare, media e secondaria, nonché agli adulti.",
     "bn": "খান একাডেমিতে বাংলাদেশের শিক্ষাক্রম অনুযায়ী গণিতের ভিডিও এবং অনুশীলনী রয়েছে। প্রতিটি অধ্যায়ে বিষয়ভিত্তিক মূল ধারণার ভিডিও এবং অসংখ্য অনুশীলনী রয়েছে যা নিয়মিত চর্চার মাধ্যমে শিক্ষার্থীরা ঐ বিষয়ে দক্ষতা অর্জন করতে পারে। প্রাথমিক ও মাধ্যমিক শিক্ষার্থীদের জন্য উপযোগী, সেইসাথে বয়স্ক শিক্ষার্থীরাও এটি ব্যবহার করতে পারবে।",
+    "bg": "Khan Academy предоставя видео уроци и упражнения по математика, физика, химия и биология, съобразени с българските учебни стандарти. Темите са представени чрез лесно разбираеми обяснения и многобройни упражнения за самооценка на наученото. Материалите са подходящи както за ученици от началните и стредните класове, така и за студенти.",
 }
 
 
