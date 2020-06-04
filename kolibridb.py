@@ -247,7 +247,7 @@ def print_subtree(subtree, level=0, extrakeys=None, maxlevel=2, printstats=True)
     if printstats:
         stats = get_stats(subtree)
         extra += stats_to_str(stats)
-    print(' '*2*level + '   -', subtree['title'] + ' (' + subtree['id'][0:7] + ')', extra)
+    print(' '*2*level + '   -', subtree['title'] + ' (' + subtree['id'] + ')', extra)
     if 'children' in subtree:
         for child in subtree['children']:
             print_subtree(child, level=level+1, extrakeys=extrakeys, maxlevel=maxlevel, printstats=printstats)

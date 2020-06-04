@@ -91,6 +91,7 @@ CHANNEL_TITLE_LOOKUP = {
     "en": "Khan Academy (English)",
     ("en", "us-cc"): "Khan Academy (English - US curriculum)",
     ("en", "in-in"): "Khan Academy (English - India curriculum)",
+    "pt-BR": "Khan Academy (Português - Brasil)",
 }
 
 def get_channel_title(lang=None, variant=None):
