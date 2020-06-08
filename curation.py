@@ -263,7 +263,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "in-in-class9th-physics-india", "translatedTitle": "Physics class 9"},
                 {"slug": "in-in-class10th-physics", "translatedTitle": "Physics class 10"},
                 {"slug": "in-in-class-10-chemistry-india", "translatedTitle": "Chemistry class 10"},
-                {"slug": "class-10-biology", "translatedTitle": "Biology class 10"},
+                {"slug": "in-in-class-10-biology", "translatedTitle": "Biology class 10"},
                 {"slug": "in-in-class11th-physics", "translatedTitle": "Physics class 11"},
                 {"slug": "class-11-chemistry-india", "translatedTitle": "Chemistry class 11"},
                 {"slug": "in-in-class-12th-physics-india", "translatedTitle": "Physics class 12"},
