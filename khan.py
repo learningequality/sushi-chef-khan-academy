@@ -1,28 +1,38 @@
+from html2text import html2text
 import ujson
-import youtube_dl
+
+from le_utils.constants.languages import getlang, getlang_by_name
+from ricecooker.config import LOGGER
+
 from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
-from html2text import html2text
-from le_utils.constants.languages import getlang, getlang_by_name
 from network import make_request
 from utils import get_video_id_english_mappings
-from youtube_dl.extractor import YoutubeIE
 
 translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
 english_video_map = get_video_id_english_mappings()
 
+SUPPORTED_KINDS = ["Topic", "Exercise", "Video"]
 
-def get_khan_topic_tree(lang="en", curr_key=None):
+
+def get_khan_topic_tree(lang="en"):
+    """
+    Build the complete topic tree based on the results obtained from the KA API.
+    Note this topic tree contains a combined topic strcuture that includes all
+    curriculum variants, curation pages, and child data may be in wrong order.
+    Returns: tuple (root_node, topics_by_slug) for further processing according
+    based on SLUG_BLACKLIST and TOPIC_TREE_REPLACMENTS specified in curation.py
+    """
     if lang == "sw":
         response = make_request(
             V2_API_URL.format(lang="swa", projection=PROJECTION_KEYS), timeout=120
         )
     else:
-        response = make_request(
-            V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS), timeout=120
-        )
+        url = V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS)
+        LOGGER.debug('khan url=' + url)
+        response = make_request(url, timeout=120)
 
     topic_tree = ujson.loads(response.content)
     # if name of lang is passed in, get language code
@@ -33,16 +43,22 @@ def get_khan_topic_tree(lang="en", curr_key=None):
         global translations
         translations = retrieve_translations(lang_code=lang)
 
-    # Flatten node_data
+    # Flatten node_data (combine topics, videos, and exercises in a single list)
     flattened_tree = [node for node_list in topic_tree.values() for node in node_list]
 
-    # convert to dict with ids as keys
+    # Convert to dict with ids as keys (for fast lookups by id)
     tree_dict = {node["id"]: node for node in flattened_tree}
 
-    return _recurse_create(tree_dict["x00000000"], tree_dict, lang=lang)
+    # Build a lookup table {slug --> KhanTopic} to be used for replacement logic
+    topics_by_slug = {}
+
+    root_node = tree_dict["x00000000"]
+    root = _recurse_create(root_node, tree_dict, topics_by_slug, lang=lang)
+
+    return root, topics_by_slug
 
 
-def _recurse_create(node, tree_dict, lang="en"):
+def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
 
     node["translatedTitle"] = translations.get(
         node["translatedTitle"], node["translatedTitle"]
@@ -53,9 +69,7 @@ def _recurse_create(node, tree_dict, lang="en"):
 
     if node["kind"] == "Exercise":
         khan_node = KhanExercise(
-            id=node[
-                "name"
-            ],  # ID is the name of exercise node, for backwards compatibility
+            id=node["name"],  # set id to name for backwards compatibility
             title=node["translatedTitle"],
             description=node["translatedDescription"],
             slug=node["slug"],
@@ -65,18 +79,19 @@ def _recurse_create(node, tree_dict, lang="en"):
             source_url=node["kaUrl"],
             lang=lang,
         )
+
     elif node["kind"] == "Topic":
         khan_node = KhanTopic(
-            id=node[
-                "slug"
-            ],  # ID is the slug of topic node, for backwards compatibility
+            id=node["slug"],  # set topic id to slug for backwards compatibility
             title=node["translatedTitle"],
             description=node["translatedDescription"],
             slug=node["slug"],
             lang=lang,
+            curriculum=node["curriculumKey"] if node["curriculumKey"] else None,
         )
-    elif node["kind"] == "Video":
+        topics_by_slug[node["slug"]] = khan_node
 
+    elif node["kind"] == "Video":
         name = getlang(lang).name.lower()
         if node["translatedYoutubeLang"] != lang:
             if video_map.get(name):
@@ -112,6 +127,7 @@ def _recurse_create(node, tree_dict, lang="en"):
             translated_youtube_id=node["translatedYoutubeId"],
             lang=node["translatedYoutubeLang"],
         )
+
     elif node["kind"] == "Article":
         khan_node = KhanArticle(
             id=node["id"],
@@ -121,13 +137,19 @@ def _recurse_create(node, tree_dict, lang="en"):
             lang=lang,
         )
 
-    for c in node.get("childData", []):
-        # if key is missing, we don't add it to list of children of topic node
-        try:
-            child_node = tree_dict[c["id"]]
-            khan_node.children.append(_recurse_create(child_node, tree_dict, lang=lang))
-        except KeyError:
-            pass
+    for child_pointer in node.get("childData", []):
+        if "id" in child_pointer and child_pointer["id"] in tree_dict:
+            child_node = tree_dict[child_pointer["id"]]
+            child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang)
+            khan_node.children.append(child)
+        else:
+            if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
+                # silentry skip unsupported content kinds like Article, Project,
+                # Talkthrough, Challenge, Interactive,  TopicQuiz, TopicUnitTest
+                pass
+            else:
+                LOGGER.warning('Missing id=' + child_pointer.get('id', 'noid') + \
+                               ' in childData of topic node with id=' + node["id"])
 
     return khan_node
 
@@ -145,8 +167,9 @@ class KhanNode(object):
 
 
 class KhanTopic(KhanNode):
-    def __init__(self, id, title, description, slug, lang="en"):
+    def __init__(self, id, title, description, slug, lang="en", curriculum=None):
         super(KhanTopic, self).__init__(id, title, description, slug, lang=lang)
+        self.curriculum = curriculum
         self.children = []
 
     def __repr__(self):
@@ -217,17 +240,6 @@ class KhanVideo(KhanNode):
         self.download_urls = download_urls
         self.youtube_id = youtube_id
         self.translated_youtube_id = translated_youtube_id
-
-    def get_subtitle_languages(self):
-        with youtube_dl.YoutubeDL({"listsubtitles": True}) as ydl:
-            try:
-                return list(
-                    YoutubeIE(ydl)
-                    .extract(self.translated_youtube_id)["subtitles"]
-                    .keys()
-                )
-            except youtube_dl.utils.ExtractorError:
-                return []
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)

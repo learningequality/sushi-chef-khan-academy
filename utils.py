@@ -3,7 +3,6 @@ import json
 from collections import OrderedDict
 
 from constants import V2_API_URL
-from le_utils.constants.languages import _LANGLOOKUP, getlang
 from network import make_request
 
 
