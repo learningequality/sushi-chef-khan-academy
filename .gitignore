@@ -1,6 +1,8 @@
 # Specific to this chef
 credentials/
+chefdata/sublangscache
 chefdata/trees
+.webcache/
 crowdin.zip
 
 # Reports and curation-related printouts
@@ -16,6 +18,7 @@ restore/
 storage/
 
 
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -23,6 +26,16 @@ __pycache__/
 
 # C extensions
 *.so
+
+# KA reports outputs and download caches
+reports/databases
+reports/khantrees
+reports/khanapicache
+
+# Dev and WIP jupyter notebooks
+notebooks
+cut_material.py
+
 
 # Distribution / packaging
 .Python
@@ -121,4 +134,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# IDEs
+.idea
+.vscode
 
