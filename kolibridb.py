@@ -2,6 +2,7 @@ from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
 import os
+import json
 import requests
 import sqlite3
 import uuid
@@ -43,6 +44,9 @@ def download_db_file(channel_id, server='production', update=False):
         print(response.status_code, response.content)
         raise ConnectionError('Failed to download DB file from', db_file_url)
 
+def dbconnect(db_file_path):
+    conn = sqlite3.connect(db_file_path)
+    return conn
 
 def dbex(conn, query):
     """
@@ -140,16 +144,13 @@ def count_values_for_attr(rows, *attrs):
 ################################################################################
 
 def get_channel(channel_id):
-    db_path = download_db_file(channel_id)
-    conn = sqlite3.connect(db_path)
+    db_file_path = download_db_file(channel_id)
+    conn = sqlite3.connect(db_file_path)
     return dbex(conn, "SELECT * FROM content_channelmetadata;")[0]
 
 
-def get_nodes_by_id(channel_id, attach_files=True):
-    db_path = download_db_file(channel_id)
-    conn = sqlite3.connect(db_path)
+def get_nodes_by_id(conn, attach_files=True, attach_assessments=True):
     nodes = dbex(conn, "SELECT * FROM content_contentnode;")
-    # TODO: load content_assessmentmetadata
     # TODO: load tags from content_contentnode_tags and content_contenttag
     # TODO: load prerequisites from content_contentnode_has_prerequisite,
     #                           and content_contentnode_related
@@ -158,7 +159,7 @@ def get_nodes_by_id(channel_id, attach_files=True):
         nodes_by_id[node['id']] = node
     if attach_files:
         # attach all the files associated with each node under the key "files"
-        files = get_files(channel_id)
+        files = get_files(conn)
         for file in files:
             node_id = file['contentnode_id']
             node = nodes_by_id[node_id]
@@ -166,18 +167,35 @@ def get_nodes_by_id(channel_id, attach_files=True):
                 node['files'].append(file)
             else:
                 node['files'] = [file]
+    if attach_assessments:
+        assessmentmetadata = get_assessmentmetadata(conn)
+        for aim in assessmentmetadata:
+            node = nodes_by_id[aim['contentnode_id']]
+            # attach assesment_ids direclty to node to imitate ricecooker/studio
+            node['assessment_item_ids'] = json.loads(aim['assessment_item_ids'])
+            node['assessmentmetadata'] = {
+                'number_of_assessments': aim['number_of_assessments'],
+                'mastery_model': aim['mastery_model'],
+                'randomize': aim['randomize'],
+                'is_manipulable': aim['is_manipulable'],
+            }
     return nodes_by_id
 
 
-def get_files(channel_id, kind=None):
-    db_path = download_db_file(channel_id)
-    conn = sqlite3.connect(db_path)
+def get_files(conn):
     files = dbex(conn, "SELECT * FROM content_file;")
     return files
 
+def get_assessmentmetadata(conn):
+    assessmentmetadata = dbex(conn, "SELECT * FROM content_assessmentmetadata;")
+    return assessmentmetadata
 
-def get_tree(channel_id):
-    nodes_by_id = get_nodes_by_id(channel_id)
+
+def get_tree(conn):
+    """
+    Return a complete JSON tree of the entire channel.
+    """
+    nodes_by_id = get_nodes_by_id(conn)
     nodes = nodes_by_id.values()
     sorted_nodes = sorted(nodes, key=lambda n: (n['parent_id'] or '0'*32, n['sort_order']))
     root = sorted_nodes[0]
@@ -188,6 +206,7 @@ def get_tree(channel_id):
         else:
             parent['children'] = [node]
     return root
+
 
 
 # NODE_ID UTILS
@@ -251,3 +270,34 @@ def print_subtree(subtree, level=0, extrakeys=None, maxlevel=2, printstats=True)
     if 'children' in subtree:
         for child in subtree['children']:
             print_subtree(child, level=level+1, extrakeys=extrakeys, maxlevel=maxlevel, printstats=printstats)
+
+
+# TREE EXPORT
+################################################################################
+
+def export_kolibri_json_tree(channel_id=None, db_file_path=None, suffix='', server='production', update=False):
+    """
+    Convert a channel from Kolibri database file to a JSON tree.
+    """
+    if channel_id is None and db_file_path is None:
+        raise ValueError("Need to specify either channel_id or db_file_path")
+
+    if db_file_path:
+        conn = dbconnect(db_file_path)
+    else:
+        db_file_path = download_db_file(channel_id, server=server, update=update)
+        conn = dbconnect(db_file_path)
+
+    kolibri_tree = get_tree(conn)
+    conn.close()
+
+    if db_file_path:
+        pre_filename = db_file_path.split(os.pathsep)[-1].replace('.sqlite3', '')
+        json_filename = pre_filename + suffix + '.json'
+    else:
+        json_filename = channel_id + suffix + '.json'
+
+    with open(json_filename, 'w') as jsonf:
+        json.dump(kolibri_tree, jsonf, indent=2, ensure_ascii=False, sort_keys=True)
+    print('Channel exported as Kolibri JSON Tree in ' + json_filename)
+
