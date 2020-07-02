@@ -68,6 +68,25 @@ the topic tree returned by the KA API is restructured to take advantage of LTTs
 see `SLUG_BLACKLIST` and `TOPIC_TREE_REPLACMENTS_PER_LANG` in [`curation.py`](./curation.py).
 
 
+## Code
+
+Important chef code:
+
+    json_chef.py          Main code for content integration script
+    khan.py               Functions for loading data from the KA API /api/v2/
+    csvkhan.py            Functions for loading data from the new KA CSV exports
+    constants.py          Constants, metadata, and settings used in the code
+    curation.py           Topic node replacements to organize the KA topic trees
+    crowdin.py            Obtain translations from CrowdIn
+    common_core_tags.py   Helper class to obtain the CCSSM tags for KA exercises
+    dubbed_mapping.py     Fallback strategy for semi-supported languages
+    network.py            Robust HTTP requests that use caching
+    utils.py              Helper method for looking up original English youtube_id
+
+Debugging and reports code
+
+    katrees.py            Generate report and print topic tree from the KA API
+    kolibridb.py          Generate report and print topic tree from Kolibri DBs
 
 
 

@@ -153,6 +153,7 @@ class KhanAcademySushiChef(JsonTreeChef):
         LOGGER.info("Downloading KA topic tree")
         # Obtain the complete topic tree for lang=lang from the KA API
         ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=lang)
+        # TODO: discuss w @kollivier introducing "archive" step here (for source diffs)
         self.topics_by_slug = topics_by_slug  # to be used for topic replacments
         self.slug_blacklist = get_slug_blacklist(lang=lang, variant=variant)
         self.topic_replacements = get_topic_tree_replacements(lang=lang, variant=variant)

@@ -1,177 +1,85 @@
 #!/usr/bin/env python
-from collections import OrderedDict
+"""
+Helpers for getting, parsing, printing, and archiving Khan Academy topic trees.
+
+    ./katrees.py --lang fr   # see ./chefdata/khanapitrees/khan_api_tree_fr.json
+
+or
+    ./katrees.py --lang fr  --print         # prints tree in terminal
+    ./katrees.py --lang fr  --htmlexport    # expots tree as an HTML file
+
+"""
+import argparse
 from contextlib import redirect_stdout
+import copy
 import io
 import json
 import os
-import requests
-import pprint
 import subprocess
 
-from constants import TOPIC_ATTRIBUTES, EXERCISE_ATTRIBUTES, VIDEO_ATTRIBUTES
-from constants import CROWDIN_LANGUAGE_MAPPING, ASSESSMENT_LANGUAGE_MAPPING, VIDEO_LANGUAGE_MAPPING
-from constants import V2_API_URL, PROJECTION_KEYS
-from curation import get_slug_blacklist
-from khan import _recurse_create, KhanTopic, KhanExercise, KhanVideo
+from khan import get_khan_api_json, report_from_raw_data
+from khan import get_khan_topic_tree, get_kind, print_subtree
 
-
-KA_CHEF_DIR = os.path.dirname(__file__)
-KHAN_API_CACHE_DIR = os.path.join(KA_CHEF_DIR, "reports", "khanapicache")
-
-
-def get_khan_api_json(lang, update=False):
-    filename = 'khan_academy_json_{}.json'.format(lang)
-    filepath = os.path.join(KHAN_API_CACHE_DIR, filename)
-    if os.path.exists(filepath) and not update:
-        print('Loaded KA API json from cache', filepath)
-        data = json.load(open(filepath))
-    else:
-        print('Downloading KA API json to', filepath)
-        url = V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS)
-        print('katrees url=', url)
-        retry_count = 0
-        max_retry = 3
-        while retry_count < max_retry:
-            try:
-                response = requests.get(url)
-                data = response.json()
-                break
-            except json.decoder.JSONDecodeError as e:
-                print('Network error retrying', str(retry_count+1)+'/'+str(max_retry), 'HTTP code', response.status_code)
-                retry_count += 1
-        json.dump(data, open(filepath, 'w'), ensure_ascii=False, indent=4)
-    return data
-
-
-def get_topic_slug_set(data):
-    all_topic_slugs = set()
-    for topic in data['topics']:
-        topic_slug = topic.get("slug", None)
-        all_topic_slugs.add(topic_slug)
-    return all_topic_slugs
+KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
 
 
 
-def report_from_raw_data(lang, data, all_en_topic_slugs=set()):
+# JSON EXPORTS
+################################################################################
+
+def subtree_to_dict(subtree, SLUG_BLACKLIST=[]):
     """
-    Basic report on data from API.
+    Convert the tree of `KhanNode` objects to a tree of JSON-serializbale dicts.
     """
-    report = {'lang': lang}
-    #
-    # general counts
-    report['#topics'] = len(data['topics'])
-    report['#videos'] = len(data['videos'])
-    report['#exercises'] = len(data['exercises'])
-    #
-    # video stats
-    translated_videos = []
-    untranslated_videos = []
-    has_mp4 = []
-    has_mp4_low = []
-    has_mp4_low_ios = []
-    for v in data['videos']:
-        vid = v['id']
-        if v['translatedYoutubeLang'] != 'en':
-            translated_videos.append(vid)
-        else:
-            untranslated_videos.append(vid)
-        durls = v['downloadUrls']
-        if 'mp4' in durls:
-            has_mp4.append(vid)
-        if 'mp4-low' in durls:
-            has_mp4_low.append(vid)
-        if 'mp4-low-ios' in durls:
-            has_mp4_low_ios.append(vid)
-    report['#translated_videos'] = len(translated_videos)
-    report['#untranslated_videos'] = len(untranslated_videos)
-    report['#has_mp4'] = len(has_mp4)
-    report['#has_mp4_low'] = len(has_mp4_low)
-    report['#has_mp4_low_ios'] = len(has_mp4_low_ios)
-    #
-    # LTT-related metadata
-    en_topic_slugs = []
-    ltt_topic_slugs = []
-    for topic in data['topics']:
-        topic_slug = topic.get("slug", None)
-        if topic_slug not in all_en_topic_slugs:
-            ltt_topic_slugs.append(topic_slug)
-        else:
-            en_topic_slugs.append(topic_slug)
-    report['#en_topic_slugs'] = len(en_topic_slugs)
-    report['#ltt_topic_slugs'] = len(ltt_topic_slugs)
-
-    report['curriculum_keys'] = []
-    for topic in data['topics']:
-        curriculum = topic.get("curriculumKey", None)
-        if curriculum and curriculum not in report['curriculum_keys']:
-            report['curriculum_keys'].append(curriculum)
-    #
-    return report
+    node_data = subtree.__dict__
+    node_data['kind'] = get_kind(subtree)
+    if 'children' in node_data:
+        children = node_data.pop('children')
+        node_data['children'] = []
+        for child in children:
+            child_data = subtree_to_dict(child, SLUG_BLACKLIST=SLUG_BLACKLIST)
+            node_data['children'].append(child_data)
+    return node_data
 
 
-def get_khan_topic_tree(lang="en"):
+def save_parsed_khan_topic_tree(ka_root_topic, lang):
     """
-    Copied from khan.get_khan_topic_tree --- adapted to use caching API results.
+    Export the parsed topic tree of `KhanNode`s as JSON for archival and diffs.
     """
-    print('Building topic tree for lang=', lang)
-    topic_tree = get_khan_api_json(lang)
-    # Flatten node_data
-    flattened_tree = [node for node_list in topic_tree.values() for node in node_list]
-    # convert to dict with ids as keys
-    tree_dict = {node["id"]: node for node in flattened_tree}
-    topics_by_slug = {}
-    return _recurse_create(tree_dict["x00000000"], tree_dict, topics_by_slug, lang=lang)
+    KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
+    filename = "khan_api_tree_{lang}.json".format(lang=lang)
+    ka_root_topic = copy.deepcopy(ka_root_topic)
+    khan_topic_tree = subtree_to_dict(ka_root_topic)
+    if not os.path.exists(KHAN_JSON_TREE_DIR):
+        os.makedirs(KHAN_JSON_TREE_DIR, exist_ok=True)
+    jsonpath = os.path.join(KHAN_JSON_TREE_DIR, filename)
+    with open(jsonpath, 'w') as jsonf:
+        json.dump(khan_topic_tree, jsonf, indent=2, ensure_ascii=False)
+    print('Saved topic tree JSON to', jsonpath)
 
 
 
+# HTML EXPORTS
+################################################################################
 
-def get_kind(node):
-    if isinstance(node, KhanTopic):
-        return 'topic'
-    elif isinstance(node, KhanExercise):
-        return 'exercise'
-    elif isinstance(node, KhanVideo):
-        return 'video'
-    else:
-        return 'unknownkind'
-
-
-def print_subtree(subtree, level=0, SLUG_BLACKLIST=[], all_en_topic_slugs=[]):
-    if subtree.slug in SLUG_BLACKLIST:
-        return
-    if level == 4:
-        return
-    extra = ''
-    if hasattr(subtree, 'curriculum') and subtree.curriculum:
-        extra = 'CURRICULUM='+ subtree.curriculum
-        if level > 2:
-            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
-    isbold = '**' if subtree.slug not in all_en_topic_slugs else ''
-    print(' '*2*level + '   -', isbold+subtree.title.strip()+isbold,
-        '[' + get_kind(subtree) + ']',
-        '(' + subtree.id + ')', extra)
-    if hasattr(subtree, 'children'):
-        for child in subtree.children:
-            print_subtree(child, level=level+1, SLUG_BLACKLIST=SLUG_BLACKLIST, all_en_topic_slugs=all_en_topic_slugs)
-
-
-def export_khantree(lang, khantree, report, variant=None, all_en_topic_slugs=[]):
-    SLUG_BLACKLIST = get_slug_blacklist(lang=lang)
-    basedir = os.path.join(KA_CHEF_DIR, "reports", "khantrees")
+def export_khantree_as_html(lang, khantree, report, maxlevel=7, SLUG_BLACKLIST=[]):
+    """
+    Export `khantree` as HTML for manual debugging and inspection of contents.
+    """
+    basedir = os.path.join("exports", "khanhtmltrees")
+    if not os.path.exists(basedir):
+        os.makedirs(basedir, exist_ok=True)
     path_md = os.path.join(basedir, 'khan_academy_{}_tree.md'.format(lang))
     path_html = os.path.join(basedir, 'khan_academy_{}_tree.html'.format(lang))
-    
+
     with io.StringIO() as buf, redirect_stdout(buf):
-
         print('# Khan Academy Content for language code', lang)
-
-        print('## Stats')
+        print('## Summary')
         for key, value in report.items():
             print('  - ', key, ':', value)
 
-        print('## Tree')
-        print('\nEntries shown in **bold** represent topics that are not present in the KA English tree.')
-        print_subtree(khantree, SLUG_BLACKLIST=SLUG_BLACKLIST, all_en_topic_slugs=all_en_topic_slugs)
+        print('## Topic tree')
+        print_subtree(khantree, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST)
         output_md = buf.getvalue()
 
         with open(path_md, 'w') as mdfile:
@@ -182,64 +90,29 @@ def export_khantree(lang, khantree, report, variant=None, all_en_topic_slugs=[])
     os.remove(path_md)
 
 
-def get_ka_learn_menu_topics(lang, curriculum=None):
-    post_data = {
-        "operationName": "learnMenuTopicsQuery",
-        "variables": {},
-        "query":"query learnMenuTopicsQuery($curriculum: String) {\n  learnMenuTopics(curriculum: $curriculum) {\n    slug\n    translatedTitle\n    href\n    children {\n      slug\n      translatedTitle\n      href\n      loggedOutHref\n      nonContentLink\n      __typename\n    }\n    __typename\n  }\n}\n"
-    }
-    if curriculum:
-        post_data["variables"]["curriculum"] = curriculum
-
-    url = 'https://www.khanacademy.org/api/internal/graphql/learnMenuTopicsQuery'
-    url += '?lang=' + lang
-    response = requests.post(url, json=post_data)
-    response_data = response.json()
-    menu_topics = response_data['data']['learnMenuTopics']
-    for top_menu in menu_topics:
-        del top_menu['__typename']
-        top_menu['slug'] = top_menu['href'].split('/')[-1]
-        for menu in top_menu['children']:
-            del menu['loggedOutHref']
-            del menu['nonContentLink']
-            del menu['__typename']
-            menu['slug'] = menu['href'].split('/')[-1]
-    return menu_topics
-
-
-def print_curation_topic_tree(menu_topics, slugs=[]):
-    """
-    Print dict tree structure suitable for inclusion in curaiton.py for the slugs
-    specified in `slugs` (list).
-    """
-    print('[')
-    for top_menu in menu_topics:
-        if top_menu['slug'] in slugs:
-            line = '    {'
-            line += '"slug": "' + top_menu['slug'] + '", '
-            line += '"translatedTitle": "' + top_menu['translatedTitle'] + '", '
-            line += '"children": ['
-            print(line)
-            for menu in top_menu['children']:
-                subline = '        {'
-                subline += '"slug": "' + menu['slug'] + '", '
-                subline += '"translatedTitle": "' + menu['translatedTitle'] + '"},'
-                print(subline)
-            print('    ]},')
-    print(']')
-
+# CLI
+################################################################################
 
 if __name__ == '__main__':
-    ka_info_path = os.path.join(KA_CHEF_DIR, "reports", "ka_channels_info.json")
-    khan_channels_info = json.load(open(ka_info_path))
+    parser = argparse.ArgumentParser(description='KA topic tree archiver')
+    parser.add_argument('--lang', required=True, help="language code")
+    parser.add_argument('--htmlexport', action='store_true', help='save topic tree as html')
+    parser.add_argument('--htmlmaxlevel', type=int, default=7, help='html tree depth')
+    parser.add_argument('--print', action='store_true', help='print topic tree')
+    parser.add_argument('--printmaxlevel', type=int, default=2, help='print tree depth')
+    args = parser.parse_args()
 
-    # first get en tree so we can diff against it to know the LTT slugs
-    endata = get_khan_api_json('en', update=False)
-    all_en_topic_slugs = get_topic_slug_set(endata)
+    print('Getting KA topic tree from API v2 for lang', args.lang)
+    ka_root_topic, _ = get_khan_topic_tree(lang=args.lang)
 
-    for khan_channel in khan_channels_info:
-        lang = khan_channel['language']
-        data = get_khan_api_json(lang, update=False)
-        report = report_from_raw_data(lang, data, all_en_topic_slugs=all_en_topic_slugs)
-        khantree = get_khan_topic_tree(lang)
-        export_khantree(lang, khantree, report, variant=None, all_en_topic_slugs=all_en_topic_slugs)
+    # json export of parsed tree of `KhanNode`s
+    save_parsed_khan_topic_tree(ka_root_topic, args.lang)
+
+    if args.htmlexport:
+        ka_data = get_khan_api_json(args.lang)
+        report = report_from_raw_data(args.lang, ka_data)
+        export_khantree_as_html(args.lang, ka_root_topic, report, maxlevel=args.htmlmaxlevel)
+
+    if args.print:
+        print_subtree(ka_root_topic, maxlevel=args.printmaxlevel)
+
