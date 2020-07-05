@@ -1,9 +1,15 @@
 # Specific to this chef
 credentials/
 chefdata/sublangscache
+chefdata/khanapicache
+chefdata/oldkhanapitrees
+chefdata/khanapitrees
+exports/oldkhanhtmltrees
+exports/khanhtmltrees
 chefdata/trees
 .webcache/
 crowdin.zip
+
 
 # Reports and curation-related printouts
 reports
