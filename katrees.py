@@ -103,7 +103,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print('Getting KA topic tree from API v2 for lang', args.lang)
-    ka_root_topic, _ = get_khan_topic_tree(lang=args.lang)
+    ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False)
 
     # json export of parsed tree of `KhanNode`s
     save_parsed_khan_topic_tree(ka_root_topic, args.lang)

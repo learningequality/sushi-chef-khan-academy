@@ -49,7 +49,7 @@ def get_khan_api_json(lang, update=False):
     return data
 
 
-def get_khan_topic_tree(lang="en"):
+def get_khan_topic_tree(lang="en", update=True):
     """
     Build the complete topic tree based on the results obtained from the KA API.
     Note this topic tree contains a combined topic strcuture that includes all
@@ -61,7 +61,7 @@ def get_khan_topic_tree(lang="en"):
         lang = "swa"
 
     # Get the fresh data from the KA API (do not try to re-use cached data)
-    topic_tree = get_khan_api_json(lang, update=True)
+    topic_tree = get_khan_api_json(lang, update=update)
 
     # if name of lang is passed in, get language code
     if getlang(lang) is None and getlang_by_name(lang):
