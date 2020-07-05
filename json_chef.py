@@ -213,11 +213,16 @@ class KhanAcademySushiChef(JsonTreeChef):
                             LOGGER.debug('      >>>> rchild["slug"] = ' + rchild["slug"])
                             if 'children' not in rchild:
                                 # CASE A: two-level replacement hierarchy
-                                rchild_ka_node = self.topics_by_slug[rchild['slug']]
-                                rchildtopic = self.convert_ka_node_to_ricecooker_node(
-                                    rchild_ka_node, target_lang=target_lang)
-                                if rchildtopic:
-                                    rtopic["children"].append(rchildtopic)
+                                rchild_ka_node = self.topics_by_slug.get(rchild['slug'])
+                                if rchild_ka_node:
+                                    if 'translatedTitle' in rchild:
+                                        rchild_ka_node.title = rchild['translatedTitle']
+                                    rchildtopic = self.convert_ka_node_to_ricecooker_node(
+                                        rchild_ka_node, target_lang=target_lang)
+                                    if rchildtopic:
+                                        rtopic["children"].append(rchildtopic)
+                                else:
+                                    LOGGER.warning('Failed to find rchild slug=' + rchild['slug'])
                             else:
                                 # CASE B: three-level replacement hierarchy
                                 rchildtopic = dict(
@@ -232,11 +237,16 @@ class KhanAcademySushiChef(JsonTreeChef):
                                 for rgrandchild in rchild['children']:
                                     rgrandchild_slug = rgrandchild['slug']
                                     LOGGER.debug('               >>> rgrandchild_slug = ' + rgrandchild_slug)
-                                    rgrandchild_ka_node = self.topics_by_slug[rgrandchild_slug]
-                                    rgrandchildtopic = self.convert_ka_node_to_ricecooker_node(
-                                        rgrandchild_ka_node, target_lang=target_lang)
-                                    if rgrandchildtopic:
-                                        rchildtopic["children"].append(rgrandchildtopic)
+                                    rgrandchild_ka_node = self.topics_by_slug.get(rgrandchild_slug)
+                                    if rgrandchild_ka_node:
+                                        if 'translatedTitle' in rgrandchild:
+                                            rgrandchild_ka_node = rgrandchild['translatedTitle']
+                                        rgrandchildtopic = self.convert_ka_node_to_ricecooker_node(
+                                            rgrandchild_ka_node, target_lang=target_lang)
+                                        if rgrandchildtopic:
+                                            rchildtopic["children"].append(rgrandchildtopic)
+                                    else:
+                                        LOGGER.warning('Failed to find rgrandchild slug=' + rgrandchild_slug)
                 else:
                     # This is the more common case (no replacement), just add...
                     child = self.convert_ka_node_to_ricecooker_node(

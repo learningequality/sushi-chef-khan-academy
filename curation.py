@@ -244,7 +244,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
         "science": [
-            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+            {"slug": "science", "translatedTitle": "Science & Engineering", "children": [
                 {"slug": "physics", "translatedTitle": "Physics"},
                 {"slug": "ap-physics-1", "translatedTitle": "AP®︎ Physics 1"},
                 {"slug": "ap-physics-2", "translatedTitle": "AP®︎ Physics 2"},
@@ -271,6 +271,18 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             {"slug": "science-hindi", "translatedTitle": "Learn science with Hindi videos", "children": [
                 {"slug": "in-in-class-10-physics-india-hindi"},
                 {"slug": "in-in-class-11-physics-cbse-hindi"},
+            ]},
+        ],
+        "ela": [
+            {"slug": "ela", "translatedTitle": "English Language Arts (USA)", "children": [
+                {"slug": "cc-2nd-reading-vocab", "translatedTitle": "2nd grade reading & vocabulary"},
+                {"slug": "cc-3rd-reading-vocab", "translatedTitle": "3rd grade reading & vocabulary"},
+                {"slug": "cc-4th-reading-vocab", "translatedTitle": "4th grade reading & vocabulary"},
+                {"slug": "cc-5th-reading-vocab", "translatedTitle": "5th grade reading & vocabulary"},
+                {"slug": "cc-6th-reading-vocab", "translatedTitle": "6th grade reading & vocabulary"},
+                {"slug": "cc-7th-reading-vocab", "translatedTitle": "7th grade reading & vocabulary"},
+                {"slug": "cc-8th-reading-vocab", "translatedTitle": "8th grade reading & vocabulary"},
+                {"slug": "cc-9th-reading-vocab", "translatedTitle": "9th grade reading & vocabulary"},
             ]},
         ],
     },
@@ -340,7 +352,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
         "science": [
-            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+            {"slug": "science", "translatedTitle": "Science & Engineering", "children": [
                 {"slug": "physics", "translatedTitle": "Physics"},
                 {"slug": "ap-physics-1", "translatedTitle": "AP®︎ Physics 1"},
                 {"slug": "ap-physics-2", "translatedTitle": "AP®︎ Physics 2"},
@@ -354,6 +366,18 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
                 {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
+        "ela": [
+            {"slug": "ela", "translatedTitle": "English Language Arts", "children": [
+                {"slug": "cc-2nd-reading-vocab", "translatedTitle": "2nd grade reading & vocabulary"},
+                {"slug": "cc-3rd-reading-vocab", "translatedTitle": "3rd grade reading & vocabulary"},
+                {"slug": "cc-4th-reading-vocab", "translatedTitle": "4th grade reading & vocabulary"},
+                {"slug": "cc-5th-reading-vocab", "translatedTitle": "5th grade reading & vocabulary"},
+                {"slug": "cc-6th-reading-vocab", "translatedTitle": "6th grade reading & vocabulary"},
+                {"slug": "cc-7th-reading-vocab", "translatedTitle": "7th grade reading & vocabulary"},
+                {"slug": "cc-8th-reading-vocab", "translatedTitle": "8th grade reading & vocabulary"},
+                {"slug": "cc-9th-reading-vocab", "translatedTitle": "9th grade reading & vocabulary"},
             ]},
         ],
     },
@@ -412,7 +436,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "in-in-class-10-physics-india-hindi"},
                 {"slug": "in-in-class-11-physics-cbse-hindi"},
             ]},
-            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+            {"slug": "science", "translatedTitle": "Science & Engineering", "children": [
                 {"slug": "physics", "translatedTitle": "Physics"},
                 {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmology & astronomy"},
                 {"slug": "chemistry", "translatedTitle": "Chemistry"},
@@ -420,6 +444,18 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
+        "ela": [
+            {"slug": "ela", "translatedTitle": "English Language Arts (USA)", "children": [
+                {"slug": "cc-2nd-reading-vocab", "translatedTitle": "2nd grade reading & vocabulary"},
+                {"slug": "cc-3rd-reading-vocab", "translatedTitle": "3rd grade reading & vocabulary"},
+                {"slug": "cc-4th-reading-vocab", "translatedTitle": "4th grade reading & vocabulary"},
+                {"slug": "cc-5th-reading-vocab", "translatedTitle": "5th grade reading & vocabulary"},
+                {"slug": "cc-6th-reading-vocab", "translatedTitle": "6th grade reading & vocabulary"},
+                {"slug": "cc-7th-reading-vocab", "translatedTitle": "7th grade reading & vocabulary"},
+                {"slug": "cc-8th-reading-vocab", "translatedTitle": "8th grade reading & vocabulary"},
+                {"slug": "cc-9th-reading-vocab", "translatedTitle": "9th grade reading & vocabulary"},
             ]},
         ],
     },
