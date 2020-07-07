@@ -10,15 +10,22 @@ GLOBAL_SLUG_BLACKLIST = [
     "new-and-noteworthy",
     "talks-and-interviews",
     "coach-res",
-    "teacher-essentials",      # Contains info specific to KA website
-    "khan-kids-page",          # Link to KA Kids app (skip to avoid empty topic)
-    "khan-kids-app-page",      # Link to KA Kids app (skip to avoid empty topic)
-    "indiacourse",             # India-specific KA resources
-    "talent-search",           # India-specific KA resources
-    "students",                # login-requiring page on KA site
-    "parents-mentors-1",       # articles-only (revisit once we support article)
-    "teacher-toolbox",         # special info webpage on KA site
-    "educator-toolbox",        # special info webpage on KA site
+    "teacher-essentials",       # Contains info specific to KA website
+    "khan-kids-page",           # Link to KA Kids app (skip to avoid empty topic)
+    "khan-kids-app-page",       # Link to KA Kids app (skip to avoid empty topic)
+    "indiacourse",              # India-specific KA resources
+    "talent-search",            # India-specific KA resources
+    "students",                 # login-requiring page on KA site
+    "parents-mentors-1",        # articles-only (revisit once we support article)
+    "teacher-toolbox",          # special info webpage on KA site
+    "educator-toolbox",         # special info webpage on KA site
+    "our-content",              # special info webpage on KA site
+    "product-tour-videos",      # special info webpage on KA site
+    "get-started",              # skip non-essential college topics (July 2020)
+    "making-high-school-count", # skip non-essential college topics (July 2020)
+    "paying-for-college",       # skip non-essential college topics (July 2020)
+    "wrapping-up",              # skip non-essential college topics (July 2020)
+    "careers-and-personal-finance",  # skip non-essential $$$ topic (July 2020)
 ]
 
 # we don't support scratchpad content so we skip the programming topics
