@@ -41,6 +41,10 @@ GLOBAL_SLUG_BLACKLIST += [
 GLOBAL_SLUG_BLACKLIST += [
     "partner-content",
     "test-prep",
+    "math-for-fun-and-glory",
+    "ap-world-history",
+    "music",
+    "all-star-orchestra",
 ]
 
 # KA partner content for which we don't have explicit permission to redistribute
@@ -270,7 +274,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "high-school-biology", "translatedTitle": "High school biology"},
                 {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
-                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
             ]},
             {"slug": "science-india", "translatedTitle": "Science (India)", "children": [
@@ -378,7 +381,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "high-school-biology", "translatedTitle": "High school biology"},
                 {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
-                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
             ]},
         ],
@@ -411,7 +413,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "multivariable-calculus", "translatedTitle": "Multivariable calculus"},
                 {"slug": "differential-equations", "translatedTitle": "Differential equations"},
                 {"slug": "linear-algebra", "translatedTitle": "Linear algebra"},
-                {"slug": "math-for-fun-and-glory", "translatedTitle": "Math for fun and glory"},
             ]},
             {"slug": "in-math-by-grade", "translatedTitle": "Math by grade (India)", "children": [
                 {"slug": "in-in-class-1st-math-cbse", "translatedTitle": "Class 1"},
@@ -456,7 +457,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "chemistry", "translatedTitle": "Chemistry"},
                 {"slug": "organic-chemistry", "translatedTitle": "Organic chemistry"},
                 {"slug": "biology", "translatedTitle": "Biology"},
-                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
             ]},
         ],
