@@ -26,34 +26,41 @@ GLOBAL_SLUG_BLACKLIST += [
     "cs",
     "towers-of-hanoi",
     "computing",
-]  
+]
 
-
-# TODO(ivan): review tree to check for new partner content to add to this list
-# TODO(ivan): followup with KA ppl to check if OK to distribute partner content
-# KA partner content for which we don't have explicit permission to redistribute
+# July 2020: Skip the "Partner content" and "Test prep" Level 1 topics since
+# these materials will no longer be maintained upsteam. For more info, see the
+# KA announcement https://khanacademy.zendesk.com/hc/en-us/articles/360043801271
 GLOBAL_SLUG_BLACKLIST += [
-    "MoMA",
-    "getty-museum",
-    "stanford-medicine",
-    "mit-k12",
-    "hour-of-code",
-    "metropolitan-museum",
-    "bitcoin",
-    "tate",
+    "partner-content",
+    "test-prep",
+]
+
+# KA partner content for which we don't have explicit permission to redistribute
+# (these detailed exclusions are no longer necessary since we exclude the entire
+# "partner-content" slug above: leaving here for information purposes )
+GLOBAL_SLUG_BLACKLIST += [
+    "MoMA",                             # already covered by `partner-content`
+    "getty-museum",                     # already covered by `partner-content`
+    "stanford-medicine",                # already covered by `partner-content`
+    "mit-k12",                          # already covered by `partner-content`
+    "hour-of-code",                     # already covered by `partner-content`
+    "metropolitan-museum",              # already covered by `partner-content`
+    "tate",                             # already covered by `partner-content`
+    "british-museum",                   # already covered by `partner-content`
+    "aspeninstitute",                   # already covered by `partner-content`
+    "asian-art-museum",                 # already covered by `partner-content`
+    "amnh",                             # already covered by `partner-content`
+    "nova",                             # already covered by `partner-content`
+    "pixar",                            # already covered by `partner-content`
+    "pixar-latam",                      # already covered by `partner-content`
+    "wi-phi",                           # already covered by `partner-content`
+    "science-engineering-partners",     # already covered by `partner-content`
+    "arts-humanities-partners",         # already covered by `partner-content`
+    "computing-partners",               # already covered by `partner-content`
     "crash-course1",
     "crash-course-bio-ecology",
-    "british-museum",
-    "aspeninstitute",
-    "asian-art-museum",
-    "amnh",
-    "nova",
-    "pixar",
-    "pixar-latam",
-    "wi-phi",  # see https://wi-phi.com/videos/ could not find info on licensing
-    "science-engineering-partners",
-    "arts-humanities-partners",
-    "computing-partners",
+    "bitcoin",                  # TODO: revisit; videos seem to be CC BY-NC-SA
 ]
 
 
@@ -73,14 +80,14 @@ GLOBAL_SLUG_BLACKLIST += [
     "high-school-math",
     "illustrative-math",
     #
-    "brazil-math-grades",                      # empty topic in pt-BR topic tree
-    "ciencias-por-ano",                        # empty topic in pt-BR topic tree
+    "brazil-math-grades",               # empty topic in pt-BR topic tree
+    "ciencias-por-ano",                 # empty topic in pt-BR topic tree
     #
-    "in-math-by-grade",                   # empty topics in the in-in curriculum
-    "hindi",
-    "math-hindi",
-    "science-hindi",
-    "science-india",
+    "in-math-by-grade",                 # empty topic in the en/in-in topic tree
+    "hindi",                            # empty topic in the en/in-in topic tree
+    "math-hindi",                       # empty topic in the en/in-in topic tree
+    "science-hindi",                    # empty topic in the en/in-in topic tree
+    "science-india",                    # empty topic in the en/in-in topic tree
 ]
 
 
