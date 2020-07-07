@@ -33,7 +33,6 @@ source venv/bin/activate
 
 source credentials/proxy_list.env
 source credentials/crowdinkeys.env
-source credentials/youtube_api_key.env
 
 ./json_chef.py --reset --token=<token> --thumbnails lang=<lang_code>
 ```
