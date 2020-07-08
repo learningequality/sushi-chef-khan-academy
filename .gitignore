@@ -1,27 +1,43 @@
-# Specific to this chef
+
+
+# Super secret stuff
 credentials/
-chefdata/sublangscache
-chefdata/khanapicache
-chefdata/oldkhanapitrees
-chefdata/khanapitrees
-exports/oldkhanhtmltrees
-exports/khanhtmltrees
-chefdata/trees
+
+# Cached data of things we download fromt from the web
 .webcache/
+chefdata/sublangscache
 crowdin.zip
 
+# Extract (what we get from KA)
+chefdata/khanapicache
+chefdata/khantsvcache
 
-# Reports and curation-related printouts
-reports
+# Transform (parsed trees of KhanNode objects -- serialized to json)
+chefdata/oldkhanapitrees
+chefdata/khanapitrees
 
-# Dev notebooks and debugging -- no need to commit bcs janky
-notebooks
 
-# ricecooker
+# Load -- serialized ricecooker input and output trees
+chefdata/trees
 restore/
-.webcache/
 .ricecookerfilecache/
 storage/
+
+
+
+
+
+# Exports (not part of data path, just used for reports and debugging)
+exports/oldkhanhtmltrees
+exports/khanhtmltrees
+
+
+# (old) Reports and curation-related printouts
+reports
+reports/databases
+reports/khantrees
+reports/khanapicache
+
 
 
 
@@ -33,10 +49,6 @@ __pycache__/
 # C extensions
 *.so
 
-# KA reports outputs and download caches
-reports/databases
-reports/khantrees
-reports/khanapicache
 
 # Dev and WIP jupyter notebooks
 notebooks
@@ -123,6 +135,7 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+oldvenv/
 
 # Spyder project settings
 .spyderproject
