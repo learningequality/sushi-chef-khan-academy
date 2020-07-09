@@ -34,7 +34,7 @@ source venv/bin/activate
 source credentials/proxy_list.env
 source credentials/crowdinkeys.env
 
-./json_chef.py --reset --token=<token> --thumbnails lang=<lang_code>
+./sushichef.py --reset --token=<token> --thumbnails lang=<lang_code>
 ```
 You'll need to replace `<token>` with your Studio access token obtained earlier
 and `<lang_code>` with a le_utils code for the channel (e.g. `en`, `es`, `pt-BR`, etc.).
@@ -71,7 +71,7 @@ see `SLUG_BLACKLIST` and `TOPIC_TREE_REPLACMENTS_PER_LANG` in [`curation.py`](./
 
 Important chef code:
 
-    json_chef.py          Main code for content integration script
+    sushichef.py          Main code for content integration script
     khan.py               Functions for loading data from the KA API /api/v2/
     csvkhan.py            Functions for loading data from the new KA CSV exports
     constants.py          Constants, metadata, and settings used in the code
