@@ -90,7 +90,7 @@ COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Commo
 CHANNEL_TITLE_LOOKUP = {
     "en": "Khan Academy (English)",
     ("en", "us-cc"): "Khan Academy (English - US curriculum)",
-    ("en", "in-in"): "Khan Academy (English - India curriculum)",
+    ("en", "in-in"): "Khan Academy (English - CBSE India Curriculum)",
     "pt-BR": "Khan Academy (Português - Brasil)",
 }
 
@@ -111,7 +111,7 @@ def get_channel_title(lang=None, variant=None):
 CHANNEL_DESCRIPTION_LOOKUP = {
     "en": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to U.S. and India curricular standards. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
     ("en", "us-cc"): "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the U.S. curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
-    ("en", "in-in"): "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the India curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+    ("en", "in-in"): "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the CBSE India curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
     "fr": "Khan Academy propose des vidéos et des exercices sur les maths, la physique, la chimie, la biologie et l'histoire. Chaque sujet est couvert par des explications vidéo intuitives et comprend de nombreux exercices de pratique pour aider les étudiants à maîtriser les sujets. Convient aux élèves des niveaux primaire et secondaire ainsi qu'aux adultes.",
     "es": "Khan Academy ofrece videos y ejercicios sobre matemáticas, ciencias, y finanzas para estudiantes de nivel medio y secundario, así para los adultos. También se encuentran los materiales de Khan Academy Perú, los cuales están alineados al Currículo Nacional de Educación Básica, así como materiales preparatorios para la educación superior, y también Khan Academy México, enfocado en matemáticas.",
     "pt-BR": "Khan Academy oferece cursos em matemática, física, química, biologia e história. Cada matéria contém vídeos explicativos e exercícios para para a prática e revisão. Próprio para alunos do ensino médio e secundário, bem como para adultos.",
@@ -121,6 +121,10 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "bn": "খান একাডেমিতে বাংলাদেশের শিক্ষাক্রম অনুযায়ী গণিতের ভিডিও এবং অনুশীলনী রয়েছে। প্রতিটি অধ্যায়ে বিষয়ভিত্তিক মূল ধারণার ভিডিও এবং অসংখ্য অনুশীলনী রয়েছে যা নিয়মিত চর্চার মাধ্যমে শিক্ষার্থীরা ঐ বিষয়ে দক্ষতা অর্জন করতে পারে। প্রাথমিক ও মাধ্যমিক শিক্ষার্থীদের জন্য উপযোগী, সেইসাথে বয়স্ক শিক্ষার্থীরাও এটি ব্যবহার করতে পারবে।",
     "bg": "Khan Academy предоставя видео уроци и упражнения по математика, физика, химия и биология, съобразени с българските учебни стандарти. Темите са представени чрез лесно разбираеми обяснения и многобройни упражнения за самооценка на наученото. Материалите са подходящи както за ученици от началните и стредните класове, така и за студенти.",
 }
+
+# KA Hindi descr
+# "खान अकादमी वीडियो और अभ्यास के माध्यम से हर शिक्षक को गणित का ज्ञान देती हैं। ये वीडियो वास्तविक जीवन अनुप्रयोगों के साथ अवधारणाओं की व्याख्या करते हैं।"
+
 
 
 def get_channel_description(lang=None, variant=None):

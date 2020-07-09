@@ -10,15 +10,22 @@ GLOBAL_SLUG_BLACKLIST = [
     "new-and-noteworthy",
     "talks-and-interviews",
     "coach-res",
-    "teacher-essentials",      # Contains info specific to KA website
-    "khan-kids-page",          # Link to KA Kids app (skip to avoid empty topic)
-    "khan-kids-app-page",      # Link to KA Kids app (skip to avoid empty topic)
-    "indiacourse",             # India-specific KA resources
-    "talent-search",           # India-specific KA resources
-    "students",                # login-requiring page on KA site
-    "parents-mentors-1",       # articles-only (revisit once we support article)
-    "teacher-toolbox",         # special info webpage on KA site
-    "educator-toolbox",        # special info webpage on KA site
+    "teacher-essentials",       # Contains info specific to KA website
+    "khan-kids-page",           # Link to KA Kids app (skip to avoid empty topic)
+    "khan-kids-app-page",       # Link to KA Kids app (skip to avoid empty topic)
+    "indiacourse",              # India-specific KA resources
+    "talent-search",            # India-specific KA resources
+    "students",                 # login-requiring page on KA site
+    "parents-mentors-1",        # articles-only (revisit once we support article)
+    "teacher-toolbox",          # special info webpage on KA site
+    "educator-toolbox",         # special info webpage on KA site
+    "our-content",              # special info webpage on KA site
+    "product-tour-videos",      # special info webpage on KA site
+    "get-started",              # skip non-essential college topics (July 2020)
+    "making-high-school-count", # skip non-essential college topics (July 2020)
+    "paying-for-college",       # skip non-essential college topics (July 2020)
+    "wrapping-up",              # skip non-essential college topics (July 2020)
+    "careers-and-personal-finance",  # skip non-essential $$$ topic (July 2020)
 ]
 
 # we don't support scratchpad content so we skip the programming topics
@@ -26,34 +33,45 @@ GLOBAL_SLUG_BLACKLIST += [
     "cs",
     "towers-of-hanoi",
     "computing",
-]  
+]
 
-
-# TODO(ivan): review tree to check for new partner content to add to this list
-# TODO(ivan): followup with KA ppl to check if OK to distribute partner content
-# KA partner content for which we don't have explicit permission to redistribute
+# July 2020: Skip the "Partner content" and "Test prep" Level 1 topics since
+# these materials will no longer be maintained upsteam. For more info, see the
+# KA announcement https://khanacademy.zendesk.com/hc/en-us/articles/360043801271
 GLOBAL_SLUG_BLACKLIST += [
-    "MoMA",
-    "getty-museum",
-    "stanford-medicine",
-    "mit-k12",
-    "hour-of-code",
-    "metropolitan-museum",
-    "bitcoin",
-    "tate",
+    "partner-content",
+    "test-prep",
+    "math-for-fun-and-glory",
+    "ap-world-history",
+    "music",
+    "all-star-orchestra",
+]
+
+# KA partner content for which we don't have explicit permission to redistribute
+# (these detailed exclusions are no longer necessary since we exclude the entire
+# "partner-content" slug above: leaving here for information purposes )
+GLOBAL_SLUG_BLACKLIST += [
+    "MoMA",                             # already covered by `partner-content`
+    "getty-museum",                     # already covered by `partner-content`
+    "stanford-medicine",                # already covered by `partner-content`
+    "mit-k12",                          # already covered by `partner-content`
+    "hour-of-code",                     # already covered by `partner-content`
+    "metropolitan-museum",              # already covered by `partner-content`
+    "tate",                             # already covered by `partner-content`
+    "british-museum",                   # already covered by `partner-content`
+    "aspeninstitute",                   # already covered by `partner-content`
+    "asian-art-museum",                 # already covered by `partner-content`
+    "amnh",                             # already covered by `partner-content`
+    "nova",                             # already covered by `partner-content`
+    "pixar",                            # already covered by `partner-content`
+    "pixar-latam",                      # already covered by `partner-content`
+    "wi-phi",                           # already covered by `partner-content`
+    "science-engineering-partners",     # already covered by `partner-content`
+    "arts-humanities-partners",         # already covered by `partner-content`
+    "computing-partners",               # already covered by `partner-content`
     "crash-course1",
     "crash-course-bio-ecology",
-    "british-museum",
-    "aspeninstitute",
-    "asian-art-museum",
-    "amnh",
-    "nova",
-    "pixar",
-    "pixar-latam",
-    "wi-phi",  # see https://wi-phi.com/videos/ could not find info on licensing
-    "science-engineering-partners",
-    "arts-humanities-partners",
-    "computing-partners",
+    "bitcoin",                  # TODO: revisit; videos seem to be CC BY-NC-SA
 ]
 
 
@@ -73,14 +91,14 @@ GLOBAL_SLUG_BLACKLIST += [
     "high-school-math",
     "illustrative-math",
     #
-    "brazil-math-grades",                      # empty topic in pt-BR topic tree
-    "ciencias-por-ano",                        # empty topic in pt-BR topic tree
+    "brazil-math-grades",               # empty topic in pt-BR topic tree
+    "ciencias-por-ano",                 # empty topic in pt-BR topic tree
     #
-    "in-math-by-grade",                   # empty topics in the in-in curriculum
-    "hindi",
-    "math-hindi",
-    "science-hindi",
-    "science-india",
+    "in-math-by-grade",                 # empty topic in the en/in-in topic tree
+    "hindi",                            # empty topic in the en/in-in topic tree
+    "math-hindi",                       # empty topic in the en/in-in topic tree
+    "science-hindi",                    # empty topic in the en/in-in topic tree
+    "science-india",                    # empty topic in the en/in-in topic tree
 ]
 
 
@@ -244,7 +262,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
         "science": [
-            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+            {"slug": "science", "translatedTitle": "Science & Engineering", "children": [
                 {"slug": "physics", "translatedTitle": "Physics"},
                 {"slug": "ap-physics-1", "translatedTitle": "AP®︎ Physics 1"},
                 {"slug": "ap-physics-2", "translatedTitle": "AP®︎ Physics 2"},
@@ -256,7 +274,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "high-school-biology", "translatedTitle": "High school biology"},
                 {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
-                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
             ]},
             {"slug": "science-india", "translatedTitle": "Science (India)", "children": [
@@ -271,6 +288,18 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             {"slug": "science-hindi", "translatedTitle": "Learn science with Hindi videos", "children": [
                 {"slug": "in-in-class-10-physics-india-hindi"},
                 {"slug": "in-in-class-11-physics-cbse-hindi"},
+            ]},
+        ],
+        "ela": [
+            {"slug": "ela", "translatedTitle": "English Language Arts (USA)", "children": [
+                {"slug": "cc-2nd-reading-vocab", "translatedTitle": "2nd grade reading & vocabulary"},
+                {"slug": "cc-3rd-reading-vocab", "translatedTitle": "3rd grade reading & vocabulary"},
+                {"slug": "cc-4th-reading-vocab", "translatedTitle": "4th grade reading & vocabulary"},
+                {"slug": "cc-5th-reading-vocab", "translatedTitle": "5th grade reading & vocabulary"},
+                {"slug": "cc-6th-reading-vocab", "translatedTitle": "6th grade reading & vocabulary"},
+                {"slug": "cc-7th-reading-vocab", "translatedTitle": "7th grade reading & vocabulary"},
+                {"slug": "cc-8th-reading-vocab", "translatedTitle": "8th grade reading & vocabulary"},
+                {"slug": "cc-9th-reading-vocab", "translatedTitle": "9th grade reading & vocabulary"},
             ]},
         ],
     },
@@ -340,7 +369,7 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
         "science": [
-            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+            {"slug": "science", "translatedTitle": "Science & Engineering", "children": [
                 {"slug": "physics", "translatedTitle": "Physics"},
                 {"slug": "ap-physics-1", "translatedTitle": "AP®︎ Physics 1"},
                 {"slug": "ap-physics-2", "translatedTitle": "AP®︎ Physics 2"},
@@ -352,8 +381,19 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "biology", "translatedTitle": "Biology"},
                 {"slug": "high-school-biology", "translatedTitle": "High school biology"},
                 {"slug": "ap-biology", "translatedTitle": "AP®︎ Biology"},
-                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
+        "ela": [
+            {"slug": "ela", "translatedTitle": "English Language Arts", "children": [
+                {"slug": "cc-2nd-reading-vocab", "translatedTitle": "2nd grade reading & vocabulary"},
+                {"slug": "cc-3rd-reading-vocab", "translatedTitle": "3rd grade reading & vocabulary"},
+                {"slug": "cc-4th-reading-vocab", "translatedTitle": "4th grade reading & vocabulary"},
+                {"slug": "cc-5th-reading-vocab", "translatedTitle": "5th grade reading & vocabulary"},
+                {"slug": "cc-6th-reading-vocab", "translatedTitle": "6th grade reading & vocabulary"},
+                {"slug": "cc-7th-reading-vocab", "translatedTitle": "7th grade reading & vocabulary"},
+                {"slug": "cc-8th-reading-vocab", "translatedTitle": "8th grade reading & vocabulary"},
+                {"slug": "cc-9th-reading-vocab", "translatedTitle": "9th grade reading & vocabulary"},
             ]},
         ],
     },
@@ -373,7 +413,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "multivariable-calculus", "translatedTitle": "Multivariable calculus"},
                 {"slug": "differential-equations", "translatedTitle": "Differential equations"},
                 {"slug": "linear-algebra", "translatedTitle": "Linear algebra"},
-                {"slug": "math-for-fun-and-glory", "translatedTitle": "Math for fun and glory"},
             ]},
             {"slug": "in-math-by-grade", "translatedTitle": "Math by grade (India)", "children": [
                 {"slug": "in-in-class-1st-math-cbse", "translatedTitle": "Class 1"},
@@ -412,14 +451,25 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "in-in-class-10-physics-india-hindi"},
                 {"slug": "in-in-class-11-physics-cbse-hindi"},
             ]},
-            {"slug": "science", "translatedTitle": "Science & engineering", "children": [
+            {"slug": "science", "translatedTitle": "Science & Engineering", "children": [
                 {"slug": "physics", "translatedTitle": "Physics"},
                 {"slug": "cosmology-and-astronomy", "translatedTitle": "Cosmology & astronomy"},
                 {"slug": "chemistry", "translatedTitle": "Chemistry"},
                 {"slug": "organic-chemistry", "translatedTitle": "Organic chemistry"},
                 {"slug": "biology", "translatedTitle": "Biology"},
-                {"slug": "health-and-medicine", "translatedTitle": "Health & medicine"},
                 {"slug": "electrical-engineering", "translatedTitle": "Electrical engineering"},
+            ]},
+        ],
+        "ela": [
+            {"slug": "ela", "translatedTitle": "English Language Arts (USA)", "children": [
+                {"slug": "cc-2nd-reading-vocab", "translatedTitle": "2nd grade reading & vocabulary"},
+                {"slug": "cc-3rd-reading-vocab", "translatedTitle": "3rd grade reading & vocabulary"},
+                {"slug": "cc-4th-reading-vocab", "translatedTitle": "4th grade reading & vocabulary"},
+                {"slug": "cc-5th-reading-vocab", "translatedTitle": "5th grade reading & vocabulary"},
+                {"slug": "cc-6th-reading-vocab", "translatedTitle": "6th grade reading & vocabulary"},
+                {"slug": "cc-7th-reading-vocab", "translatedTitle": "7th grade reading & vocabulary"},
+                {"slug": "cc-8th-reading-vocab", "translatedTitle": "8th grade reading & vocabulary"},
+                {"slug": "cc-9th-reading-vocab", "translatedTitle": "9th grade reading & vocabulary"},
             ]},
         ],
     },

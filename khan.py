@@ -1,5 +1,10 @@
+"""
+Logic for parsing the "flat" lists of JSON data from the Khan Academy API and
+converting to a topic tree of `KhanNode` classes.
+"""
 from html2text import html2text
-import ujson
+import json
+import os
 
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.config import LOGGER
@@ -16,27 +21,50 @@ english_video_map = get_video_id_english_mappings()
 
 SUPPORTED_KINDS = ["Topic", "Exercise", "Video"]
 
+KHAN_API_CACHE_DIR = os.path.join("chefdata", "khanapicache")
 
-def get_khan_topic_tree(lang="en"):
+
+
+# EXTERNAL API
+################################################################################
+
+def get_khan_api_json(lang, update=False):
+    """
+    Get all data for language `lang` from the KA API at /api/v2/topics/topictree
+    """
+    filename = 'khan_academy_json_{}.json'.format(lang)
+    filepath = os.path.join(KHAN_API_CACHE_DIR, filename)
+    if os.path.exists(filepath) and not update:
+        print('Loaded KA API json from cache', filepath)
+        data = json.load(open(filepath))
+    else:
+        print('Downloading KA API json for lang =', lang)
+        url = V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS)
+        LOGGER.debug('khan API url=' + url)
+        response = make_request(url, timeout=120)
+        data = response.json()
+        if not os.path.exists(KHAN_API_CACHE_DIR):
+            os.makedirs(KHAN_API_CACHE_DIR, exist_ok=True)
+        json.dump(data, open(filepath, 'w'), ensure_ascii=False, indent=4)
+    return data
+
+
+def get_khan_topic_tree(lang="en", update=True):
     """
     Build the complete topic tree based on the results obtained from the KA API.
     Note this topic tree contains a combined topic strcuture that includes all
     curriculum variants, curation pages, and child data may be in wrong order.
     Returns: tuple (root_node, topics_by_slug) for further processing according
-    based on SLUG_BLACKLIST and TOPIC_TREE_REPLACMENTS specified in curation.py
+    based on SLUG_BLACKLIST and TOPIC_TREE_REPLACMENTS specified in curation.py.
     """
-    if lang == "sw":
-        response = make_request(
-            V2_API_URL.format(lang="swa", projection=PROJECTION_KEYS), timeout=120
-        )
-    else:
-        url = V2_API_URL.format(lang=lang, projection=PROJECTION_KEYS)
-        LOGGER.debug('khan url=' + url)
-        response = make_request(url, timeout=120)
+    if lang == "sw":  # for backward compatibility in case old Swahili code used
+        lang = "swa"
 
-    topic_tree = ujson.loads(response.content)
+    # Get the fresh data from the KA API (do not try to re-use cached data)
+    topic_tree = get_khan_api_json(lang, update=update)
+
     # if name of lang is passed in, get language code
-    if getlang_by_name(lang):
+    if getlang(lang) is None and getlang_by_name(lang):
         lang = getlang_by_name(lang).primary_code
 
     if lang not in SUPPORTED_LANGS:
@@ -58,14 +86,16 @@ def get_khan_topic_tree(lang="en"):
     return root, topics_by_slug
 
 
+# TREE-BUILDING LOGIC
+################################################################################
+
 def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
 
-    node["translatedTitle"] = translations.get(
-        node["translatedTitle"], node["translatedTitle"]
-    )
-    node["translatedDescription"] = translations.get(
-        node["translatedDescription"], node["translatedDescription"]
-    )
+    # If CrowdIn translations for title or description are available, load them:
+    if node["translatedTitle"] in translations:
+        node["translatedTitle"] = translations[node["translatedTitle"]]
+    if node["translatedDescription"] in translations:
+        node["translatedDescription"] = translations[node["translatedDescription"]]
 
     if node["kind"] == "Exercise":
         khan_node = KhanExercise(
@@ -154,6 +184,10 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
     return khan_node
 
 
+
+# DATA CLASSES
+################################################################################
+
 class KhanNode(object):
     def __init__(self, id, title, description, slug, lang="en"):
         self.id = id
@@ -203,10 +237,8 @@ class KhanExercise(KhanNode):
             item = make_request(item_url).json()
             # check if assessment item is fully translated, before adding it to list
             if item["is_fully_translated"]:
-                items_list.append(
-                    KhanAssessmentItem(item["id"], item["item_data"], self.source_url)
-                )
-
+                ai = KhanAssessmentItem(item["id"], item["item_data"], self.source_url)
+                items_list.append(ai)
         return items_list
 
     def __repr__(self):
@@ -251,3 +283,90 @@ class KhanArticle(KhanNode):
 
     def __repr__(self):
         return "Article Node: {}".format(self.title)
+
+
+
+
+# KHAN TREE UTILS
+################################################################################
+
+def get_kind(node):
+    if isinstance(node, KhanTopic):
+        return 'topic'
+    elif isinstance(node, KhanExercise):
+        return 'exercise'
+    elif isinstance(node, KhanVideo):
+        return 'video'
+    elif isinstance(node, KhanArticle):
+        return 'article'
+    else:
+        return 'unknown kind'
+
+
+def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[]):
+    if subtree.slug in SLUG_BLACKLIST:
+        return
+    if level == maxlevel:
+        return
+    extra = ''
+    if hasattr(subtree, 'curriculum') and subtree.curriculum:
+        extra = 'CURRICULUM='+ subtree.curriculum
+        if level > 2:
+            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
+    print(' '*2*level + '   -', subtree.title.strip(),
+        '[' + get_kind(subtree) + ']',
+        '(' + subtree.id + ')', extra)
+    if hasattr(subtree, 'children'):
+        for child in subtree.children:
+            print_subtree(child, level=level+1, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST)
+
+
+
+
+# REPORTS
+################################################################################
+
+def report_from_raw_data(lang, data):
+    """
+    Basic report on raw, flat data from the API (not parsed into a tree yet).
+    """
+    report = {'lang': lang}
+
+    # general counts
+    report['#topics'] = len(data['topics'])
+    report['#videos'] = len(data['videos'])
+    report['#exercises'] = len(data['exercises'])
+
+    # video stats
+    translated_videos = []
+    untranslated_videos = []
+    has_mp4 = []
+    has_mp4_low = []
+    has_mp4_low_ios = []
+    for v in data['videos']:
+        vid = v['id']
+        if v['translatedYoutubeLang'] != 'en':
+            translated_videos.append(vid)
+        else:
+            untranslated_videos.append(vid)
+        durls = v['downloadUrls']
+        if 'mp4' in durls:
+            has_mp4.append(vid)
+        if 'mp4-low' in durls:
+            has_mp4_low.append(vid)
+        if 'mp4-low-ios' in durls:
+            has_mp4_low_ios.append(vid)
+    report['#translated_videos'] = len(translated_videos)
+    report['#untranslated_videos'] = len(untranslated_videos)
+    report['#has_mp4'] = len(has_mp4)
+    report['#has_mp4_low'] = len(has_mp4_low)
+    report['#has_mp4_low_ios'] = len(has_mp4_low_ios)
+
+    # Keys <k> that can be used in https://{lang}.khanacademy.org/?curriculum=<k>
+    report['curriculum_keys'] = []
+    for topic in data['topics']:
+        curriculum = topic.get("curriculumKey", None)
+        if curriculum and curriculum not in report['curriculum_keys']:
+            report['curriculum_keys'].append(curriculum)
+
+    return report
