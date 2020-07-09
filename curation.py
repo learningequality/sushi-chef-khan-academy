@@ -773,6 +773,24 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
             ]},
         ],
     },
+    "hi": {
+        "math": [
+            {"slug": "math", "translatedTitle": "गणित", "children": [
+                {"slug": "in-in-class-6th-math-cbse", "translatedTitle": "कक्षा 6 (इंडिया)"},
+                {"slug": "in-in-class-7th-math-cbse", "translatedTitle": "कक्षा 7 (इंडिया)"},
+                {"slug": "in-in-class-8th-math-cbse", "translatedTitle": "कक्षा 8 (इंडिया)"},
+                {"slug": "in-in-grade-9-ncert", "translatedTitle": "कक्षा 9 (इंडिया)"},
+                {"slug": "in-in-grade-10-ncert", "translatedTitle": "कक्षा 10 (इंडिया)"},
+            ]},
+            {"slug": "math-foundation", "translatedTitle": "गणित (आधार)", "children": [
+                {"slug": "in-class-6-math-foundation", "translatedTitle": "कक्षा 6 (आधार)"},
+                {"slug": "in-class-7-math-foundation", "translatedTitle": "कक्षा 7 (आधार)"},
+                {"slug": "in-class-8-math-foundation", "translatedTitle": "कक्षा 8 (आधार)"},
+                {"slug": "class-8th-math-revision", "translatedTitle": "कक्षा 9 (आधार)"},
+                {"slug": "class-9th-math-revision", "translatedTitle": "कक्षा 10 (आधार)"},
+            ]},
+        ]
+    }
 }
 
 def get_topic_tree_replacements(lang=None, variant=None):
