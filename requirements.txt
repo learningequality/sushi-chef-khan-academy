@@ -1,6 +1,6 @@
 html2text==2018.1.9
 ricecooker>=0.6.43
-ujson==1.35
 polib==1.1.0
 google-api-python-client==1.8.2
+google-cloud-storage==1.29.0
 oauth2client==4.1.3

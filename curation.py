@@ -26,6 +26,7 @@ GLOBAL_SLUG_BLACKLIST = [
     "paying-for-college",       # skip non-essential college topics (July 2020)
     "wrapping-up",              # skip non-essential college topics (July 2020)
     "careers-and-personal-finance",  # skip non-essential $$$ topic (July 2020)
+    "internal-courses",         # KA internal domain
 ]
 
 # we don't support scratchpad content so we skip the programming topics
