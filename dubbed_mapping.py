@@ -1,7 +1,7 @@
 import csv
 from io import StringIO
 
-from constants import KA_LITE_DUBBED_LIST
+KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"
 from network import make_request
 
 
