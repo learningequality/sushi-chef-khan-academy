@@ -17,14 +17,21 @@ import json
 import os
 import subprocess
 
-from khan import get_khan_api_json, report_from_raw_data
-from khan import get_khan_topic_tree, get_kind, print_subtree
+# OLD JSON API v2
+# from khan import get_khan_api_json, report_from_raw_data
+# from khan import get_khan_topic_tree, get_kind, print_subtree
+
+# NEW TSV API
+from tsvkhan import get_khan_tsv as get_khan_api_json   # to avoid changing code
+from tsvkhan import report_from_raw_data
+from tsvkhan import get_khan_topic_tree, get_kind, print_subtree
+
 
 KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
 
 
 
-# JSON EXPORTS
+# JSON TREE EXPORTS
 ################################################################################
 
 def subtree_to_dict(subtree, SLUG_BLACKLIST=[]):

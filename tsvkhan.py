@@ -5,26 +5,24 @@ converting to a topic tree of `KhanNode` classes.
 import csv
 from google.cloud import storage
 from html2text import html2text
+from itertools import groupby
 import json
+from operator import itemgetter
 import os
 
-from le_utils.constants.languages import getlang
 from ricecooker.config import LOGGER
 
-from constants import ASSESSMENT_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
+from constants import ASSESSMENT_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING, KHAN_ACADEMY_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
-from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from network import make_request
-from utils import get_video_id_english_mappings
 
 translations = {}
-video_map = generate_dubbed_video_mappings_from_csv()
-english_video_map = get_video_id_english_mappings()
 
-TOPIC_LIKE_KINDS = ["Root", "Domain", "Course", "Unit", "Lesson"]
+TOPIC_LIKE_KINDS = ["Domain", "Course", "Unit", "Lesson"]
 SUPPORTED_KINDS = TOPIC_LIKE_KINDS + ["Exercise", "Video"]
-# UNSUPPORTED_KINDS = ["Article", "Challenge", "Interactive", "Project", "Talkthrough"]
-
+UNSUPPORTED_KINDS = ["Article", "Interactive"]
+UNSUPPORTED_KINDS += ["TopicQuiz", "TopicUnitTest"]            # exercise-like
+UNSUPPORTED_KINDS += ["Challenge", "Project", "Talkthrough"]   # scratchpad-like
 
 KHAN_TSV_EXPORT_BUCKET_NAME = "public-content-export-data"
 
@@ -48,18 +46,22 @@ def get_khan_api_json(lang, update=False):
 
 def get_khan_tsv(lang, update=False):
     """
-    Get TSV data export for language `lang` from the KA exports bucket.
+    Get TSV data export for le-utils language `lang` from the KA exports bucket.
     """
-    filename = 'topic_tree_export.{}.tsv'.format(lang)
+    if lang in KHAN_ACADEMY_LANGUAGE_MAPPING:
+        kalang = KHAN_ACADEMY_LANGUAGE_MAPPING[lang]
+    else:
+        kalang = lang
+    filename = 'topic_tree_export.{}.tsv'.format(kalang)
     filepath = os.path.join(KHAN_TSV_CACHE_DIR, filename)
     if os.path.exists(filepath) and not update:
         LOGGER.info('Loaded KA TSV data from cache ' + filepath)
         data = parse_tsv_file(filepath)
     else:
-        LOGGER.info('Downloading KA TSV data for lang=' + lang)
+        LOGGER.info('Downloading KA TSV data for kalang=' + kalang)
         if not os.path.exists(KHAN_TSV_CACHE_DIR):
             os.makedirs(KHAN_TSV_CACHE_DIR, exist_ok=True)
-        download_latest_tsv_export(lang, filepath)
+        download_latest_tsv_export(kalang, filepath)
         data = parse_tsv_file(filepath)
     return data
 
@@ -88,8 +90,8 @@ def get_khan_topic_tree(lang="en", update=True):
         'kind': 'Root',
         'slug': 'root',
         'id': 'x00000000',
-        'original_title': '',
-        'translated_title': '',
+        'original_title': 'THE CHANNEL ROOT NODE',
+        'translated_title': 'THE CHANNEL ROOT NODE',
         'translated_description_html': '',
         'children_ids': [],  # to be filled below
     }
@@ -143,15 +145,15 @@ def list_latest_tsv_exports():
     return sorted(list(langs))
 
 
-def download_latest_tsv_export(lang, filepath):
+def download_latest_tsv_export(kalang, filepath):
     """
-    Download latest TSV data for language `lang` from the KA exports bucket and
-    save it to the local path `filepath`.
+    Download latest TSV data for the language code `kalang` from the exports
+    bucket and save it to the local path `filepath`.
     """
     storage_client = storage.Client.create_anonymous_client()
-    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix=lang)
+    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix=kalang)
     if not blobs:
-        raise ValueError('The export for lang=' + lang + ' is not available.')
+        raise ValueError('An export for kalang=' + kalang + ' is not available.')
     blob_names = [blob.name for blob in blobs]
     LOGGER.debug('Found a total of ' + str(len(blob_names)) + ' export files.')
     # Get the blob with the most recent export file based on blob name
@@ -186,7 +188,7 @@ def parse_tsv_file(filepath):
 COLUMN_TYPES_MAP = {
     'listed': bool,
     'children_ids': json.loads,
-    # 'standards': json.loads,  # not implemented yet, but guess it will be json
+    # 'standards': json.loads,  # not implemented yet, but it will prob. be json
     'duration': int,
     'download_urls': json.loads,
     'prerequisites': json.loads,
@@ -220,3 +222,330 @@ def clean_tsv_row(row):
             else:
                 clean_row[key] = val.strip()
     return clean_row
+
+
+
+
+# TREE-BUILDING LOGIC
+################################################################################
+
+def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
+
+    # Title info comes form different place if `en` vs. translated trees
+    title = node['original_title'] if lang == 'en' else node['translated_title']
+    description_html = node['translated_description_html']
+    if description_html:
+        description = html2text(description_html)[0:400]
+    else:
+        description = ''
+
+    # If CrowdIn translations for title or description are available, load them:
+    if title in translations:
+        title = translations[title]
+    if description in translations:
+        description = translations[description]
+
+    if node["kind"] == "Exercise":
+        slug_no_prefix = node['slug'].replace('e/','')  # remove the `e/`-prefix
+        khan_node = KhanExercise(
+            id=slug_no_prefix,   # set id to slug_no_prefix (used for source_id)
+            title=title,
+            description=description,
+            slug=slug_no_prefix,
+            thumbnail=node["thumbnail_url"],
+            assessment_items=node["assessment_item_ids"],
+            mastery_model=node["suggested_completion_criteria"],
+            source_url=node["canonical_url"],
+            lang=lang,
+        )
+        return khan_node
+
+    elif node["kind"] in TOPIC_LIKE_KINDS or node["kind"] == "Root":
+        khan_node = KhanTopic(
+            id=node["slug"],   # set topic id to slug (used for source_id later)
+            title=title,
+            description=description,
+            slug=node["slug"],
+            lang=lang,
+            curriculum=node.get("curriculum_key", None),
+        )
+        topics_by_slug[node["slug"]] = khan_node
+
+        for child_pointer in node.get("children_ids", []):
+            if "id" in child_pointer and child_pointer["id"] in tree_dict:
+                child_node = tree_dict[child_pointer["id"]]
+                child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang)
+                if child:
+                    khan_node.children.append(child)
+            else:
+                if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
+                    # silentry skip unsupported content kinds like Article, Project,
+                    # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
+                    pass
+                else:
+                    LOGGER.warning('Missing id=' + child_pointer.get('id', 'noid') + \
+                                ' in childData of topic node with id=' + node["id"])
+        return khan_node
+
+    elif node["kind"] == "Video":
+        slug_no_prefix = node['slug'].replace('v/','')  # remove the `v/`-prefix
+
+        # The `translated_youtube_id` attr will be used to create the file later
+        if "translated_youtube_id" in node:
+            # for dubbed videos
+            translated_youtube_id = node["translated_youtube_id"]
+        else:
+            # for subbed videos and original videos
+            translated_youtube_id = node["youtube_id"]
+
+        khan_node = KhanVideo(
+            id=node["id"],
+            title=title,
+            description=description,
+            slug=slug_no_prefix,
+            thumbnail=node["thumbnail_url"],
+            license=node["license"],
+            download_urls=node["download_urls"],
+            youtube_id=node["youtube_id"],  # original English video (used for `source_id` later)
+            translated_youtube_id=translated_youtube_id,
+            lang=lang if node.get("dubbed") else node["source_lang"],
+            # TODO(ivan): store subbed, dubbed, and dub_subbed as class attributes
+        )
+        return khan_node
+
+    elif node["kind"] == "Article":
+        slug_no_prefix = node['slug'].replace('a/','')  # remove the `a/`-prefix
+        khan_node = KhanArticle(
+            id=node["id"],
+            title=title,
+            description=description,
+            slug=slug_no_prefix,
+            lang=lang,
+        )
+        return khan_node
+
+    else:
+        if node["kind"] in UNSUPPORTED_KINDS:
+            # silentry skip unsupported content kinds like Article, Project,
+            # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
+            pass
+        else:
+            LOGGER.warning('Unrecognized node kind ' + node["kind"] + ' ' + title)
+
+
+
+    
+
+
+
+# DATA CLASSES
+################################################################################
+
+class KhanNode(object):
+    """
+    Basic container class for the metadata associated with Khan Academy nodes.
+    TODO: the following data are available in the TSV exports, but are not used:
+      - standards: not currently exported but will be important alignment data
+      - prerequisites: not yet supported by ricecooker, woudl be nice to have
+      - related_content: not clear where to store this in Kolibri data model
+    """
+    def __init__(self, id, title, description, slug, lang="en"):
+        self.id = id
+        self.title = title
+        self.description = description
+        self.slug = slug
+        self.lang = lang
+
+    def __repr__(self):
+        return self.title
+
+
+class KhanTopic(KhanNode):
+    def __init__(self, id, title, description, slug, lang="en", curriculum=None):
+        super(KhanTopic, self).__init__(id, title, description, slug, lang=lang)
+        self.curriculum = curriculum
+        self.children = []
+
+    def __repr__(self):
+        return "Topic Node: {}".format(self.title)
+
+
+class KhanExercise(KhanNode):
+    def __init__(
+        self,
+        id,
+        title,
+        description,
+        slug,
+        thumbnail,
+        assessment_items,
+        mastery_model,
+        source_url,
+        lang="en",
+    ):
+        super(KhanExercise, self).__init__(id, title, description, slug, lang=lang)
+        self.thumbnail = thumbnail
+        self.assessment_items = assessment_items
+        self.mastery_model = mastery_model
+        self.source_url = source_url
+
+    def get_assessment_items(self):
+        items_list = []
+        lang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
+        for ai_id in self.assessment_items:
+            item_url = ASSESSMENT_URL.format(assessment_item=ai_id, lang=lang)
+            item = make_request(item_url).json()
+            # check if assessment item is fully translated, before adding it to list
+            if item["is_fully_translated"]:
+                ai = KhanAssessmentItem(item["id"], item["item_data"], self.source_url)
+                items_list.append(ai)
+        return items_list
+
+    def __repr__(self):
+        return "Exercise Node: {}".format(self.title)
+
+
+class KhanAssessmentItem(object):
+    def __init__(self, id, data, source_url):
+        self.id = id
+        self.data = data
+        self.source_url = source_url
+
+
+class KhanVideo(KhanNode):
+    def __init__(
+        self,
+        id,
+        title,
+        description,
+        slug,
+        thumbnail,
+        license,
+        download_urls,
+        youtube_id,
+        translated_youtube_id,
+        lang="en",
+    ):
+        super(KhanVideo, self).__init__(id, title, description, slug, lang=lang)
+        self.license = license
+        self.thumbnail = thumbnail
+        self.download_urls = download_urls
+        self.youtube_id = youtube_id
+        self.translated_youtube_id = translated_youtube_id
+
+    def __repr__(self):
+        return "Video Node: {}".format(self.title)
+
+
+class KhanArticle(KhanNode):
+    def __init__(self, id, title, description, slug, lang="en"):
+        super(KhanArticle, self).__init__(id, title, description, slug, lang=lang)
+
+    def __repr__(self):
+        return "Article Node: {}".format(self.title)
+
+
+
+
+# KHAN TREE UTILS
+################################################################################
+
+def get_kind(node):
+    if isinstance(node, KhanTopic):
+        return 'topic'
+    elif isinstance(node, KhanExercise):
+        return 'exercise'
+    elif isinstance(node, KhanVideo):
+        return 'video'
+    elif isinstance(node, KhanArticle):
+        return 'article'
+    else:
+        return 'unknown kind'
+
+
+def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[]):
+    if subtree.slug in SLUG_BLACKLIST:
+        return
+    if level == maxlevel:
+        return
+    extra = ''
+    if hasattr(subtree, 'curriculum') and subtree.curriculum:
+        extra = 'CURRICULUM='+ subtree.curriculum
+        if level > 2:
+            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
+    print(' '*2*level + '   -', subtree.title.strip(),
+        '[' + get_kind(subtree) + ']',
+        '(' + subtree.id + ')', extra)
+    if hasattr(subtree, 'children'):
+        for child in subtree.children:
+            print_subtree(child, level=level+1, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST)
+
+
+
+
+# REPORTS
+################################################################################
+
+def report_from_raw_data(lang, tree_dict):
+    """
+    Basic report on raw, flat data from the API (not parsed into a tree yet).
+    """
+    report = {'lang': lang}
+
+    # general counts
+    sorted_items = sorted(tree_dict.values(), key=itemgetter('kind'))
+    nodes_by_kind = dict((k, list(g)) for k, g in groupby(sorted_items, key=itemgetter('kind')))
+    for kind in SUPPORTED_KINDS:
+        report['#' + kind] = len(nodes_by_kind.get(kind, []))
+    for kind in UNSUPPORTED_KINDS:
+        report['#' + kind + ' (unsupported)'] = len(nodes_by_kind.get(kind, []))
+
+    # video stats
+    translated_videos = []
+    untranslated_videos = []
+    dubbed_videos = []
+    subbed_videos = []
+    dub_subbed_videos = []
+    has_mp4 = []
+    has_mp4_low = []
+    has_mp4_low_ios = []
+    for v in nodes_by_kind['Video']:
+        vid = v['id']
+        if v.get('dubbed'):
+            dubbed_videos.append(vid)
+        if v.get('subbed'):
+            subbed_videos.append(vid)
+        if v.get('dub_subbed'):
+            dub_subbed_videos.append(vid)
+        if v.get('dubbed') or v.get('subbed') or v.get('dub_subbed'):
+            translated_videos.append(vid)
+        else:
+            untranslated_videos.append(vid)
+
+        durls = v['download_urls']
+        for durl in durls:
+            if durl['filetype'] == "mp4":
+                has_mp4.append(vid)
+            if durl['filetype'] == "mp4-low":
+                has_mp4_low.append(vid)
+            if durl['filetype'] == "mp4-low-ios":
+                has_mp4_low_ios.append(vid)
+
+    report['#dubbed_videos'] = len(dubbed_videos)
+    report['#subbed_videos'] = len(subbed_videos)
+    report['#dub_subbed_videos'] = len(dub_subbed_videos)
+    report['#translated_videos'] = len(translated_videos)
+    report['#untranslated_videos'] = len(untranslated_videos)
+    report['#has_mp4'] = len(has_mp4)
+    report['#has_mp4_low'] = len(has_mp4_low)
+    report['#has_mp4_low_ios'] = len(has_mp4_low_ios)
+
+    # Keys <k> that can be used in https://{lang}.khanacademy.org/?curriculum=<k>
+    report['curriculum_keys'] = []
+    for node in tree_dict.values():
+        if node['kind'] in TOPIC_LIKE_KINDS:
+            curriculum = node.get("curriculum_key", None)
+            if curriculum and curriculum not in report['curriculum_keys']:
+                report['curriculum_keys'].append(curriculum)
+
+    return report
