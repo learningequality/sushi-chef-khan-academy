@@ -309,7 +309,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                         item_data=ka_assessment_item.data,
                         source_url=ka_assessment_item.source_url,
                     )
-                exercise["questions"].append(assessment_item)
+                    exercise["questions"].append(assessment_item)
             # if there are no questions for this exercise, return None
             if not exercise["questions"]:
                 return None
