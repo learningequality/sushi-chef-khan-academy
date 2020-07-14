@@ -359,6 +359,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             for lang_code in subtitle_languages:
                 if is_youtube_subtitle_file_supported_language(lang_code):
                     if target_lang == "en":
+                        # KA English is special: use subs for all available langs
                         files.append(
                             dict(
                                 file_type="subtitles",

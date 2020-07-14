@@ -81,7 +81,7 @@ SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'ko', 'und', 
 # that it's better to include subtitles when available even videos are dubbed.
 
 V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
-ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={lang}"
+ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={kalang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?key={key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
 
@@ -136,12 +136,18 @@ def get_channel_description(lang=None, variant=None):
         return description
 
 
+# map from le-utils codes to language codes used in the Khan Academy TSV exports
+KHAN_ACADEMY_LANGUAGE_MAPPING = {
+    "pt-BR": 'pt',
+    "zh-CN": 'zh-hans',
+}
+
 # map from le-utils language codes to language codes used on CROWDIN
 CROWDIN_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
 }
 
-# map  to codes used to get assesment items from the KA API
+# map from le-utils codes to language codes used by the KA assesment items API
 ASSESSMENT_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
 }
@@ -153,11 +159,6 @@ VIDEO_LANGUAGE_MAPPING = {
     "zh-CN": "zh-hans",
 }
 
-# map from le-utils codes to language codes used in the Khan Academy TSV exports
-KHAN_ACADEMY_LANGUAGE_MAPPING = {
-    "pt-BR": 'pt',
-    "zh-CN": 'zh-hans',
-}
 
 # Videos with misleading translatedYoutubeLang organized by le-utils lang code.
 # Use this list to override the should-be-included logic and include the videos.

@@ -391,9 +391,9 @@ class KhanExercise(KhanNode):
 
     def get_assessment_items(self):
         items_list = []
-        lang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
+        kalang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
         for ai_id in self.assessment_items:
-            item_url = ASSESSMENT_URL.format(assessment_item=ai_id, lang=lang)
+            item_url = ASSESSMENT_URL.format(assessment_item=ai_id, kalang=kalang)
             item = make_request(item_url).json()
             # check if assessment item is fully translated, before adding it to list
             if item["is_fully_translated"]:
