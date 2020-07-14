@@ -21,7 +21,9 @@ translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
 english_video_map = get_video_id_english_mappings()
 
-SUPPORTED_KINDS = ["Topic", "Exercise", "Video"]
+TOPIC_LIKE_KINDS = ["Root", "Domain", "Course", "Unit", "Lesson"]
+SUPPORTED_KINDS = TOPIC_LIKE_KINDS + ["Exercise", "Video"]
+# UNSUPPORTED_KINDS = ["Article", "Challenge", "Interactive", "Project", "Talkthrough"]
 
 
 KHAN_TSV_EXPORT_BUCKET_NAME = "public-content-export-data"
@@ -84,9 +86,11 @@ def get_khan_topic_tree(lang="en", update=True):
     # The TSV data dows not contain a "root" node so we must manually create one
     root_node = {
         'kind': 'Root',
-        'original_title': '',
-        'id': 'x00000000',
         'slug': 'root',
+        'id': 'x00000000',
+        'original_title': '',
+        'translated_title': '',
+        'translated_description_html': '',
         'children_ids': [],  # to be filled below
     }
 
@@ -116,10 +120,9 @@ def get_khan_topic_tree(lang="en", update=True):
     # Build a lookup table {slug --> KhanTopic} to be used for replacement logic
     topics_by_slug = {}
 
+    root = _recurse_create(root_node, tree_dict, topics_by_slug, lang=lang)
+    return root, topics_by_slug
 
-    # root_node = tree_dict["x00000000"]
-    # root = _recurse_create(root_node, tree_dict, topics_by_slug, lang=lang)
-    # return root, topics_by_slug
 
 
 
@@ -168,14 +171,6 @@ def parse_tsv_file(filepath):
     print('Loading TSV file', filepath)
     data_by_id = {}
     with open(filepath, encoding="utf-8-sig") as tsvfile:
-        # tsv_dialect_options = dict(
-        #         delimiter = '\t',
-        #         quotechar = '"',
-        #         doublequote = True,
-        #         skipinitialspace = False,
-        #         lineterminator = '\n',
-        #         quoting = csv.QUOTE_MINIMAL,  # quote values only if needed
-        # )
         reader = csv.DictReader(tsvfile, dialect='excel-tab')
         for row in reader:
             if not row['id']:
@@ -189,13 +184,15 @@ def parse_tsv_file(filepath):
 
 
 COLUMN_TYPES_MAP = {
+    'listed': bool,
     'children_ids': json.loads,
+    # 'standards': json.loads,  # not implemented yet, but guess it will be json
+    'duration': int,
     'download_urls': json.loads,
     'prerequisites': json.loads,
     'related_content': json.loads,
     'time_estimate': json.loads,
     'assessment_item_ids': json.loads,
-    'unlisted': bool,
     'subbed': bool,
     'dubbed': bool,
     'dub_subbed': bool,
@@ -211,7 +208,7 @@ COLUMN_TYPES_MAP = {
 def clean_tsv_row(row):
     """
     Transform empty strings values to None and map the keys in `COLUMN_TYPES_MAP`
-    to the appropriate data types.
+    to the appropriate data types (e.g. parse json string to Python dict value).
     """
     clean_row = {}
     for key, val in row.items():
