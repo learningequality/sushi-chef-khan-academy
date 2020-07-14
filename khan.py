@@ -2,6 +2,7 @@
 Logic for parsing the "flat" lists of JSON data from the Khan Academy API and
 converting to a topic tree of `KhanNode` classes.
 """
+from collections import OrderedDict
 from html2text import html2text
 import json
 import os
@@ -9,19 +10,93 @@ import os
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.config import LOGGER
 
-from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
+from constants import ASSESSMENT_URL, ASSESSMENT_LANGUAGE_MAPPING
+from constants import SUPPORTED_LANGS
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from network import make_request
-from utils import get_video_id_english_mappings
+
 
 translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
-english_video_map = get_video_id_english_mappings()
+
 
 SUPPORTED_KINDS = ["Topic", "Exercise", "Video"]
 
 KHAN_API_CACHE_DIR = os.path.join("chefdata", "khanapicache")
+
+
+V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
+
+TOPIC_ATTRIBUTES = [
+    'childData',
+    'deleted',
+    'doNotPublish',
+    'hide',
+    'id',
+    'kind',
+    'slug',
+    'translatedTitle',
+    'translatedDescription',
+    'curriculumKey'
+]
+
+EXERCISE_ATTRIBUTES = [
+    'allAssessmentItems',
+    'displayName',
+    'fileName',
+    'id',
+    'kind',
+    'name',
+    'prerequisites',
+    'slug',
+    'usesAssessmentItems',
+    'relatedContent',
+    'translatedTitle',
+    'translatedDescription',
+    'suggestedCompletionCriteria',
+    'kaUrl',
+    'imageUrl'
+]
+
+VIDEO_ATTRIBUTES = [
+    'id',
+    'kind',
+    'licenseName',
+    'slug',
+    'youtubeId',
+    'translatedYoutubeLang',
+    'translatedYoutubeId',
+    'translatedTitle',
+    'translatedDescription',
+    'translatedDescriptionHtml',
+    'downloadUrls',
+    'imageUrl'
+]
+# Note (May 2020): we also want `sourceLanguage` but not avail. thorugh /api/v2/
+
+# ARTICLE_ATTRIBUTES = [
+#     'id',
+#     'kind',
+#     'slug',
+#     'descriptionHtml',
+#     'perseusContent',
+#     'title',
+#     'imageUrl'
+# ]
+
+PROJECTION_KEYS = json.dumps(OrderedDict([
+    ("topics", [OrderedDict((key, 1) for key in TOPIC_ATTRIBUTES)]),
+    ("exercises", [OrderedDict((key, 1) for key in EXERCISE_ATTRIBUTES)]),
+    ("videos", [OrderedDict((key, 1) for key in VIDEO_ATTRIBUTES)]),
+    # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
+]))
+
+
+
+# this code moved here to avoid circular imports
+from utils import get_video_id_english_mappings
+english_video_map = get_video_id_english_mappings()
 
 
 

@@ -1,72 +1,5 @@
-import json
-from collections import OrderedDict
 
 from le_utils.constants.languages import getlang
-
-TOPIC_ATTRIBUTES = [
-    'childData',
-    'deleted',
-    'doNotPublish',
-    'hide',
-    'id',
-    'kind',
-    'slug',
-    'translatedTitle',
-    'translatedDescription',
-    'curriculumKey'
-]
-
-EXERCISE_ATTRIBUTES = [
-    'allAssessmentItems',
-    'displayName',
-    'fileName',
-    'id',
-    'kind',
-    'name',
-    'prerequisites',
-    'slug',
-    'usesAssessmentItems',
-    'relatedContent',
-    'translatedTitle',
-    'translatedDescription',
-    'suggestedCompletionCriteria',
-    'kaUrl',
-    'imageUrl'
-]
-
-VIDEO_ATTRIBUTES = [
-    'id',
-    'kind',
-    'licenseName',
-    'slug',
-    'youtubeId',
-    'translatedYoutubeLang',
-    'translatedYoutubeId',
-    'translatedTitle',
-    'translatedDescription',
-    'translatedDescriptionHtml',
-    'downloadUrls',
-    'imageUrl'
-]
-# Note (May 2020): we also want `sourceLanguage` but not avail. thorugh /api/v2/
-
-# ARTICLE_ATTRIBUTES = [
-#     'id',
-#     'kind',
-#     'slug',
-#     'descriptionHtml',
-#     'perseusContent',
-#     'title',
-#     'imageUrl'
-# ]
-
-PROJECTION_KEYS = json.dumps(OrderedDict([
-    ("topics", [OrderedDict((key, 1) for key in TOPIC_ATTRIBUTES)]),
-    ("exercises", [OrderedDict((key, 1) for key in EXERCISE_ATTRIBUTES)]),
-    ("videos", [OrderedDict((key, 1) for key in VIDEO_ATTRIBUTES)]),
-    # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
-]))
-
 
 # These KA channels are supported on the KA website and topic trees for them are
 # availables as TSV exports. The list contains internal le-utils language codes.
@@ -87,10 +20,10 @@ UNSUPPORTED_LANGS = [
 ]
 
 
-V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
 ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={kalang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?login={username}&account-key={account_key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
+
 
 CHANNEL_TITLE_LOOKUP = {
     ("en", "us-cc"): "Khan Academy (English - US curriculum)",
