@@ -6,7 +6,7 @@ credentials/
 # Cached data of things we download fromt from the web
 .webcache/
 chefdata/sublangscache
-crowdin.zip
+chefdata/crowdin
 
 # Extract (what we get from KA)
 chefdata/khanapicache

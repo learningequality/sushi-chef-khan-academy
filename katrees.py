@@ -109,7 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--printmaxlevel', type=int, default=2, help='print tree depth')
     args = parser.parse_args()
 
-    print('Getting KA topic tree from API v2 for lang', args.lang)
+    print('Getting KA topic tree for lang', args.lang)
     ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False)
 
     # json export of parsed tree of `KhanNode`s

@@ -69,7 +69,7 @@ def get_khan_topic_tree(lang="en", update=True):
 
     if lang not in SUPPORTED_LANGS:
         global translations
-        translations = retrieve_translations(lang_code=lang)
+        translations = retrieve_translations(lang)
 
     # Flatten node_data (combine topics, videos, and exercises in a single list)
     flattened_tree = [node for node_list in topic_tree.values() for node in node_list]

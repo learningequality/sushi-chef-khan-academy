@@ -82,7 +82,7 @@ def get_khan_topic_tree(lang="en", update=True):
 
     if lang not in SUPPORTED_LANGS:
         global translations
-        translations = retrieve_translations(lang_code=lang)
+        translations = retrieve_translations(lang)
 
 
     # The TSV data dows not contain a "root" node so we must manually create one
@@ -230,20 +230,26 @@ def clean_tsv_row(row):
 ################################################################################
 
 def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
+    """
+    Main tree-building function that takes the rows from the TSV data and makes
+    a KhanNode tree out of them.
+    """
 
     # Title info comes form different place if `en` vs. translated trees
-    title = node['original_title'] if lang == 'en' else node['translated_title']
+    title = node['original_title'] if lang=='en' else node['translated_title']
     description_html = node['translated_description_html']
-    if description_html:
-        description = html2text(description_html)[0:400]
-    else:
-        description = ''
 
-    # If CrowdIn translations for title or description are available, load them:
+    # Check if crowdin translations for title or description are available:
     if title in translations:
         title = translations[title]
-    if description in translations:
-        description = translations[description]
+    if description_html in translations:
+        description_html = translations[description_html]
+
+    # Let's have plain text description
+    # TODO: description_html might contain hyperlinks, so need to remove them
+    # see also github.com/learningequality/sushi-chef-khan-academy/issues/4
+    description = html2text(description_html)[0:400] if description_html else ""
+
 
     if node["kind"] == "Exercise":
         slug_no_prefix = node['slug'].replace('e/','')  # remove the `e/`-prefix
@@ -283,8 +289,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
                     # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
                     pass
                 else:
-                    LOGGER.warning('Missing id=' + child_pointer.get('id', 'noid') + \
-                                ' in childData of topic node with id=' + node["id"])
+                    LOGGER.warning('Missing id=' + child_pointer.get('id') + \
+                        ' in children_ids of topic node with id=' + node["id"])
         return khan_node
 
     elif node["kind"] == "Video":
