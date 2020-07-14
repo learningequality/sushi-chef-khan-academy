@@ -68,23 +68,29 @@ PROJECTION_KEYS = json.dumps(OrderedDict([
 ]))
 
 
+# These KA channels are supported on the KA website and topic trees for them are
+# availables as TSV exports. The list contains internal le-utils language codes.
+SUPPORTED_LANGS = [
+    'az', 'bg', 'bn', 'cs', 'da', 'de', 'el', 'en', 'es', 'fr', 'gu', 'hi', 'hu',
+    'hy', 'id', 'it', 'ja', 'ka', 'km', 'kn', 'ko', 'ky', 'lt', 'my', 'nb', 'nl', 'pl',
+    'pt-BR',  # note kalang for Brasilian Portuguese is `pt`
+    'pt-pt', 'ru', 'sr', 'sv', 'ta', 'tr', 'uz',
+    'zh-CN',  # note kalang for Simplified Chinese is `zh-hans`
+]
 
-SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'ko', 'und', 'bn', 'gu', 'id']
+# These KA channels are not fully supported on the KA website, but content may
+# be available as YouTube playlists and via exercise translations from Crowdin.
+UNSUPPORTED_LANGS = [
+    'zul',  # note KA kalang is `zu`
+    'fuv',  # note KA kalang is `fv`
+    'ur',
+]
 
-# UNSUPPORTED_LANGS = ['ru', 'zu', 'my', 'fv', 'ur']
-# These KA channels are not fully supported on the KA website, but content
-# may be available as YouTube playlists and CrowdIn translations
-
-# UNSUBTITLED_LANGS = ['es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'bn', 'id']
-# Deprecated: previously we were skipping the download of subtitles for these
-# KA channels because most of the videos are translated/dubbed. But we decided
-# that it's better to include subtitles when available even videos are dubbed.
 
 V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
 ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={kalang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?login={username}&account-key={account_key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
-
 
 CHANNEL_TITLE_LOOKUP = {
     ("en", "us-cc"): "Khan Academy (English - US curriculum)",
@@ -145,16 +151,21 @@ KHAN_ACADEMY_LANGUAGE_MAPPING = {
 # map from le-utils language codes to language codes used on CROWDIN
 CROWDIN_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
+    "zul": "zu",            # Zulu
 }
 
 # map from le-utils codes to language codes used by the KA assesment items API
 ASSESSMENT_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
+    "zul": "zu",            # Zulu
+    "pt-BR": "pt",
+    "zh-CN": "zh-hans",
 }
 
 # map from le-utils codes to language codes for video nodes translated_  from youtube do not have the same language code as le-utils
 VIDEO_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
+    "zul": "zu",            # Zulu
     "pt-BR": "pt",
     "zh-CN": "zh-hans",
 }
