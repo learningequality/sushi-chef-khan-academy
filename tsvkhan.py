@@ -218,7 +218,12 @@ def clean_tsv_row(row):
             clean_row[key] = None
         else:
             if key in COLUMN_TYPES_MAP:
-                clean_row[key] = COLUMN_TYPES_MAP[key](val)
+                dest_type = COLUMN_TYPES_MAP[key]
+                if dest_type == bool:
+                    clean_val = True if val == 'True' or val == 'true' else False
+                    clean_row[key] = clean_val
+                else:
+                    clean_row[key] = dest_type(val)
             else:
                 clean_row[key] = val.strip()
     return clean_row
