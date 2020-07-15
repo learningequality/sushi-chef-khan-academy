@@ -791,7 +791,23 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "class-9th-math-revision", "translatedTitle": "कक्षा 10 (आधार)"},
             ]},
         ]
-    }
+    },
+    "km": {
+        "math": [
+            {"slug": "math", "translatedTitle": "គណិតវិទ្យា", "children": [
+                {"slug": "early-math", "translatedTitle": "គណិតវិទ្យាថ្នាក់បឋម"},
+                {"slug": "arithmetic", "translatedTitle": "លេខនព្វន្ធ"},
+                # Jul 15 (Ivan) I added the following manually even thought they
+                # are not in the website menu yet since they are 80%+ transalted
+                {"slug": "cc-kindergarten-math"},
+                {"slug": "cc-1st-grade-math"},
+                {"slug": "cc-2nd-grade-math"},
+                {"slug": "cc-third-grade-math"},
+                {"slug": "cc-fourth-grade-math"},
+                {"slug": "cc-fifth-grade-math"},
+            ]},
+        ]
+    },
 }
 
 def get_topic_tree_replacements(lang=None, variant=None):
