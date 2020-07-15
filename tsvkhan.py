@@ -534,13 +534,14 @@ def report_from_raw_data(lang, tree_dict):
             untranslated_videos.append(vid)
 
         durls = v['download_urls']
-        for durl in durls:
-            if durl['filetype'] == "mp4":
-                has_mp4.append(vid)
-            if durl['filetype'] == "mp4-low":
-                has_mp4_low.append(vid)
-            if durl['filetype'] == "mp4-low-ios":
-                has_mp4_low_ios.append(vid)
+        if durls:
+            for durl in durls:
+                if durl['filetype'] == "mp4":
+                    has_mp4.append(vid)
+                if durl['filetype'] == "mp4-low":
+                    has_mp4_low.append(vid)
+                if durl['filetype'] == "mp4-low-ios":
+                    has_mp4_low_ios.append(vid)
 
     report['#dubbed_videos'] = len(dubbed_videos)
     report['#subbed_videos'] = len(subbed_videos)
