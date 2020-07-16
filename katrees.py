@@ -132,7 +132,7 @@ if __name__ == '__main__':
         ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False, onlylisted=onlylisted)
         # json export of parsed tree of `KhanNode`s
         save_parsed_khan_topic_tree(ka_root_topic, args.lang)
-        ka_data = get_khan_tsv(args.lang, onlylisted=onlylisted)
+        ka_data = get_khan_tsv(args.lang)
 
     # HTML TREE EXPORT
     if args.htmlexport:

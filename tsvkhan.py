@@ -35,7 +35,7 @@ KHAN_TSV_CACHE_DIR = os.path.join("chefdata", "khantsvcache")
 # EXTERNAL API
 ################################################################################
 
-def get_khan_tsv(lang, update=False, onlylisted=True):
+def get_khan_tsv(lang, update=False):
     """
     Get TSV data export for le-utils language `lang` from the KA exports bucket.
     """
@@ -54,14 +54,7 @@ def get_khan_tsv(lang, update=False, onlylisted=True):
             os.makedirs(KHAN_TSV_CACHE_DIR, exist_ok=True)
         download_latest_tsv_export(kalang, filepath)
         data = parse_tsv_file(filepath)
-    if onlylisted:
-        listed_data = {}
-        for nid, node in data.items():
-            if node['listed']:
-                listed_data[nid] = node
-        return listed_data
-    else:
-        return data
+    return data
 
 
 def get_khan_topic_tree(lang="en", update=True, onlylisted=True):
@@ -238,8 +231,6 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
     Main tree-building function that takes the rows from the TSV data and makes
     a KhanNode tree out of them.
     """
-    if onlylisted and not node['listed']:
-        return None  # we want to use only nodes with `listed=True` for tree
 
     # Title info comes form different place if `en` vs. translated trees
     title = node['original_title'] if lang=='en' else node['translated_title']
@@ -255,7 +246,6 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
     # TODO: description_html might contain hyperlinks, so need to remove them
     # see also github.com/learningequality/sushi-chef-khan-academy/issues/4
     description = html2text(description_html)[0:400] if description_html else ""
-
 
     if node["kind"] == "Exercise":
         slug_no_prefix = node['slug'].replace('e/','')  # remove the `e/`-prefix
@@ -274,6 +264,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
         return khan_node
 
     elif node["kind"] in TOPIC_LIKE_KINDS or node["kind"] == "Root":
+        if onlylisted and (node['listed'] == False or node['listed'] == None):
+            return None   # we keep only topics with `listed=True` in the tree
         khan_node = KhanTopic(
             id=node["slug"],   # set topic id to slug (used for source_id later)
             title=title,
@@ -511,16 +503,20 @@ def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[]):
 def report_from_raw_data(lang, tree_dict):
     """
     Basic report on raw, flat data from the API (not parsed into a tree yet).
+    Counts not representative since they include listed=False and listed=None.
     """
     report = {'lang': lang}
 
     # general counts
     sorted_items = sorted(tree_dict.values(), key=itemgetter('kind'))
     nodes_by_kind = dict((k, list(g)) for k, g in groupby(sorted_items, key=itemgetter('kind')))
+    report['#TSV rows of Topics'] = 0
     for kind in SUPPORTED_KINDS:
-        report['#' + kind] = len(nodes_by_kind.get(kind, []))
+        report['#TSV rows of ' + kind] = len(nodes_by_kind.get(kind, []))
+        if kind in TOPIC_LIKE_KINDS:
+            report['#TSV rows of Topics'] = report['#TSV rows of Topics'] + len(nodes_by_kind.get(kind, []))
     for kind in UNSUPPORTED_KINDS:
-        report['#' + kind + ' (unsupported)'] = len(nodes_by_kind.get(kind, []))
+        report['#TSV rows of ' + kind + ' (unsupported)'] = len(nodes_by_kind.get(kind, []))
 
     # video stats
     translated_videos = []
