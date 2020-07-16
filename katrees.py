@@ -91,6 +91,59 @@ def export_khantree_as_html(lang, khantree, report, maxlevel=7, SLUG_BLACKLIST=[
     os.remove(path_md)
 
 
+
+# TREE PRINTING
+################################################################################
+
+def get_stats(subtree):
+    """
+    Recusively compute kind-counts and total file_size (non-deduplicated).
+    """
+    kind = get_kind(subtree)
+    if kind == 'topic':
+        stats = {'topic': 1, 'video':0, 'exercise':0, 'article':0}
+        for child in subtree.children:
+            child_stats = get_stats(child)
+            for k, v in child_stats.items():
+                stats[k] += v
+        return stats
+    else:
+        return {kind: 1}
+
+def stats_to_str(stats):
+    stats_items = []
+    for key in ['topic', 'video', 'exercise']:  # TODO: add 'article' when impl.
+        if stats[key]:
+            stats_items.append(str(stats[key]) + ' ' + key + 's')
+    stats_str = ' ' + ', '.join(stats_items)
+    return stats_str
+
+
+def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[], printstats=True):
+    if hasattr(subtree, 'slug') and subtree.slug in SLUG_BLACKLIST:
+        return
+    if level >= maxlevel:
+        return
+    extras = []
+    if hasattr(subtree, 'curriculum') and subtree.curriculum:
+        extras.append('CURRICULUM=' + subtree.curriculum)
+        if level > 2:
+            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
+    if hasattr(subtree, 'listed') and not subtree.listed:
+        extras.append('listed=' + str(subtree.listed))
+    if printstats:
+        stats = get_stats(subtree)
+        extras.append(stats_to_str(stats))
+    extra = ' ' + ', '.join(extras)
+    print(' '*2*level + '   -', subtree.title.strip(),
+        '[' + get_kind(subtree) + ']',
+        '(' + subtree.id + ')', extra)
+    if hasattr(subtree, 'children'):
+        for child in subtree.children:
+            print_subtree(child, level=level+1, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST, printstats=printstats)
+
+
+
 # CLI
 ################################################################################
 
@@ -112,7 +165,7 @@ if __name__ == '__main__':
     if args.oldapi:
         # OLD JSON API v2
         from khan import get_khan_api_json, report_from_raw_data
-        from khan import get_khan_topic_tree, get_kind, print_subtree
+        from khan import get_khan_topic_tree, get_kind
         KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'oldkhanapitrees')
         KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "oldkhanhtmltrees")
         print('Getting KA topic tree for lang', args.lang)
@@ -125,7 +178,7 @@ if __name__ == '__main__':
         # NEW TSV API
         from tsvkhan import get_khan_tsv
         from tsvkhan import report_from_raw_data
-        from tsvkhan import get_khan_topic_tree, get_kind, print_subtree
+        from tsvkhan import get_khan_topic_tree, get_kind
         KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
         KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "khanhtmltrees")
         print('Getting KA topic tree for lang', args.lang)

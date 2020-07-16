@@ -474,27 +474,6 @@ def get_kind(node):
         return 'unknown kind'
 
 
-def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[]):
-    if subtree.slug in SLUG_BLACKLIST:
-        return
-    if level == maxlevel:
-        return
-    extras = []
-    if hasattr(subtree, 'curriculum') and subtree.curriculum:
-        extras.append('CURRICULUM=' + subtree.curriculum)
-        if level > 2:
-            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
-    if hasattr(subtree, 'listed') and not subtree.listed:
-        extras.append('listed=' + str(subtree.listed))
-    extra = ' ' + ', '.join(extras)
-    print(' '*2*level + '   -', subtree.title.strip(),
-        '[' + get_kind(subtree) + ']',
-        '(' + subtree.id + ')', extra)
-    if hasattr(subtree, 'children'):
-        for child in subtree.children:
-            print_subtree(child, level=level+1, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST)
-
-
 
 
 # REPORTS
