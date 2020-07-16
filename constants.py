@@ -7,7 +7,8 @@ SUPPORTED_LANGS = [
     'az', 'bg', 'bn', 'cs', 'da', 'de', 'el', 'en', 'es', 'fr', 'gu', 'hi', 'hu',
     'hy', 'id', 'it', 'ja', 'ka', 'km', 'kn', 'ko', 'ky', 'lt', 'my', 'nb', 'nl', 'pl',
     'pt-BR',  # note kalang for Brasilian Portuguese is `pt`
-    'pt-pt', 'ru', 'sr', 'sv', 'ta', 'tr', 'uz',
+    'pt-PT',  # note kalang for Brasilian Portuguese is `pt-pt`
+    'ru', 'sr', 'sv', 'ta', 'tr', 'uz',
     'zh-CN',  # note kalang for Simplified Chinese is `zh-hans`
 ]
 
@@ -82,6 +83,7 @@ def get_channel_description(lang=None, variant=None):
 # map from le-utils codes to language codes used in the Khan Academy TSV exports
 KHAN_ACADEMY_LANGUAGE_MAPPING = {
     "pt-BR": 'pt',
+    "pt-PT": 'pt-pt',
     "zh-CN": 'zh-hans',
 }
 

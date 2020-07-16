@@ -113,7 +113,7 @@ def get_stats(subtree):
 def stats_to_str(stats):
     stats_items = []
     for key in ['topic', 'video', 'exercise']:  # TODO: add 'article' when impl.
-        if stats[key]:
+        if key in stats and stats[key]:
             stats_items.append(str(stats[key]) + ' ' + key + 's')
     stats_str = ' ' + ', '.join(stats_items)
     return stats_str
