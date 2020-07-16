@@ -35,16 +35,7 @@ KHAN_TSV_CACHE_DIR = os.path.join("chefdata", "khantsvcache")
 # EXTERNAL API
 ################################################################################
 
-def get_khan_api_json(lang, update=False):
-    """
-    TMP shim to keep the katrees working.
-    """
-    data = get_khan_tsv(lang)
-    print('len(data)', len(data))
-    return data
-
-
-def get_khan_tsv(lang, update=False):
+def get_khan_tsv(lang, update=False, onlylisted=True):
     """
     Get TSV data export for le-utils language `lang` from the KA exports bucket.
     """
@@ -63,10 +54,17 @@ def get_khan_tsv(lang, update=False):
             os.makedirs(KHAN_TSV_CACHE_DIR, exist_ok=True)
         download_latest_tsv_export(kalang, filepath)
         data = parse_tsv_file(filepath)
-    return data
+    if onlylisted:
+        listed_data = {}
+        for nid, node in data.items():
+            if node['listed']:
+                listed_data[nid] = node
+        return listed_data
+    else:
+        return data
 
 
-def get_khan_topic_tree(lang="en", update=True):
+def get_khan_topic_tree(lang="en", update=True, onlylisted=True):
     """
     Build the complete topic tree based on the results obtained from the KA API.
     Note this topic tree contains a combined topic strcuture that includes all
@@ -92,6 +90,7 @@ def get_khan_topic_tree(lang="en", update=True):
         'id': 'x00000000',
         'original_title': 'THE CHANNEL ROOT NODE',
         'translated_title': 'THE CHANNEL ROOT NODE',
+        'listed': True,
         'translated_description_html': '',
         'children_ids': [],  # to be filled below
     }
@@ -122,7 +121,7 @@ def get_khan_topic_tree(lang="en", update=True):
     # Build a lookup table {slug --> KhanTopic} to be used for replacement logic
     topics_by_slug = {}
 
-    root = _recurse_create(root_node, tree_dict, topics_by_slug, lang=lang)
+    root = _recurse_create(root_node, tree_dict, topics_by_slug, lang=lang, onlylisted=onlylisted)
     return root, topics_by_slug
 
 
@@ -234,11 +233,13 @@ def clean_tsv_row(row):
 # TREE-BUILDING LOGIC
 ################################################################################
 
-def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
+def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True):
     """
     Main tree-building function that takes the rows from the TSV data and makes
     a KhanNode tree out of them.
     """
+    if onlylisted and not node['listed']:
+        return None  # we want to use only nodes with `listed=True` for tree
 
     # Title info comes form different place if `en` vs. translated trees
     title = node['original_title'] if lang=='en' else node['translated_title']
@@ -267,6 +268,7 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             assessment_items=node["assessment_item_ids"],
             mastery_model=node["suggested_completion_criteria"],
             source_url=node["canonical_url"],
+            listed=node['listed'],
             lang=lang,
         )
         return khan_node
@@ -278,6 +280,7 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             description=description,
             slug=node["slug"],
             lang=lang,
+            listed=node['listed'],
             curriculum=node.get("curriculum_key", None),
         )
         topics_by_slug[node["slug"]] = khan_node
@@ -285,7 +288,7 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
         for child_pointer in node.get("children_ids", []):
             if "id" in child_pointer and child_pointer["id"] in tree_dict:
                 child_node = tree_dict[child_pointer["id"]]
-                child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang)
+                child = _recurse_create(child_node, tree_dict, topics_by_slug, lang=lang, onlylisted=onlylisted)
                 if child:
                     khan_node.children.append(child)
             else:
@@ -319,6 +322,7 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             download_urls=node["download_urls"],
             youtube_id=node["youtube_id"],  # original English video (used for `source_id` later)
             translated_youtube_id=translated_youtube_id,
+            listed=node['listed'],
             lang=lang if node.get("dubbed") else node["source_lang"],
             # TODO(ivan): store subbed, dubbed, and dub_subbed as class attributes
         )
@@ -331,6 +335,7 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             title=title,
             description=description,
             slug=slug_no_prefix,
+            listed=node['listed'],
             lang=lang,
         )
         return khan_node
@@ -360,11 +365,12 @@ class KhanNode(object):
       - prerequisites: not yet supported by ricecooker, woudl be nice to have
       - related_content: not clear where to store this in Kolibri data model
     """
-    def __init__(self, id, title, description, slug, lang="en"):
+    def __init__(self, id, title, description, slug, listed, lang="en"):
         self.id = id
         self.title = title
         self.description = description
         self.slug = slug
+        self.listed = listed
         self.lang = lang
 
     def __repr__(self):
@@ -372,8 +378,8 @@ class KhanNode(object):
 
 
 class KhanTopic(KhanNode):
-    def __init__(self, id, title, description, slug, lang="en", curriculum=None):
-        super(KhanTopic, self).__init__(id, title, description, slug, lang=lang)
+    def __init__(self, id, title, description, slug, listed, lang="en", curriculum=None):
+        super(KhanTopic, self).__init__(id, title, description, slug, listed, lang=lang)
         self.curriculum = curriculum
         self.children = []
 
@@ -392,9 +398,10 @@ class KhanExercise(KhanNode):
         assessment_items,
         mastery_model,
         source_url,
+        listed,
         lang="en",
     ):
-        super(KhanExercise, self).__init__(id, title, description, slug, lang=lang)
+        super(KhanExercise, self).__init__(id, title, description, slug, listed, lang=lang)
         self.thumbnail = thumbnail
         self.assessment_items = assessment_items
         self.mastery_model = mastery_model
@@ -435,9 +442,10 @@ class KhanVideo(KhanNode):
         download_urls,
         youtube_id,
         translated_youtube_id,
+        listed,
         lang="en",
     ):
-        super(KhanVideo, self).__init__(id, title, description, slug, lang=lang)
+        super(KhanVideo, self).__init__(id, title, description, slug, listed, lang=lang)
         self.license = license
         self.thumbnail = thumbnail
         self.download_urls = download_urls
@@ -449,8 +457,8 @@ class KhanVideo(KhanNode):
 
 
 class KhanArticle(KhanNode):
-    def __init__(self, id, title, description, slug, lang="en"):
-        super(KhanArticle, self).__init__(id, title, description, slug, lang=lang)
+    def __init__(self, id, title, description, slug, listed, lang="en"):
+        super(KhanArticle, self).__init__(id, title, description, slug, listed, lang=lang)
 
     def __repr__(self):
         return "Article Node: {}".format(self.title)
@@ -479,11 +487,14 @@ def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[]):
         return
     if level == maxlevel:
         return
-    extra = ''
+    extras = []
     if hasattr(subtree, 'curriculum') and subtree.curriculum:
-        extra = 'CURRICULUM='+ subtree.curriculum
+        extras.append('CURRICULUM=' + subtree.curriculum)
         if level > 2:
             raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
+    if hasattr(subtree, 'listed') and not subtree.listed:
+        extras.append('listed=' + str(subtree.listed))
+    extra = ' ' + ', '.join(extras)
     print(' '*2*level + '   -', subtree.title.strip(),
         '[' + get_kind(subtree) + ']',
         '(' + subtree.id + ')', extra)

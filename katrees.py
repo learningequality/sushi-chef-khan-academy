@@ -17,17 +17,12 @@ import json
 import os
 import subprocess
 
-# OLD JSON API v2
-# from khan import get_khan_api_json, report_from_raw_data
-# from khan import get_khan_topic_tree, get_kind, print_subtree
-
-# NEW TSV API
-from tsvkhan import get_khan_tsv as get_khan_api_json   # to avoid changing code
-from tsvkhan import report_from_raw_data
-from tsvkhan import get_khan_topic_tree, get_kind, print_subtree
 
 
-KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
+KHAN_JSON_TREE_DIR = None
+KHAN_HTMLEXPORT_TREE_DIR = None
+
+
 
 
 
@@ -53,7 +48,6 @@ def save_parsed_khan_topic_tree(ka_root_topic, lang):
     """
     Export the parsed topic tree of `KhanNode`s as JSON for archival and diffs.
     """
-    KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
     filename = "khan_api_tree_{lang}.json".format(lang=lang)
     ka_root_topic = copy.deepcopy(ka_root_topic)
     khan_topic_tree = subtree_to_dict(ka_root_topic)
@@ -73,7 +67,7 @@ def export_khantree_as_html(lang, khantree, report, maxlevel=7, SLUG_BLACKLIST=[
     """
     Export `khantree` as HTML for manual debugging and inspection of contents.
     """
-    basedir = os.path.join("exports", "khanhtmltrees")
+    basedir = KHAN_HTMLEXPORT_TREE_DIR
     if not os.path.exists(basedir):
         os.makedirs(basedir, exist_ok=True)
     path_md = os.path.join(basedir, 'khan_academy_{}_tree.md'.format(lang))
@@ -107,19 +101,44 @@ if __name__ == '__main__':
     parser.add_argument('--htmlmaxlevel', type=int, default=7, help='html tree depth')
     parser.add_argument('--print', action='store_true', help='print topic tree')
     parser.add_argument('--printmaxlevel', type=int, default=2, help='print tree depth')
+    parser.add_argument('--oldapi', action='store_true', help='use the old API v2')
+    parser.add_argument('--showunlisted', action='store_true', help='show unlisted nodes')
     args = parser.parse_args()
 
-    print('Getting KA topic tree for lang', args.lang)
-    ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False)
+    # Normally build tree using only `listed=True` nodes, which corresponds to
+    # setting onlylisted=True. If want to see unlisted, we set onlylisted=False.
+    onlylisted = not args.showunlisted
 
-    # json export of parsed tree of `KhanNode`s
-    save_parsed_khan_topic_tree(ka_root_topic, args.lang)
-
-    if args.htmlexport:
+    if args.oldapi:
+        # OLD JSON API v2
+        from khan import get_khan_api_json, report_from_raw_data
+        from khan import get_khan_topic_tree, get_kind, print_subtree
+        KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'oldkhanapitrees')
+        KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "oldkhanhtmltrees")
+        print('Getting KA topic tree for lang', args.lang)
+        ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False)
+        # json export of parsed tree of `KhanNode`s
+        save_parsed_khan_topic_tree(ka_root_topic, args.lang)
         ka_data = get_khan_api_json(args.lang)
+
+    else:
+        # NEW TSV API
+        from tsvkhan import get_khan_tsv
+        from tsvkhan import report_from_raw_data
+        from tsvkhan import get_khan_topic_tree, get_kind, print_subtree
+        KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
+        KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "khanhtmltrees")
+        print('Getting KA topic tree for lang', args.lang)
+        ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False, onlylisted=onlylisted)
+        # json export of parsed tree of `KhanNode`s
+        save_parsed_khan_topic_tree(ka_root_topic, args.lang)
+        ka_data = get_khan_tsv(args.lang, onlylisted=onlylisted)
+
+    # HTML TREE EXPORT
+    if args.htmlexport:
         report = report_from_raw_data(args.lang, ka_data)
         export_khantree_as_html(args.lang, ka_root_topic, report, maxlevel=args.htmlmaxlevel)
 
+    # PRINT IN TERMINCAL
     if args.print:
         print_subtree(ka_root_topic, maxlevel=args.printmaxlevel)
-
