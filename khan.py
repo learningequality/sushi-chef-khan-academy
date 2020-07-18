@@ -175,8 +175,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
     if node["kind"] == "Exercise":
         khan_node = KhanExercise(
             id=node["name"],  # set id to name for backwards compatibility
-            title=node["translatedTitle"],
-            description=node["translatedDescription"],
+            title=node["translatedTitle"].replace('\xa0', ' ').replace('\n', ' ').strip(),
+            description=node["translatedDescription"].replace('\xa0', ' ').replace('\n', ' ').strip(),
             slug=node["slug"],
             thumbnail=node["imageUrl"],
             assessment_items=node["allAssessmentItems"],
@@ -188,8 +188,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
     elif node["kind"] == "Topic":
         khan_node = KhanTopic(
             id=node["slug"],  # set topic id to slug for backwards compatibility
-            title=node["translatedTitle"],
-            description=node["translatedDescription"],
+            title=node["translatedTitle"].replace('\xa0', ' ').replace('\n', ' ').strip(),
+            description=node["translatedDescription"].replace('\xa0', ' ').replace('\n', ' ').strip(),
             slug=node["slug"],
             lang=lang,
             curriculum=node["curriculumKey"] if node["curriculumKey"] else None,
@@ -210,7 +210,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             video_description = html2text(
                 translations.get(
                     node["translatedDescriptionHtml"], node["translatedDescriptionHtml"]
-                )
+                ),
+                bodywidth=0
             )[:400]
         elif node.get("translatedDescription"):
             video_description = translations.get(
@@ -220,8 +221,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             video_description = ""
         khan_node = KhanVideo(
             id=node["id"],
-            title=node["translatedTitle"],
-            description=video_description,
+            title=node["translatedTitle"].replace('\xa0', ' ').replace('\n', ' ').strip(),
+            description=video_description.replace('\xa0', ' ').replace('\n', ' ').strip(),
             slug=node["slug"],
             thumbnail=node["imageUrl"],
             license=node["licenseName"],

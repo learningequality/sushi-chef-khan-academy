@@ -245,7 +245,12 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
     # Let's have plain text description
     # TODO: description_html might contain hyperlinks, so need to remove them
     # see also github.com/learningequality/sushi-chef-khan-academy/issues/4
-    description = html2text(description_html)[0:400] if description_html else ""
+    if description_html:
+        full_description = html2text(description_html, bodywidth=0)
+        raw_description = full_description[0:400]
+        description = raw_description.replace('\n', ' ').strip()
+    else:
+        description =  ""
 
     if node["kind"] == "Exercise":
         slug_no_prefix = node['slug'].replace('e/','')  # remove the `e/`-prefix
