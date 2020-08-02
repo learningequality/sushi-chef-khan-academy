@@ -255,7 +255,7 @@ def get_stats(subtree):
     """
     if 'children' in subtree and subtree['children']:
         stats = dict((kind, 0) for kind in CONTENT_KINDS)
-        stats['topic'] = 1
+        stats['topic'] = 1  # count self
         stats['size'] = 0
         for child in subtree['children']:
             child_stats = get_stats(child)
@@ -367,11 +367,12 @@ if __name__ == '__main__':
     parser.add_argument('--printmaxlevel', type=int, default=2, help='print tree depth')
     parser.add_argument('--htmlexport', action='store_true', help='save topic tree as html')
     parser.add_argument('--htmlmaxlevel', type=int, default=7, help='html tree depth')
-    
+    parser.add_argument('--update', action='store_true', help='Force re-download of DB file')
+
     args = parser.parse_args()
 
 
-    db_file_path = download_db_file(args.channel_id)
+    db_file_path = download_db_file(args.channel_id, update=args.update)
     conn = dbconnect(db_file_path)
     kolibritree = get_tree(conn)
 
