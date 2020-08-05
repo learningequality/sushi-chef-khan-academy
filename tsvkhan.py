@@ -1,7 +1,9 @@
+#!/usr/bin/env python
 """
 Logic for parsing the "flat" lists of JSON data from the Khan Academy API and
 converting to a topic tree of `KhanNode` classes.
 """
+import argparse
 import csv
 from google.cloud import storage
 from html2text import html2text
@@ -130,11 +132,11 @@ def list_latest_tsv_exports():
     storage_client = storage.Client.create_anonymous_client()
     blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix='')
     blob_names = [blob.name for blob in blobs]
-    langs = set()
+    exports = []
     for blob_name in blob_names:
-        lang = blob_name.split('-export')[0]
-        langs.add(lang)
-    return sorted(list(langs))
+        kalang = blob_name.split('-export')[0]
+        exports.append((kalang, blob_name))
+    return sorted(exports, key=itemgetter(1))
 
 
 def download_latest_tsv_export(kalang, filepath):
@@ -552,3 +554,31 @@ def report_from_raw_data(lang, tree_dict):
                 report['curriculum_keys'].append(curriculum)
 
     return report
+
+
+
+
+# CLI
+################################################################################
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Khan Academy TSV exports viewer')
+    parser.add_argument('--latest', action='store_true', help="show only most recent")
+    parser.add_argument('--kalang', help="language code filter")
+    args = parser.parse_args()
+
+    all_exports = list_latest_tsv_exports()
+    exports_by_kalang = dict((k, list(g)) for k, g in groupby(all_exports, key=itemgetter(0)))
+    if args.latest:
+        for kalang in exports_by_kalang.keys():
+            exports_by_kalang[kalang] = [exports_by_kalang[kalang][-1]]
+
+    print('all supported kalang =', sorted(exports_by_kalang.keys()))
+    if args.kalang:
+        for export in exports_by_kalang[args.kalang]:
+            print(export)
+    else:
+        for kalang, exports in exports_by_kalang.items():
+            print('Exports for kalang =', kalang)
+            for export in exports:
+                print('  -', export[1])
