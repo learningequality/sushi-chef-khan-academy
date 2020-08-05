@@ -19,8 +19,14 @@ from constants import get_channel_title
 from constants import get_channel_description
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
-from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 from network import get_subtitle_languages
+
+# old V2 API : pre Aug 2020
+# from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
+
+# uncomment next line to switch to new TSV API : post Aug 2020
+from tsvkhan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
+
 
 
 LICENSE_MAPPING = {
