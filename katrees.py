@@ -10,12 +10,14 @@ or
 
 """
 import argparse
+from constants import SUPPORTED_LANGS
 from contextlib import redirect_stdout
 import copy
 import io
 import json
 import os
 import subprocess
+import sys
 
 
 
@@ -150,6 +152,7 @@ def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[], printstats=Tr
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KA topic tree archiver')
     parser.add_argument('--lang', required=True, help="language code")
+    parser.add_argument('--archiveall', action='store_true', help="archive all langs")
     parser.add_argument('--htmlexport', action='store_true', help='save topic tree as html')
     parser.add_argument('--htmlmaxlevel', type=int, default=7, help='html tree depth')
     parser.add_argument('--print', action='store_true', help='print topic tree')
@@ -168,12 +171,20 @@ if __name__ == '__main__':
         from khan import get_khan_topic_tree, get_kind
         KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'oldkhanapitrees')
         KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "oldkhanhtmltrees")
-        print('Getting KA topic tree for lang', args.lang)
-        ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False)
-        # json export of parsed tree of `KhanNode`s
-        save_parsed_khan_topic_tree(ka_root_topic, args.lang)
-        ka_data = get_khan_api_json(args.lang)
-
+        if args.archiveall:
+            from constants import SUPPORTED_LANGS
+            langs = SUPPORTED_LANGS
+        else:
+            langs = [args.lang]
+        for lang in langs:
+            try:
+                print('Getting KA topic tree for lang', lang)
+                ka_root_topic, _ = get_khan_topic_tree(lang=lang, update=False)
+                # json export of parsed tree of `KhanNode`s
+                save_parsed_khan_topic_tree(ka_root_topic, lang)
+                ka_data = get_khan_api_json(lang)
+            except json.decoder.JSONDecodeError as e:
+                print('Failed to get lang', lang, 'from old API')
     else:
         # NEW TSV API
         from tsvkhan import get_khan_tsv
@@ -181,11 +192,21 @@ if __name__ == '__main__':
         from tsvkhan import get_khan_topic_tree, get_kind
         KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
         KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "khanhtmltrees")
-        print('Getting KA topic tree for lang', args.lang)
-        ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False, onlylisted=onlylisted)
-        # json export of parsed tree of `KhanNode`s
-        save_parsed_khan_topic_tree(ka_root_topic, args.lang)
-        ka_data = get_khan_tsv(args.lang)
+        if args.archiveall:
+            from constants import SUPPORTED_LANGS
+            langs = SUPPORTED_LANGS
+        else:
+            langs = [args.lang]
+        for lang in langs:
+            print('Getting KA topic tree for lang', lang)
+            ka_root_topic, _ = get_khan_topic_tree(lang=lang, update=False, onlylisted=onlylisted)
+            # json export of parsed tree of `KhanNode`s
+            save_parsed_khan_topic_tree(ka_root_topic, lang)
+            ka_data = get_khan_tsv(lang)
+
+    if args.archiveall:
+        print('Done archiving all languages...')
+        sys.exit(0)  # exit early when using --all for archiving purposes
 
     # HTML TREE EXPORT
     if args.htmlexport:
