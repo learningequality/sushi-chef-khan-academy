@@ -32,6 +32,10 @@ exports/oldkhanhtmltrees
 exports/khanhtmltrees
 
 
+# (moved) v2API - TSVexports diffs script moved to treediffer/examples/  ; use symlink to get latest version
+tsvdiffs.py
+
+
 # (old) Reports and curation-related printouts
 reports
 reports/databases
