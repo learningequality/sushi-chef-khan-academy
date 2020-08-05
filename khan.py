@@ -124,7 +124,7 @@ def get_khan_api_json(lang, update=False):
     return data
 
 
-def get_khan_topic_tree(lang="en", update=True):
+def get_khan_topic_tree(lang="en", update=False):
     """
     Build the complete topic tree based on the results obtained from the KA API.
     Note this topic tree contains a combined topic strcuture that includes all
