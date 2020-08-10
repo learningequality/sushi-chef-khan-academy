@@ -59,9 +59,11 @@ def download_db_file(channel_id, server='production', update=False):
         print(response.status_code, response.content)
         raise ConnectionError('Failed to download DB file from', db_file_url)
 
+
 def dbconnect(db_file_path):
     conn = sqlite3.connect(db_file_path)
     return conn
+
 
 def dbex(conn, query):
     """
@@ -154,7 +156,6 @@ def count_values_for_attr(rows, *attrs):
 
 
 
-
 # KOLIBRI CHANNEL
 ################################################################################
 
@@ -167,8 +168,7 @@ def get_channel(channel_id):
 def get_nodes_by_id(conn, attach_files=True, attach_assessments=True):
     nodes = dbex(conn, "SELECT * FROM content_contentnode;")
     # TODO: load tags from content_contentnode_tags and content_contenttag
-    # TODO: load prerequisites from content_contentnode_has_prerequisite,
-    #                           and content_contentnode_related
+    # TODO: load content_contentnode_has_prerequisite, content_contentnode_related
     nodes_by_id = {}
     for node in nodes:
         nodes_by_id[node['id']] = node
@@ -200,6 +200,7 @@ def get_nodes_by_id(conn, attach_files=True, attach_assessments=True):
 def get_files(conn):
     files = dbex(conn, "SELECT * FROM content_file;")
     return files
+
 
 def get_assessmentmetadata(conn):
     assessmentmetadata = dbex(conn, "SELECT * FROM content_assessmentmetadata;")
@@ -290,10 +291,12 @@ def print_subtree(subtree, level=0, extrakeys=None, maxlevel=2, printstats=True)
     if printstats:
         stats = get_stats(subtree)
         extra += stats_to_str(stats)
-    print(' '*2*level + '   -', subtree['title'] + ' (' + subtree['id'] + ')', extra)
+    title = subtree['title'].replace('\n', ' ')
+    print(' '*2*level + '   -',  title + ' (' + subtree['id'] + ')', extra)
     if 'children' in subtree:
         for child in subtree['children']:
             print_subtree(child, level=level+1, extrakeys=extrakeys, maxlevel=maxlevel, printstats=printstats)
+
 
 
 # TREE EXPORT
@@ -331,7 +334,6 @@ def export_kolibri_json_tree(channel_id=None, db_file_path=None, suffix='', serv
 ################################################################################
 
 KOLIBRI_TREE_HTMLEXPORT_DIR = 'reports/kolibrihtmltrees'
-
 
 def export_kolibritree_as_html(kolibritree, maxlevel=7):
     """
