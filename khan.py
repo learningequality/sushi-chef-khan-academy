@@ -2,6 +2,7 @@
 Logic for parsing the "flat" lists of JSON data from the Khan Academy API and
 converting to a topic tree of `KhanNode` classes.
 """
+from collections import OrderedDict
 from html2text import html2text
 import json
 import os
@@ -9,19 +10,93 @@ import os
 from le_utils.constants.languages import getlang, getlang_by_name
 from ricecooker.config import LOGGER
 
-from constants import ASSESSMENT_URL, PROJECTION_KEYS, V2_API_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING
+from constants import ASSESSMENT_URL, ASSESSMENT_LANGUAGE_MAPPING
+from constants import SUPPORTED_LANGS
 from crowdin import retrieve_translations
 from dubbed_mapping import generate_dubbed_video_mappings_from_csv
 from network import make_request
-from utils import get_video_id_english_mappings
+
 
 translations = {}
 video_map = generate_dubbed_video_mappings_from_csv()
-english_video_map = get_video_id_english_mappings()
+
 
 SUPPORTED_KINDS = ["Topic", "Exercise", "Video"]
 
 KHAN_API_CACHE_DIR = os.path.join("chefdata", "khanapicache")
+
+
+V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
+
+TOPIC_ATTRIBUTES = [
+    'childData',
+    'deleted',
+    'doNotPublish',
+    'hide',
+    'id',
+    'kind',
+    'slug',
+    'translatedTitle',
+    'translatedDescription',
+    'curriculumKey'
+]
+
+EXERCISE_ATTRIBUTES = [
+    'allAssessmentItems',
+    'displayName',
+    'fileName',
+    'id',
+    'kind',
+    'name',
+    'prerequisites',
+    'slug',
+    'usesAssessmentItems',
+    'relatedContent',
+    'translatedTitle',
+    'translatedDescription',
+    'suggestedCompletionCriteria',
+    'kaUrl',
+    'imageUrl'
+]
+
+VIDEO_ATTRIBUTES = [
+    'id',
+    'kind',
+    'licenseName',
+    'slug',
+    'youtubeId',
+    'translatedYoutubeLang',
+    'translatedYoutubeId',
+    'translatedTitle',
+    'translatedDescription',
+    'translatedDescriptionHtml',
+    'downloadUrls',
+    'imageUrl'
+]
+# Note (May 2020): we also want `sourceLanguage` but not avail. thorugh /api/v2/
+
+# ARTICLE_ATTRIBUTES = [
+#     'id',
+#     'kind',
+#     'slug',
+#     'descriptionHtml',
+#     'perseusContent',
+#     'title',
+#     'imageUrl'
+# ]
+
+PROJECTION_KEYS = json.dumps(OrderedDict([
+    ("topics", [OrderedDict((key, 1) for key in TOPIC_ATTRIBUTES)]),
+    ("exercises", [OrderedDict((key, 1) for key in EXERCISE_ATTRIBUTES)]),
+    ("videos", [OrderedDict((key, 1) for key in VIDEO_ATTRIBUTES)]),
+    # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
+]))
+
+
+
+# this code moved here to avoid circular imports
+from utils import get_video_id_english_mappings
+english_video_map = get_video_id_english_mappings()
 
 
 
@@ -49,7 +124,7 @@ def get_khan_api_json(lang, update=False):
     return data
 
 
-def get_khan_topic_tree(lang="en", update=True):
+def get_khan_topic_tree(lang="en", update=False):
     """
     Build the complete topic tree based on the results obtained from the KA API.
     Note this topic tree contains a combined topic strcuture that includes all
@@ -69,7 +144,7 @@ def get_khan_topic_tree(lang="en", update=True):
 
     if lang not in SUPPORTED_LANGS:
         global translations
-        translations = retrieve_translations(lang_code=lang)
+        translations = retrieve_translations(lang)
 
     # Flatten node_data (combine topics, videos, and exercises in a single list)
     flattened_tree = [node for node_list in topic_tree.values() for node in node_list]
@@ -100,8 +175,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
     if node["kind"] == "Exercise":
         khan_node = KhanExercise(
             id=node["name"],  # set id to name for backwards compatibility
-            title=node["translatedTitle"],
-            description=node["translatedDescription"],
+            title=node["translatedTitle"].replace('\xa0', ' ').replace('\n', ' ').strip(),
+            description=node["translatedDescription"].replace('\xa0', ' ').replace('\n', ' ').strip(),
             slug=node["slug"],
             thumbnail=node["imageUrl"],
             assessment_items=node["allAssessmentItems"],
@@ -113,8 +188,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
     elif node["kind"] == "Topic":
         khan_node = KhanTopic(
             id=node["slug"],  # set topic id to slug for backwards compatibility
-            title=node["translatedTitle"],
-            description=node["translatedDescription"],
+            title=node["translatedTitle"].replace('\xa0', ' ').replace('\n', ' ').strip(),
+            description=node["translatedDescription"].replace('\xa0', ' ').replace('\n', ' ').strip() if node["translatedDescription"] else None,
             slug=node["slug"],
             lang=lang,
             curriculum=node["curriculumKey"] if node["curriculumKey"] else None,
@@ -135,7 +210,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             video_description = html2text(
                 translations.get(
                     node["translatedDescriptionHtml"], node["translatedDescriptionHtml"]
-                )
+                ),
+                bodywidth=0
             )[:400]
         elif node.get("translatedDescription"):
             video_description = translations.get(
@@ -145,8 +221,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en"):
             video_description = ""
         khan_node = KhanVideo(
             id=node["id"],
-            title=node["translatedTitle"],
-            description=video_description,
+            title=node["translatedTitle"].replace('\xa0', ' ').replace('\n', ' ').strip(),
+            description=video_description.replace('\xa0', ' ').replace('\n', ' ').strip(),
             slug=node["slug"],
             thumbnail=node["imageUrl"],
             license=node["licenseName"],
@@ -231,9 +307,9 @@ class KhanExercise(KhanNode):
 
     def get_assessment_items(self):
         items_list = []
-        lang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
+        kalang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
         for i in self.assessment_items:
-            item_url = ASSESSMENT_URL.format(assessment_item=i["id"], lang=lang)
+            item_url = ASSESSMENT_URL.format(assessment_item=i["id"], kalang=kalang)
             item = make_request(item_url).json()
             # check if assessment item is fully translated, before adding it to list
             if item["is_fully_translated"]:
@@ -301,25 +377,6 @@ def get_kind(node):
         return 'article'
     else:
         return 'unknown kind'
-
-
-def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[]):
-    if subtree.slug in SLUG_BLACKLIST:
-        return
-    if level == maxlevel:
-        return
-    extra = ''
-    if hasattr(subtree, 'curriculum') and subtree.curriculum:
-        extra = 'CURRICULUM='+ subtree.curriculum
-        if level > 2:
-            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
-    print(' '*2*level + '   -', subtree.title.strip(),
-        '[' + get_kind(subtree) + ']',
-        '(' + subtree.id + ')', extra)
-    if hasattr(subtree, 'children'):
-        for child in subtree.children:
-            print_subtree(child, level=level+1, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST)
-
 
 
 

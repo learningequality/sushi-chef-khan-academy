@@ -2,14 +2,19 @@ import fnmatch
 import glob
 import os
 import shutil
+import sys
 import tempfile
 import zipfile
 
 import polib
 from constants import CROWDIN_URL, SUPPORTED_LANGS, CROWDIN_LANGUAGE_MAPPING
 from network import make_request
-from ricecooker.utils.caching import (CacheControlAdapter,
-                                      CacheForeverHeuristic, FileCache)
+from ricecooker.config import LOGGER
+
+
+CROWDIN_CACHE_DIR = os.path.join("chefdata", "crowdin")
+if not os.path.exists(CROWDIN_CACHE_DIR):
+    os.makedirs(CROWDIN_CACHE_DIR, exist_ok=True)
 
 
 # monkey patch polib.POEntry.merge
@@ -48,24 +53,37 @@ class Catalog(dict):
         super().__init__()
 
 
-def retrieve_translations(lang_code, includes="*.po"):
+def retrieve_translations(lang, includes="*.po"):
 
-    if lang_code in SUPPORTED_LANGS:
+    if lang in SUPPORTED_LANGS:
         return {}
 
-    lang_code = CROWDIN_LANGUAGE_MAPPING.get(lang_code, lang_code)
+    lang_code = CROWDIN_LANGUAGE_MAPPING.get(lang, lang)
 
-    r = make_request(CROWDIN_URL.format(key=os.environ['KA_CROWDIN_SECRET_KEY'], lang_code=lang_code), timeout=180)
+    if 'CROWDIN_USERNAME' not in os.environ or 'CROWDIN_ACCOUNT_KEY' not in os.environ:
+        LOGGER.error("Error missing Crowdin creds needed to get KA contnet translations.")
+        LOGGER.error("Must set ENV vars CROWDIN_USERNAME and/or CROWDIN_ACCOUNT_KEY")
+        LOGGER.error("get from /data/sushi-chef-khan-academy/credentials/crowdinkeys.env on vader")
+        LOGGER.error("or crate an account and get from https://crowdin.com/settings#api-key")
+        sys.exit(1)
+    username = os.environ['CROWDIN_USERNAME']
+    account_key = os.environ['CROWDIN_ACCOUNT_KEY']
+    url = CROWDIN_URL.format(lang_code=lang_code, username=username, account_key=account_key)
 
-    with open('crowdin.zip', "wb") as f:
+    filename = "khanacademy_{lang_code}.zip".format(lang_code=lang_code)
+    filepath = os.path.join(CROWDIN_CACHE_DIR, filename)
+
+    # GET
+    LOGGER.debug("Getting translations from the khanacademy project...")
+    r = make_request(url, timeout=180)
+    with open(filepath, "wb") as f:
         for chunk in r.iter_content(1024):
             f.write(chunk)
 
+    # UNZIP
     zip_extraction_path = tempfile.mkdtemp()
-
-    with zipfile.ZipFile('crowdin.zip') as zf:
+    with zipfile.ZipFile(filepath) as zf:
         zf.extractall(zip_extraction_path)
-
     all_filenames = glob.iglob(
         os.path.join(zip_extraction_path, "**"),
         recursive=True

@@ -1,89 +1,28 @@
-import json
-from collections import OrderedDict
 
 from le_utils.constants.languages import getlang
 
-TOPIC_ATTRIBUTES = [
-    'childData',
-    'deleted',
-    'doNotPublish',
-    'hide',
-    'id',
-    'kind',
-    'slug',
-    'translatedTitle',
-    'translatedDescription',
-    'curriculumKey'
+# These KA channels are supported on the KA website and topic trees for them are
+# availables as TSV exports. The list contains internal le-utils language codes.
+SUPPORTED_LANGS = [
+    'az', 'bg', 'bn', 'cs', 'da', 'de', 'el', 'en', 'es', 'fr', 'gu', 'hi', 'hu',
+    'hy', 'id', 'it', 'ja', 'ka', 'km', 'kn', 'ko', 'ky', 'lt', 'my', 'nb', 'nl', 'pl',
+    'pt-BR',  # note kalang for Brasilian Portuguese is `pt`
+    'pt-PT',  # note kalang for Brasilian Portuguese is `pt-pt`
+    'ru', 'sr', 'sv', 'ta', 'tr', 'uz',
+    'zh-CN',  # note kalang for Simplified Chinese is `zh-hans`
 ]
 
-EXERCISE_ATTRIBUTES = [
-    'allAssessmentItems',
-    'displayName',
-    'fileName',
-    'id',
-    'kind',
-    'name',
-    'prerequisites',
-    'slug',
-    'usesAssessmentItems',
-    'relatedContent',
-    'translatedTitle',
-    'translatedDescription',
-    'suggestedCompletionCriteria',
-    'kaUrl',
-    'imageUrl'
+# These KA channels are not fully supported on the KA website, but content may
+# be available as YouTube playlists and via exercise translations from Crowdin.
+UNSUPPORTED_LANGS = [
+    'zul',  # note KA kalang is `zu`
+    'fuv',  # note KA kalang is `fv`
+    'ur',
 ]
 
-VIDEO_ATTRIBUTES = [
-    'id',
-    'kind',
-    'licenseName',
-    'slug',
-    'youtubeId',
-    'translatedYoutubeLang',
-    'translatedYoutubeId',
-    'translatedTitle',
-    'translatedDescription',
-    'translatedDescriptionHtml',
-    'downloadUrls',
-    'imageUrl'
-]
-# Note (May 2020): we also want `sourceLanguage` but not avail. thorugh /api/v2/
 
-# ARTICLE_ATTRIBUTES = [
-#     'id',
-#     'kind',
-#     'slug',
-#     'descriptionHtml',
-#     'perseusContent',
-#     'title',
-#     'imageUrl'
-# ]
-
-PROJECTION_KEYS = json.dumps(OrderedDict([
-    ("topics", [OrderedDict((key, 1) for key in TOPIC_ATTRIBUTES)]),
-    ("exercises", [OrderedDict((key, 1) for key in EXERCISE_ATTRIBUTES)]),
-    ("videos", [OrderedDict((key, 1) for key in VIDEO_ATTRIBUTES)]),
-    # ("articles", [OrderedDict((key, 1) for key in ARTICLE_ATTRIBUTES)])
-]))
-
-
-
-SUPPORTED_LANGS = ['en', 'es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'ko', 'und', 'bn', 'gu', 'id']
-
-# UNSUPPORTED_LANGS = ['ru', 'zu', 'my', 'fv', 'ur']
-# These KA channels are not fully supported on the KA website, but content
-# may be available as YouTube playlists and CrowdIn translations
-
-# UNSUBTITLED_LANGS = ['es', 'fr', 'hi', 'pt-PT', 'pt-BR', 'hy', 'bn', 'id']
-# Deprecated: previously we were skipping the download of subtitles for these
-# KA channels because most of the videos are translated/dubbed. But we decided
-# that it's better to include subtitles when available even videos are dubbed.
-
-V2_API_URL = "http://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection={projection}"
-KA_LITE_DUBBED_LIST = "https://docs.google.com/spreadsheets/d/1haV0KK8313lG-_Ay2REplQuMquRStZumB3zxmmtYqO0/export?format=csv#gid=1632743521"
-ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={lang}"
-CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?key={key}"
+ASSESSMENT_URL = "http://www.khanacademy.org/api/internal/assessment_items/{assessment_item}?lang={kalang}"
+CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?login={username}&account-key={account_key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
 
 
@@ -119,8 +58,12 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "it": "Khan Academy offre i video e gli esercizi di matematica, allineati al curriculum degli Stati Uniti. Ogni argomento è trattato in modo intuitivo attraverso spiegazioni video, e fornisce numerosi esercizi pratici per aiutare gli studenti raggiungere la competenza sulla materia. Adatto agli studenti di scuola elementare, media e secondaria, nonché agli adulti.",
     "bn": "খান একাডেমিতে বাংলাদেশের শিক্ষাক্রম অনুযায়ী গণিতের ভিডিও এবং অনুশীলনী রয়েছে। প্রতিটি অধ্যায়ে বিষয়ভিত্তিক মূল ধারণার ভিডিও এবং অসংখ্য অনুশীলনী রয়েছে যা নিয়মিত চর্চার মাধ্যমে শিক্ষার্থীরা ঐ বিষয়ে দক্ষতা অর্জন করতে পারে। প্রাথমিক ও মাধ্যমিক শিক্ষার্থীদের জন্য উপযোগী, সেইসাথে বয়স্ক শিক্ষার্থীরাও এটি ব্যবহার করতে পারবে।",
     "bg": "Khan Academy предоставя видео уроци и упражнения по математика, физика, химия и биология, съобразени с българските учебни стандарти. Темите са представени чрез лесно разбираеми обяснения и многобройни упражнения за самооценка на наученото. Материалите са подходящи както за ученици от началните и стредните класове, така и за студенти.",
-    "hi": "खान अकादमी वीडियो और अभ्यास के माध्यम से हर शिक्षक को गणित का ज्ञान देती हैं। ये वीडियो वास्तविक जीवन अनुप्रयोगों के साथ अवधारणाओं की व्याख्या करते हैं।"
+    "hi": "खान अकादमी गणित वीडियो और अभ्यास प्रदान करता है। प्रत्येक विषय सहज वीडियो और कई अभ्यासों के साथ कवर किया गया है। वे विषयों में निपुण होने में मदद करते हैं।",
+    "km": "Khan Academy ផ្តល់ជូននូវវីដេអូ និងលំហាត់គណិតវិទ្យាជាច្រើន។ គ្រប់មុខវិជ្ជាទាំងអស់ត្រូវបានផ្សព្វផ្សាយតាមរយៈវីដេអូវិចារណញាណ និងមានលំហាត់ជាច្រើនទៀតដើម្បីជួយឱ្យសិស្សមានគន្លឹះក្នុងការដោះស្រាយលំហាត់កាន់តែងាយស្រួល។",
+    "gu": "ખાન એકેડેમી ગણિત અને વિજ્ઞાન ના વિડિયો અને સ્વાધ્યાય પ્રદાન કરે છે. દરેક વિષય સાહજિક વિડિયો અને અસંખ્ય સ્વાધ્યાયના સાથે આવરી લેવામાં આવે છે. તેઓ વિષયોને માસ્ટર બનાવવામાં મદદ કરે છે.",
+    "my": "Khan Academy မှဗွီဒီယိုများနှင့်သင်္ချာဆိုင်ရာလေ့ကျင့်ခန်းများကိုတင်ဆက်သည်။ ဘာသာရပ်တိုင်းကိုထိုးထွင်းသိမြင်နိုင်သောဗီဒီယိုများဖြင့်ဖော်ပြပြီးကျောင်းသားများကိုသဘောတရားများကိုကျွမ်းကျင်အောင်ကူညီရန်လေ့ကျင့်ခန်းများစွာပါ ၀ င်သည်။",  # via google transalte
 }
+
 
 
 def get_channel_description(lang=None, variant=None):
@@ -137,21 +80,33 @@ def get_channel_description(lang=None, variant=None):
         return description
 
 
+# map from le-utils codes to language codes used in the Khan Academy TSV exports
+KHAN_ACADEMY_LANGUAGE_MAPPING = {
+    "pt-BR": 'pt',
+    "pt-PT": 'pt-pt',
+    "zh-CN": 'zh-hans',
+}
+
 # map from le-utils language codes to language codes used on CROWDIN
 CROWDIN_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
+    "zul": "zu",            # Zulu
 }
 
-# map  to codes used to get assesment items from the KA API
+# map from le-utils codes to language codes used by the KA assesment items API
 ASSESSMENT_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
+    "zul": "zu",            # Zulu
+    "pt-BR": "pt",
+    "zh-CN": "zh-hans",
 }
 
 # map from le-utils codes to language codes for video nodes translated_  from youtube do not have the same language code as le-utils
 VIDEO_LANGUAGE_MAPPING = {
     "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
+    "zul": "zu",            # Zulu
     "pt-BR": "pt",
-    "zh-CN": "zh-hans"
+    "zh-CN": "zh-hans",
 }
 
 

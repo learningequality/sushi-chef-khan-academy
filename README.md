@@ -1,6 +1,7 @@
 # Khan Academy Sushi Chef
 
-Sushi Chef for khanacademy.org
+Content integration script for the Khan Academy channels from https://khanacademy.org.
+
 
 ### Step 0: Installation
 
@@ -14,7 +15,7 @@ Sushi Chef for khanacademy.org
 * Run `pip install -r requirements.txt`
 
 
-### Step 1: Obtaining an Authorization Token ###
+### Step 1: Obtaining an Authorization Token
 
 You will need an authorization token to create a channel on Kolibri Studio. In order to obtain one:
 
@@ -23,7 +24,7 @@ You will need an authorization token to create a channel on Kolibri Studio. In o
 3. Copy the given authorization token (you will need this for later).
 
 
-### Step 2: Running the chef ###
+### Step 2: Running the chef
 
 Running the KA sushi chef script requires loading some environment variables,
 and a single command:
@@ -41,57 +42,90 @@ and `<lang_code>` with a le_utils code for the channel (e.g. `en`, `es`, `pt-BR`
 When running the KA chef command on a remote server, use `nohup ... &` so that
 the long-running chef process will not exit when you "hang up" the ssh sesssion.
 
-<!--
- * Supported Language Codes: en, es, pt-BR, pt-PT, fr, sw
- * Lite Language Codes: zu
--->
+
+
 
 
 # Implementation Overview
 
-We use `https://www.khanacademy.org/api/v2/topics/topictree?lang={lang}&projection=<projection>`,
-to get a tree structure of the language, which includes topics, videos, and exercises.
-Using the `projection` attribute we can pass in the specific attributes for each 
-content kind such as `projection={"topics": [{"translatedTitle": 1}], "exercises": [{"id": 1, "name": 1}], "videos": [{"id": 1,"youtubeId": 1}]}`
-(Note: These are only a subset of the attributes we pass in. For a full list see,
-https://github.com/learningequality/sushi-chef-khan-academy/blob/master/constants.py).
+We use Khan Academy TSV export data to get a tree structure of the language,
+which includes topics, videos, and exercises. We map each of these content kinds
+to our KhanNode objects, which then get mapped to the ricecooker data structures:
 
-We map each of these content kinds to our KhanNode objects, which then get mapped
-to the ricecooker data structures:
-
-    KA API json data --(A)--> KhanNode tree --(B)--> ContentNode tree
+    KA TSV exports --(A)--> KhanNode tree --(B)--> ContentNode tree
 
 During the processing step (A) slug-based filtering is applied to skip certain
-nodes (due to technical or licensing limitiations). During processing step (B)
+nodes (due to technical or licensing limitations). During processing step (B)
 the topic tree returned by the KA API is restructured to take advantage of LTTs
 see `SLUG_BLACKLIST` and `TOPIC_TREE_REPLACMENTS_PER_LANG` in [`curation.py`](./curation.py).
 
 
 ## Code
 
-Important chef code:
+### Important chef code
 
-    sushichef.py          Main code for content integration script
-    khan.py               Functions for loading data from the KA API /api/v2/
-    csvkhan.py            Functions for loading data from the new KA CSV exports
+    sushichef.py          Main code for the content integration script
+    tsvkhan.py            Functions for loading data from the new KA TSV exports
     constants.py          Constants, metadata, and settings used in the code
     curation.py           Topic node replacements to organize the KA topic trees
     crowdin.py            Obtain translations from CrowdIn
     common_core_tags.py   Helper class to obtain the CCSSM tags for KA exercises
-    dubbed_mapping.py     Fallback strategy for semi-supported languages
     network.py            Robust HTTP requests that use caching
-    utils.py              Helper method for looking up original English youtube_id
 
-Debugging and reports code
+### Debugging and reports code
 
+    graphql.py            Helper method to extract localized topic trees form the KA website
     katrees.py            Generate report and print topic tree from the KA API
     kolibridb.py          Generate report and print topic tree from Kolibri DBs
+
+Each of these scripts can be called as standalone command line scripts.
+
+**Example 1.** Get localized topic tree info from Khan Academy website:
+
+    ./graphql.py --lang hi   # check the topics structure used on hi.khanacademy.org
+    ./graphql.py --lang en --curriculum us-cc   # topic structure for us-cc variant
+
+Use the output of this script to add or update the info in `curaiton.py`.
+
+
+**Example 2.** Print the entire topic tree from the French TSV export (up to 3 levels)
+and also save the tree as an HTML file:
+
+    ./katrees.py --print --printmaxlevel=3 --htmlexport --htmlmaxlevel=4   --lang fr
+
+**Example 3.** Print the topic tree for the currently published Kolibri channel 
+Khan Academy (Français) which has channle ID `878ec2e6f88c5c268b1be6f202833cd4`:
+
+    ./kolibridb.py --channel_id 878ec2e6f88c5c268b1be6f202833cd4 --printmaxlevel 3 --update
+
+The output is similar to tree output of **Example 2** so it can be used for comparing
+and debugging (what we get from the TSV exports vs. what the final channel produced).
+
+
+**Example 4.** The code in `tsvkhan.py` is also runnable as a standalone script:
+  
+    ./tsvkhan.py   # list the available TSV exports for all languages
+    ./tsvkhan.py --kalang fr     # list the TSV exports available for French
+
+
+
+
+### Legacy code
+These files will no longer necessary once the switchover to the new TSV exports API is complete:
+
+    khan.py               (legacy) functions for loading data from the old KA API /api/v2/
+    dubbed_mapping.py     (legacy) A fallback strategy for semi-supported languages
+    utils.py              (legacy) Helper method for looking up original English youtube_id
 
 
 
 ### KhanExercise
 
-Each exercise has a list of assessment item IDs associated with it. In order to retrieve each assessment item we use, `https://www.khanacademy.org/api/v1/assessment_items/{id}?lang={lang}`. We only include the assessment item if the content is fully translated by looking at `is_fully_translated` from the response.
+Each exercise has a list of assessment item IDs associated with it. In order to retrieve each
+assessment item we use, `https://www.khanacademy.org/api/v1/assessment_items/{id}?lang={lang}`.
+We only include the assessment item if the content is fully translated by looking
+at `is_fully_translated` from the response.
+
 
 ### Data Mapping
 Below is a table which shows the mapping from the Khan data structures to the Ricecooker data structures.
@@ -119,20 +153,20 @@ The Khan Academy content is available under different topic structures. The KA
 content in English was originally organized around high-level Subjects.
 Later, an additional "Math by grade" topic structure was added that contains the
 same videos and lessons but organized according to the US Common Core Math standards.
-Certain KA languages offer an additional topic structure aligned to local grade levels
+Certain KA languages offer an additional topic structures aligned to local grade levels
 called Localized Topic Trees (LTTs). The KA website offers multiple top-level menu
 topics that can vary with both language and region. All the topic trees are available
 through the KA API, but the different topic trees co-exist within the same tree
 structure as returned by the KA API, which can be overwhelming for users since
 the same content appears repeatedly and organization is unexpected.
 
-The `SLUG_BLACKLIST` and `TOPIC_TREE_FOR_LANG_AND_VARIANT` info in `curation.py`
+The `SLUG_BLACKLIST` and `TOPIC_TREE_REPLACMENTS_PER_LANG` info in `curation.py`
 allows us to take advantage of these multiple topics trees and present Kolibri
-users with a topic tree structure that closely resmeble the Khan Academy website.
+users with a topic tree structure that closely resemble the Khan Academy website.
 Each Kolibri channel is created with a combination of (`lang`,`variant`) where
-lang is one of the le-utils language codes, and variant is one of the "curriculum"
+lang is one of the `le_utils` language codes, and variant is one of the "curriculum"
 variants available for that language. For example, the Khan Academy English content
-comes in two variants, the "default" variant (`None`) and the India variant (`in-in`).
+comes in two variants, the US variant (`us-cc`) and the India variant (`in-in`).
 Here is a complete list of channels and command line options lang/variant for them:
 
 - Arabic: youtube playlist channel via https://www.youtube.com/user/KhanAcademyArabi/playlists
@@ -141,10 +175,6 @@ Here is a complete list of channels and command line options lang/variant for th
 - Bulgarian: `lang=bg` https://bg.khanacademy.org/
 - German: `lang=de` https://de.khanacademy.org/
 - English: `lang=en` https://www.khanacademy.org/ comes in three variants:
-  - Khan Academy (English): `lang=en`, `variant=None`. This is the "origina" channel
-    that contains all the content available through the API, includes hierarchies
-    for both USA and India. The choice to include all content was made for backward
-    compatibility, in case content was curated from this channel (May 2020).
   - Khan Academy (English - US curriculum): `lang=en`, `variant=us-cc` is based
     on the menu of https://www.khanacademy.org/?curriculum=us-cc and including
     "Math by subject" and "Math by grade" hierarchies aligned to the US common core.

@@ -10,21 +10,25 @@ or
 
 """
 import argparse
+from constants import SUPPORTED_LANGS
 from contextlib import redirect_stdout
 import copy
 import io
 import json
 import os
 import subprocess
-
-from khan import get_khan_api_json, report_from_raw_data
-from khan import get_khan_topic_tree, get_kind, print_subtree
-
-KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
+import sys
 
 
 
-# JSON EXPORTS
+KHAN_JSON_TREE_DIR = None
+KHAN_HTMLEXPORT_TREE_DIR = None
+
+
+
+
+
+# JSON TREE EXPORTS
 ################################################################################
 
 def subtree_to_dict(subtree, SLUG_BLACKLIST=[]):
@@ -46,7 +50,6 @@ def save_parsed_khan_topic_tree(ka_root_topic, lang):
     """
     Export the parsed topic tree of `KhanNode`s as JSON for archival and diffs.
     """
-    KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
     filename = "khan_api_tree_{lang}.json".format(lang=lang)
     ka_root_topic = copy.deepcopy(ka_root_topic)
     khan_topic_tree = subtree_to_dict(ka_root_topic)
@@ -66,7 +69,7 @@ def export_khantree_as_html(lang, khantree, report, maxlevel=7, SLUG_BLACKLIST=[
     """
     Export `khantree` as HTML for manual debugging and inspection of contents.
     """
-    basedir = os.path.join("exports", "khanhtmltrees")
+    basedir = KHAN_HTMLEXPORT_TREE_DIR
     if not os.path.exists(basedir):
         os.makedirs(basedir, exist_ok=True)
     path_md = os.path.join(basedir, 'khan_academy_{}_tree.md'.format(lang))
@@ -90,29 +93,126 @@ def export_khantree_as_html(lang, khantree, report, maxlevel=7, SLUG_BLACKLIST=[
     os.remove(path_md)
 
 
+
+# TREE PRINTING
+################################################################################
+
+def get_stats(subtree):
+    """
+    Recusively compute kind-counts and total file_size (non-deduplicated).
+    """
+    kind = get_kind(subtree)
+    if kind == 'topic':
+        stats = {'topic': 1, 'video':0, 'exercise':0, 'article':0}
+        for child in subtree.children:
+            child_stats = get_stats(child)
+            for k, v in child_stats.items():
+                stats[k] += v
+        return stats
+    else:
+        return {kind: 1}
+
+def stats_to_str(stats):
+    stats_items = []
+    for key in ['topic', 'video', 'exercise']:  # TODO: add 'article' when impl.
+        if key in stats and stats[key]:
+            stats_items.append(str(stats[key]) + ' ' + key + 's')
+    stats_str = ' ' + ', '.join(stats_items)
+    return stats_str
+
+
+def print_subtree(subtree, level=0, maxlevel=2, SLUG_BLACKLIST=[], printstats=True):
+    if hasattr(subtree, 'slug') and subtree.slug in SLUG_BLACKLIST:
+        return
+    if level >= maxlevel:
+        return
+    extras = []
+    if hasattr(subtree, 'curriculum') and subtree.curriculum:
+        extras.append('CURRICULUM=' + subtree.curriculum)
+        if level > 2:
+            raise ValueError('Unexpected curriculum annotation found at level = ' + str(level))
+    if hasattr(subtree, 'listed') and not subtree.listed:
+        extras.append('listed=' + str(subtree.listed))
+    if printstats:
+        stats = get_stats(subtree)
+        extras.append(stats_to_str(stats))
+    extra = ' ' + ', '.join(extras)
+    print(' '*2*level + '   -', subtree.title.strip(),
+        '[' + get_kind(subtree) + ']',
+        '(' + subtree.id + ')', extra)
+    if hasattr(subtree, 'children'):
+        for child in subtree.children:
+            print_subtree(child, level=level+1, maxlevel=maxlevel, SLUG_BLACKLIST=SLUG_BLACKLIST, printstats=printstats)
+
+
+
 # CLI
 ################################################################################
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KA topic tree archiver')
     parser.add_argument('--lang', required=True, help="language code")
+    parser.add_argument('--archiveall', action='store_true', help="archive all langs")
     parser.add_argument('--htmlexport', action='store_true', help='save topic tree as html')
     parser.add_argument('--htmlmaxlevel', type=int, default=7, help='html tree depth')
     parser.add_argument('--print', action='store_true', help='print topic tree')
     parser.add_argument('--printmaxlevel', type=int, default=2, help='print tree depth')
+    parser.add_argument('--oldapi', action='store_true', help='use the old API v2')
+    parser.add_argument('--showunlisted', action='store_true', help='show unlisted nodes')
     args = parser.parse_args()
 
-    print('Getting KA topic tree from API v2 for lang', args.lang)
-    ka_root_topic, _ = get_khan_topic_tree(lang=args.lang, update=False)
+    # Normally build tree using only `listed=True` nodes, which corresponds to
+    # setting onlylisted=True. If want to see unlisted, we set onlylisted=False.
+    onlylisted = not args.showunlisted
 
-    # json export of parsed tree of `KhanNode`s
-    save_parsed_khan_topic_tree(ka_root_topic, args.lang)
+    if args.oldapi:
+        # OLD JSON API v2
+        from khan import get_khan_api_json, report_from_raw_data
+        from khan import get_khan_topic_tree, get_kind
+        KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'oldkhanapitrees')
+        KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "oldkhanhtmltrees")
+        if args.archiveall:
+            from constants import SUPPORTED_LANGS
+            langs = SUPPORTED_LANGS
+        else:
+            langs = [args.lang]
+        for lang in langs:
+            try:
+                print('Getting KA topic tree for lang', lang)
+                ka_root_topic, _ = get_khan_topic_tree(lang=lang, update=False)
+                # json export of parsed tree of `KhanNode`s
+                save_parsed_khan_topic_tree(ka_root_topic, lang)
+                ka_data = get_khan_api_json(lang)
+            except json.decoder.JSONDecodeError as e:
+                print('Failed to get lang', lang, 'from old API')
+    else:
+        # NEW TSV API
+        from tsvkhan import get_khan_tsv
+        from tsvkhan import report_from_raw_data
+        from tsvkhan import get_khan_topic_tree, get_kind
+        KHAN_JSON_TREE_DIR = os.path.join('chefdata', 'khanapitrees')
+        KHAN_HTMLEXPORT_TREE_DIR = os.path.join("exports", "khanhtmltrees")
+        if args.archiveall:
+            from constants import SUPPORTED_LANGS
+            langs = SUPPORTED_LANGS
+        else:
+            langs = [args.lang]
+        for lang in langs:
+            print('Getting KA topic tree for lang', lang)
+            ka_root_topic, _ = get_khan_topic_tree(lang=lang, update=False, onlylisted=onlylisted)
+            # json export of parsed tree of `KhanNode`s
+            save_parsed_khan_topic_tree(ka_root_topic, lang)
+            ka_data = get_khan_tsv(lang)
 
+    if args.archiveall:
+        print('Done archiving all languages...')
+        sys.exit(0)  # exit early when using --all for archiving purposes
+
+    # HTML TREE EXPORT
     if args.htmlexport:
-        ka_data = get_khan_api_json(args.lang)
         report = report_from_raw_data(args.lang, ka_data)
         export_khantree_as_html(args.lang, ka_root_topic, report, maxlevel=args.htmlmaxlevel)
 
+    # PRINT IN TERMINCAL
     if args.print:
         print_subtree(ka_root_topic, maxlevel=args.printmaxlevel)
-

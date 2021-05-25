@@ -2,7 +2,7 @@
 import json
 from collections import OrderedDict
 
-from constants import V2_API_URL
+from khan import V2_API_URL
 from network import make_request
 
 

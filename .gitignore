@@ -6,7 +6,7 @@ credentials/
 # Cached data of things we download fromt from the web
 .webcache/
 chefdata/sublangscache
-crowdin.zip
+chefdata/crowdin
 
 # Extract (what we get from KA)
 chefdata/khanapicache
@@ -30,6 +30,10 @@ storage/
 # Exports (not part of data path, just used for reports and debugging)
 exports/oldkhanhtmltrees
 exports/khanhtmltrees
+
+
+# (moved) v2API - TSVexports diffs script moved to treediffer/examples/  ; use symlink to get latest version
+tsvdiffs.py
 
 
 # (old) Reports and curation-related printouts

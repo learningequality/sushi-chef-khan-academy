@@ -19,19 +19,22 @@ from constants import get_channel_title
 from constants import get_channel_description
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
-from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 from network import get_subtitle_languages
+
+# old V2 API : pre Aug 2020
+# from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
+
+# uncomment next line to switch to new TSV API : post Aug 2020
+from tsvkhan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
+
 
 
 LICENSE_MAPPING = {
+    # OLD KEYS
     "CC BY": dict(license_id=licenses.CC_BY, copyright_holder="Khan Academy"),
     "CC BY-NC": dict(license_id=licenses.CC_BY_NC, copyright_holder="Khan Academy"),
-    "CC BY-NC-ND": dict(
-        license_id=licenses.CC_BY_NC_ND, copyright_holder="Khan Academy"
-    ),
-    "CC BY-NC-SA (KA default)": dict(
-        license_id=licenses.CC_BY_NC_SA, copyright_holder="Khan Academy"
-    ),
+    "CC BY-NC-ND": dict(license_id=licenses.CC_BY_NC_ND, copyright_holder="Khan Academy"),
+    "CC BY-NC-SA (KA default)": dict(license_id=licenses.CC_BY_NC_SA, copyright_holder="Khan Academy"),
     "CC BY-SA": dict(license_id=licenses.CC_BY_SA, copyright_holder="Khan Academy"),
     "Non-commercial/non-Creative Commons (College Board)": dict(
         license_id=licenses.SPECIAL_PERMISSIONS,
@@ -39,6 +42,18 @@ LICENSE_MAPPING = {
         description="Non-commercial/non-Creative Commons (College Board)",
     ),
     # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
+    #
+    #
+    #
+    # NEW KEYS
+    'cc-by-nc-nd': dict(license_id=licenses.CC_BY_NC_ND, copyright_holder="Khan Academy"),
+    'cc-by-nc-sa': dict(license_id=licenses.CC_BY_NC_SA, copyright_holder="Khan Academy"),
+    'cb-ka-copyright': dict(
+        license_id=licenses.SPECIAL_PERMISSIONS,
+        copyright_holder="Khan Academy",
+        description="Non-commercial/non-Creative Commons (College Board)",
+    ),
+    # 'yt-standard': licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
 }
 
 EXERCISE_MAPPING = {
@@ -300,7 +315,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                         item_data=ka_assessment_item.data,
                         source_url=ka_assessment_item.source_url,
                     )
-                exercise["questions"].append(assessment_item)
+                    exercise["questions"].append(assessment_item)
             # if there are no questions for this exercise, return None
             if not exercise["questions"]:
                 return None
@@ -350,6 +365,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             for lang_code in subtitle_languages:
                 if is_youtube_subtitle_file_supported_language(lang_code):
                     if target_lang == "en":
+                        # KA English is special: use subs for all available langs
                         files.append(
                             dict(
                                 file_type="subtitles",
@@ -381,7 +397,9 @@ class KhanAcademySushiChef(JsonTreeChef):
 
             video = dict(
                 kind=content_kinds.VIDEO,
-                source_id=ka_node.translated_youtube_id if "-dubbed(KY)" in ka_node.title else ka_node.youtube_id,
+                # POLICY: set the `source_id` based on the `youtube_id` of the
+                # original English video and not the `translated_youtube_id`:
+                source_id=ka_node.youtube_id,
                 title=ka_node.title,
                 description=ka_node.description[:400] if ka_node.description else '',
                 license=license,
