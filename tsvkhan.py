@@ -427,8 +427,8 @@ class KhanExercise(KhanNode):
             item_url = ASSESSMENT_URL.format(assessment_item=ai_id, kalang=kalang)
             item = make_request(item_url).json()
             # check if assessment item is fully translated, before adding it to list
-            if item["is_fully_translated"]:
-                ai = KhanAssessmentItem(item["id"], item["item_data"], self.source_url)
+            if item["isFullyTranslated"]:
+                ai = KhanAssessmentItem(item["id"], item["itemData"], self.source_url)
                 items_list.append(ai)
         return items_list
 
