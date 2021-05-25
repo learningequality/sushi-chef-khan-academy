@@ -21,7 +21,7 @@ UNSUPPORTED_LANGS = [
 ]
 
 
-ASSESSMENT_URL = "http://www.khanacademy.org/api/v1/assessment_items/{assessment_item}?lang={kalang}"
+ASSESSMENT_URL = "http://www.khanacademy.org/api/internal/assessment_items/{assessment_item}?lang={kalang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?login={username}&account-key={account_key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
 
