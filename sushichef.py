@@ -284,7 +284,7 @@ class KhanAcademySushiChef(JsonTreeChef):
                         ka_node.mastery_model, ka_node.id
                     )
                 )
-                mastery_model = exercises.M_OF_N
+                mastery_model = EXERCISE_MAPPING["do-all"]
 
             # common core tags
             tags = []
