@@ -5,12 +5,12 @@ import youtube_dl
 
 from le_utils.constants import content_kinds, exercises, licenses
 from le_utils.constants.languages import getlang
-from pressurecooker.youtube import get_language_with_alpha2_fallback
 from ricecooker.chefs import JsonTreeChef
 from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
 from ricecooker.classes.nodes import ChannelNode
 from ricecooker.config import LOGGER
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
+from ricecooker.utils.youtube import get_language_with_alpha2_fallback
 
 from common_core_tags import generate_common_core_mapping
 from constants import DUBBED_VIDEOS_BY_LANG

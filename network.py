@@ -5,7 +5,6 @@ import os
 import requests
 import time
 
-from pressurecooker.youtube import YouTubeResource
 from ricecooker.config import LOGGER
 from ricecooker.utils.caching import (
     CacheControlAdapter,
@@ -13,6 +12,7 @@ from ricecooker.utils.caching import (
     FileCache,
     InvalidatingCacheControlAdapter,
 )
+from ricecooker.utils.youtube import YouTubeResource
 
 YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', None)
 
