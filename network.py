@@ -6,6 +6,12 @@ import os
 import requests
 import time
 
+from pycaption import CaptionNode
+from pycaption import Caption
+from pycaption import CaptionSet
+from pycaption import CaptionList
+from pycaption import WebVTTWriter
+
 from ricecooker.config import LOGGER
 from ricecooker.utils.caching import (
     CacheControlAdapter,
@@ -131,6 +137,38 @@ def cached_post(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
         json.dump(f, data)
     return data
 
+
+subtitles_query = """
+query LearningEquality_getSubtitles($youtubeId: String!, $kaLocale: String) {
+    subtitles(youtubeId: $youtubeId, kaLocale: $kaLocale) {
+        text
+        startTime
+        endTime
+        kaIsValid
+    }
+}
+"""
+
+
+def get_subtitles_file_from_ka_api(youtube_id, lang_code):
+    url = "https://{}.khanacademy.org/graphql/LearningEquality_getSubtitles".format(lang_code)
+    data = {
+        "query": subtitles_query,
+        "variables": {
+            "youtubeId": youtube_id,
+            "kaLocale": lang_code,
+        }
+    }
+    response_data = cached_post(url, data)
+    if response_data:
+        subtitles = response_data["data"]["subtitles"]
+        captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
+        capset = CaptionSet({lang_code: CaptionList(captions)})
+        writer = WebVTTWriter()
+        path = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "{}-{}.vtt".format(youtube_id, lang_code))
+        with open(path, 'w') as f:
+            f.write(writer.write(capset))
+        return path
 
 
 def get_subtitle_languages(youtube_id):
