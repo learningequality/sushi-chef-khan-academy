@@ -234,13 +234,8 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
     a KhanNode tree out of them. By default we want to process only nodes with
     `listed=True` (onlylisted=True). Use onlylisted=False only for debugging.
     """
-    ## Aug 10 2020   TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-    ## Based on recommendation from the KA team, only nodes with listerd=True
-    ## should be included in the Kolibri channels, which can be accomplised using
-    ## the following two lines:
-    # if onlylisted and (node['listed'] == False or node['listed'] == None):
-    #     return None   # we want to keep only nodes with `listed=True`
-    ##   /TODO /TODO /TODO /TODO /TODO /TODO /TODO /TODO /TODO /TODO /TODO /TODO
+    if onlylisted and (node['listed'] == False or node['listed'] == None):
+        return None   # we want to keep only nodes with `listed=True`
 
     # Title info comes form different place if `en` vs. translated trees
     title = node['original_title'] if lang=='en' else node['translated_title']
@@ -279,14 +274,6 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
         return khan_node
 
     elif node["kind"] in TOPIC_LIKE_KINDS or node["kind"] == "Root":
-        if onlylisted and (node['listed'] == False or node['listed'] == None):
-            return None   # we keep only topics with `listed=True` in the tree
-            ## see TODO TODO TODO section above for how to enable filtering for
-            ## all nodes instead of just topic nodes. The global unlisted ignore
-            ## has was not turned on in order to minimize the logical changes
-            ## between the old API and the new TSV exports API (tsvkhan branch).
-            ## Filtering out only unlisted topic nodes reproduces the same trees
-            ## as we were previously getting from the v2 JSON API.
         khan_node = KhanTopic(
             id=node["slug"],   # set topic id to slug (used for source_id later)
             title=title,
