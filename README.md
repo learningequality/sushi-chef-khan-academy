@@ -107,18 +107,6 @@ and debugging (what we get from the TSV exports vs. what the final channel produ
     ./tsvkhan.py   # list the available TSV exports for all languages
     ./tsvkhan.py --kalang fr     # list the TSV exports available for French
 
-
-
-
-### Legacy code
-These files will no longer necessary once the switchover to the new TSV exports API is complete:
-
-    khan.py               (legacy) functions for loading data from the old KA API /api/v2/
-    dubbed_mapping.py     (legacy) A fallback strategy for semi-supported languages
-    utils.py              (legacy) Helper method for looking up original English youtube_id
-
-
-
 ### KhanExercise
 
 Each exercise has a list of assessment item IDs associated with it. In order to retrieve each
