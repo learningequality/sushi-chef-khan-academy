@@ -155,16 +155,6 @@ class KhanAcademySushiChef(JsonTreeChef):
         channel_node = self.get_channel_dict(options)
         channel_node["children"] = []
 
-        # Handle special case of building Kolibri channel from youtube playlists
-        if options.get("youtube_channel_id"):
-            youtube_channel_id = options.get("youtube_channel_id")
-            LOGGER.info("Found YouTube channel {}".format(youtube_channel_id))
-            root_node = youtube_playlist_scraper(youtube_channel_id, channel_node)
-            json_tree_path = self.get_json_tree_path(**options)
-            LOGGER.info("Writing youtube ricecooker tree to " + json_tree_path)
-            write_tree_to_json_tree(json_tree_path, root_node)
-            return None
-
         LOGGER.info("Downloading KA topic tree")
         # Obtain the complete topic tree for lang=lang from the KA API
         ka_root_topic, topics_by_slug = get_khan_topic_tree(lang=lang)
@@ -172,10 +162,6 @@ class KhanAcademySushiChef(JsonTreeChef):
         self.topics_by_slug = topics_by_slug  # to be used for topic replacments
         self.slug_blacklist = get_slug_blacklist(lang=lang, variant=variant)
         self.topic_replacements = get_topic_tree_replacements(lang=lang, variant=variant)
-
-        if options.get("english_subtitles"):
-            # we will include english videos with target language subtitles
-            duplicate_videos(ka_root_topic)
 
         LOGGER.info("Converting KA nodes to ricecooker json nodes")
         root_topic = self.convert_ka_node_to_ricecooker_node(ka_root_topic, target_lang=lang)
@@ -323,7 +309,6 @@ class KhanAcademySushiChef(JsonTreeChef):
 
         elif isinstance(ka_node, KhanVideo):
             le_target_lang = target_lang
-            DUBBED_VIDEOS = DUBBED_VIDEOS_BY_LANG.get(le_target_lang, [])
             target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
 
             if ka_node.youtube_id != ka_node.translated_youtube_id:
@@ -350,41 +335,43 @@ class KhanAcademySushiChef(JsonTreeChef):
                     }
                 )
             ]
+            if ka_node.subbed:
+                # Find all subtitles that are available for this video
+                subtitle_languages = get_subtitle_languages(ka_node.translated_youtube_id)
 
-            # Find all subtitles that are available for this video
-            subtitle_languages = get_subtitle_languages(ka_node.translated_youtube_id)
-
-            # if we dont have video in target lang or subtitle not available in target lang, return None
-            if ka_node.lang != target_lang.lower():
-                if ka_node.translated_youtube_id in DUBBED_VIDEOS:
-                    pass  # videos known to be transalted and should be included
-                elif not any(should_include_subtitle(sub_code, le_target_lang) for sub_code in subtitle_languages):
+                # If the node is meant to be subbed, is not dubbed, and there are no subtitles, we should skip this node,
+                # as it has not been properly translated.
+                if not ka_node.dubbed and not any(should_include_subtitle(sub_code, le_target_lang) for sub_code in subtitle_languages):
                     LOGGER.error("Untranslated video {} and no subs available. Skipping.".format(ka_node.translated_youtube_id))
                     return None
 
-            for lang_code in subtitle_languages:
-                if is_youtube_subtitle_file_supported_language(lang_code):
-                    if target_lang == "en":
-                        # KA English is special: use subs for all available langs
-                        files.append(
-                            dict(
-                                file_type="subtitles",
-                                youtube_id=ka_node.translated_youtube_id,
-                                language=lang_code,
+                for lang_code in subtitle_languages:
+                    if is_youtube_subtitle_file_supported_language(lang_code):
+                        if ka_node.dub_subbed:
+                            # If dubbed and subtitled: use subs for all available langs
+                            # as any subtitles are specifically for this video.
+                            files.append(
+                                dict(
+                                    file_type="subtitles",
+                                    youtube_id=ka_node.translated_youtube_id,
+                                    language=lang_code,
+                                )
                             )
-                        )
-                    elif should_include_subtitle(lang_code, le_target_lang):
-                        files.append(
-                            dict(
-                                file_type="subtitles",
-                                youtube_id=ka_node.translated_youtube_id,
-                                language=lang_code,
+                        elif should_include_subtitle(lang_code, le_target_lang):
+                            # Otherwise just use subtitles for langs that match the target lang
+                            # as the video has not been dubbed, so this is an english language
+                            # video to which we are adding subtitles.
+                            files.append(
+                                dict(
+                                    file_type="subtitles",
+                                    youtube_id=ka_node.translated_youtube_id,
+                                    language=lang_code,
+                                )
                             )
-                        )
-                    else:
-                        LOGGER.debug(
-                            'Skipping subs with lang_code {} for video {}'.format(
-                                lang_code, ka_node.translated_youtube_id))
+                        else:
+                            LOGGER.debug(
+                                'Skipping subs with lang_code {} for video {}'.format(
+                                    lang_code, ka_node.translated_youtube_id))
 
             # convert KA's license format into our internal license classes
             if ka_node.license in LICENSE_MAPPING:
@@ -412,73 +399,6 @@ class KhanAcademySushiChef(JsonTreeChef):
         elif isinstance(ka_node, KhanArticle):
             # TODO
             return None
-
-
-
-
-def youtube_playlist_scraper(channel_id, channel_node):
-    ydl = youtube_dl.YoutubeDL(
-        {
-            "no_warnings": True,
-            "writesubtitles": True,
-            "allsubtitles": True,
-            "ignoreerrors": True,  # Skip over deleted videos in a playlist
-            "skip_download": True,
-        }
-    )
-    youtube_channel_url = "https://www.youtube.com/channel/{}/playlists".format(
-        channel_id
-    )
-    youtube_channel = ydl.extract_info(youtube_channel_url)
-    for playlist in youtube_channel["entries"]:
-        if playlist:
-            topic_node = dict(
-                kind=content_kinds.TOPIC,
-                source_id=playlist["id"],
-                title=playlist["title"],
-                description="",
-                children=[],
-            )
-            channel_node["children"].append(topic_node)
-            entries = []
-            for video in playlist["entries"]:
-                if video and video["id"] not in entries:
-                    entries.append(video["id"])
-                    files = [dict(file_type="video", youtube_id=video["id"])]
-                    video_node = dict(
-                        kind=content_kinds.VIDEO,
-                        source_id=video["id"],
-                        title=video["title"],
-                        description="",
-                        thumbnail=video["thumbnail"],
-                        license=LICENSE_MAPPING["CC BY-NC-ND"],
-                        files=files,
-                    )
-                    topic_node["children"].append(video_node)
-
-    return channel_node
-
-
-def duplicate_videos(node):
-    """
-    Duplicate any videos that are dubbed, but convert them to being english only
-    in order to add subtitled english videos (if available).
-    """
-    children = list(node.children)
-    add = 0
-    for idx, ka_node in enumerate(children):
-        if isinstance(ka_node, KhanTopic):
-            duplicate_videos(ka_node)
-        if isinstance(ka_node, KhanVideo):
-            if ka_node.lang != "en":
-                replica_node = copy.deepcopy(ka_node)
-                replica_node.translated_youtube_id = ka_node.youtube_id
-                replica_node.lang = "en"
-                ka_node.title = ka_node.title + " -dubbed(KY)"
-                node.children.insert(idx + add, replica_node)
-                add += 1
-
-    return node
 
 
 def should_include_subtitle(youtube_language, target_lang):

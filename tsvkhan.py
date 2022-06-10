@@ -320,8 +320,11 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
             youtube_id=node["youtube_id"],  # original English video (used for `source_id` later)
             translated_youtube_id=translated_youtube_id,
             listed=node['listed'],
+            # The en TSV doesn't include these fields, so default to True in this case.
+            subbed=node.get("subbed", lang == "en"),
+            dubbed=node.get("dubbed", lang == "en"),
+            dub_subbed=node.get("dub_subbed", lang == "en"),
             lang=lang if node.get("dubbed") else node["source_lang"],
-            # TODO(ivan): store subbed, dubbed, and dub_subbed as class attributes
         )
         return khan_node
 
@@ -455,6 +458,9 @@ class KhanVideo(KhanNode):
         youtube_id,
         translated_youtube_id,
         listed,
+        subbed,
+        dubbed,
+        dub_subbed,
         lang="en",
     ):
         super(KhanVideo, self).__init__(id, title, description, slug, listed, lang=lang)
@@ -463,6 +469,9 @@ class KhanVideo(KhanNode):
         self.download_urls = download_urls
         self.youtube_id = youtube_id
         self.translated_youtube_id = translated_youtube_id
+        self.subbed = subbed
+        self.dubbed = dubbed
+        self.dub_subbed = dub_subbed
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)
