@@ -257,10 +257,10 @@ def _recurse_create(node, tree_dict, topics_by_slug, lang="en", onlylisted=True)
     if node["kind"] == "Exercise":
         slug_no_prefix = node['slug'].replace('e/','')  # remove the `e/`-prefix
         khan_node = KhanExercise(
-            id=slug_no_prefix,   # set id to slug_no_prefix (used for source_id)
+            id=node["id"],
             title=title,
             description=description,
-            slug=slug_no_prefix,
+            slug=slug_no_prefix, # set slug to slug_no_prefix (used for source_id)
             thumbnail=node["thumbnail_url"],
             assessment_items=node["assessment_item_ids"],
             mastery_model=node["suggested_completion_criteria"],

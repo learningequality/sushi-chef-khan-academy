@@ -276,7 +276,7 @@ class KhanAcademySushiChef(JsonTreeChef):
 
             exercise = dict(
                 kind=content_kinds.EXERCISE,
-                source_id=ka_node.id,
+                source_id=ka_node.slug,
                 title=ka_node.title,
                 description=ka_node.description[:400] if ka_node.description else '',
                 exercise_data=mastery_model,
