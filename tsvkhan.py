@@ -466,12 +466,25 @@ class KhanVideo(KhanNode):
         super(KhanVideo, self).__init__(id, title, description, slug, listed, lang=lang)
         self.license = license
         self.thumbnail = thumbnail
-        self.download_urls = download_urls
+        self.high_res_video = None
+        self.low_res_video = None
+        self.low_res_ios_video = None
+        for durl in download_urls:
+            if durl['filetype'] == "mp4":
+                self.high_res_video = durl["url"]
+            if durl['filetype'] == "mp4-low":
+                self.low_res_video = durl["url"]
+            if durl['filetype'] == "mp4-low-ios":
+                self.low_res_ios_video = durl["url"]
         self.youtube_id = youtube_id
         self.translated_youtube_id = translated_youtube_id
         self.subbed = subbed
         self.dubbed = dubbed
         self.dub_subbed = dub_subbed
+
+    @property
+    def download_url(self):
+        return self.high_res_video or self.low_res_video or self.low_res_ios_video
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)

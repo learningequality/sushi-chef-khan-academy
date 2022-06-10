@@ -20,11 +20,8 @@ from constants import get_channel_description
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
 from network import get_subtitle_languages
+from network import get_subtitles_file_from_ka_api
 
-# old V2 API : pre Aug 2020
-# from khan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
-
-# uncomment next line to switch to new TSV API : post Aug 2020
 from tsvkhan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 
 
@@ -323,7 +320,7 @@ class KhanAcademySushiChef(JsonTreeChef):
             files = [
                 dict(
                     file_type="video",
-                    youtube_id=ka_node.translated_youtube_id,
+                    web_url=ka_node.download_url,
                     high_resolution=False,
                     download_settings = {
                         'postprocessors': [
@@ -347,27 +344,21 @@ class KhanAcademySushiChef(JsonTreeChef):
 
                 for lang_code in subtitle_languages:
                     if is_youtube_subtitle_file_supported_language(lang_code):
-                        if ka_node.dub_subbed:
+                        if ka_node.dub_subbed or should_include_subtitle(lang_code, le_target_lang):
                             # If dubbed and subtitled: use subs for all available langs
                             # as any subtitles are specifically for this video.
-                            files.append(
-                                dict(
-                                    file_type="subtitles",
-                                    youtube_id=ka_node.translated_youtube_id,
-                                    language=lang_code,
-                                )
-                            )
-                        elif should_include_subtitle(lang_code, le_target_lang):
                             # Otherwise just use subtitles for langs that match the target lang
                             # as the video has not been dubbed, so this is an english language
                             # video to which we are adding subtitles.
-                            files.append(
-                                dict(
-                                    file_type="subtitles",
-                                    youtube_id=ka_node.translated_youtube_id,
-                                    language=lang_code,
+                            path = get_subtitles_file_from_ka_api(ka_node.translated_youtube_id, lang_code)
+                            if path:
+                                files.append(
+                                    dict(
+                                        file_type="subtitles",
+                                        path=path,
+                                        language=lang_code,
+                                    )
                                 )
-                            )
                         else:
                             LOGGER.debug(
                                 'Skipping subs with lang_code {} for video {}'.format(
