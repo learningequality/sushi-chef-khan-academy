@@ -1,5 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import hashlib
 import json
 import os
 import requests
@@ -26,6 +27,8 @@ sess.mount("http://www.khanacademy.org/api/v1/assessment_items/", forever_adapte
 sess.mount("https://api.crowdin.com", forever_adapter)
 # TODO: review caching used by make_request to avoid need to delete .webcache
 
+
+KHAN_API_CACHE_DIR = os.path.join("chefdata", "khanapicache")
 
 # Directory to store list-of-subtitles-available-for-
 SUBTITLE_LANGUAGES_CACHE_DIR = 'chefdata/sublangscache'
@@ -83,6 +86,50 @@ def make_request(url, clear_cookies=True, timeout=60, *args, **kwargs):
     #     print("NOT CACHED:", url)
 
     return response
+
+
+def cached_post(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
+    filename = hashlib.md5(json.dumps({
+        "url": url,
+        "data": data,
+    }, sort_keys=True).encode('utf-8')).hexdigest() + ".json"
+
+    filepath = os.path.join(KHAN_API_CACHE_DIR, filename)
+
+    if os.path.exists(filepath):
+        with open(filepath) as f:
+            return json.load(f)
+
+
+    if clear_cookies:
+        sess.cookies.clear()
+
+    retry_count = 0
+    max_retries = 5
+    while True:
+        try:
+            response = sess.post(url, data, headers=headers, timeout=timeout, *args, **kwargs)
+            response.raise_for_status()
+            break
+        except (
+            requests.exceptions.HTTPError,
+            requests.exceptions.ConnectionError,
+            requests.exceptions.ReadTimeout,
+        ) as e:
+            retry_count += 1
+            print(
+                "Error with connection ('{msg}'); about to perform retry {count} of {trymax}.".format(
+                    msg=str(e), count=retry_count, trymax=max_retries
+                )
+            )
+            time.sleep(retry_count * 1)
+            if retry_count >= max_retries:
+                return None
+
+    data = response.json()
+    with open(filepath, "w") as f:
+        json.dump(f, data)
+    return data
 
 
 

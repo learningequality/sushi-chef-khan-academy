@@ -14,9 +14,9 @@ import os
 
 from ricecooker.config import LOGGER
 
-from constants import ASSESSMENT_URL, SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING, KHAN_ACADEMY_LANGUAGE_MAPPING
+from constants import SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING, KHAN_ACADEMY_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
-from network import make_request
+from network import cached_post
 
 translations = {}
 
@@ -29,9 +29,6 @@ UNSUPPORTED_KINDS += ["Challenge", "Project", "Talkthrough"]   # scratchpad-like
 KHAN_TSV_EXPORT_BUCKET_NAME = "public-content-export-data"
 
 KHAN_TSV_CACHE_DIR = os.path.join("chefdata", "khantsvcache")
-
-
-
 
 
 # EXTERNAL API
@@ -387,6 +384,17 @@ class KhanTopic(KhanNode):
         return "Topic Node: {}".format(self.title)
 
 
+assessment_item_query = """
+query LearningEquality_assessmentItems($itemDescriptors: [String]!) {
+    assessmentItems(reservedItemDescriptors: $itemDescriptors) {
+        id
+        itemData
+    }
+}
+"""
+
+
+
 class KhanExercise(KhanNode):
     def __init__(
         self,
@@ -408,16 +416,20 @@ class KhanExercise(KhanNode):
         self.source_url = source_url
 
     def get_assessment_items(self):
-        items_list = []
         kalang = ASSESSMENT_LANGUAGE_MAPPING.get(self.lang, self.lang)
-        for ai_id in self.assessment_items:
-            item_url = ASSESSMENT_URL.format(assessment_item=ai_id, kalang=kalang)
-            item = make_request(item_url).json()
-            # check if assessment item is fully translated, before adding it to list
-            if item["isFullyTranslated"]:
-                ai = KhanAssessmentItem(item["id"], item["itemData"], self.source_url)
-                items_list.append(ai)
-        return items_list
+        url = "https://{}.khanacademy.org/graphql/LearningEquality_assessmentItems".format(kalang)
+        data = {
+            "query": assessment_item_query,
+            "variables": {
+                "itemDescriptors":["{}|{}".format(self.id, ai_id) for ai_id in self.assessment_items]
+            }
+        }
+
+        response_data = cached_post(url, data)
+
+        if response_data:
+            return [KhanAssessmentItem(item["id"], item["itemData"], self.source_url) for item in response_data.get("data", {}).get("assessmentItems", [])]
+        return []
 
     def __repr__(self):
         return "Exercise Node: {}".format(self.title)
