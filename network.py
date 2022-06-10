@@ -99,7 +99,7 @@ def post_request(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
     max_retries = 5
     while True:
         try:
-            response = sess.post(url, data, headers=headers, timeout=timeout, *args, **kwargs)
+            response = sess.post(url, json=data, headers=headers, timeout=timeout, *args, **kwargs)
             response.raise_for_status()
             break
         except (
