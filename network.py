@@ -33,9 +33,6 @@ sess.mount("http://www.khanacademy.org/api/v1/assessment_items/", forever_adapte
 sess.mount("https://api.crowdin.com", forever_adapter)
 # TODO: review caching used by make_request to avoid need to delete .webcache
 
-
-KHAN_API_CACHE_DIR = os.path.join("chefdata", "khanapicache")
-
 # Directory to store list-of-subtitles-available-for-
 SUBTITLE_LANGUAGES_CACHE_DIR = 'chefdata/sublangscache'
 if not os.path.exists(SUBTITLE_LANGUAGES_CACHE_DIR):
@@ -94,19 +91,7 @@ def make_request(url, clear_cookies=True, timeout=60, *args, **kwargs):
     return response
 
 
-def cached_post(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
-    filename = hashlib.md5(json.dumps({
-        "url": url,
-        "data": data,
-    }, sort_keys=True).encode('utf-8')).hexdigest() + ".json"
-
-    filepath = os.path.join(KHAN_API_CACHE_DIR, filename)
-
-    if os.path.exists(filepath):
-        with open(filepath) as f:
-            return json.load(f)
-
-
+def post_request(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
     if clear_cookies:
         sess.cookies.clear()
 
@@ -131,11 +116,7 @@ def cached_post(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
             time.sleep(retry_count * 1)
             if retry_count >= max_retries:
                 return None
-
-    data = response.json()
-    with open(filepath, "w") as f:
-        json.dump(f, data)
-    return data
+    return response.json()
 
 
 subtitles_query = """
@@ -159,7 +140,7 @@ def get_subtitles_file_from_ka_api(youtube_id, lang_code):
             "kaLocale": lang_code,
         }
     }
-    response_data = cached_post(url, data)
+    response_data = post_request(url, data)
     if response_data:
         subtitles = response_data["data"]["subtitles"]
         captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]

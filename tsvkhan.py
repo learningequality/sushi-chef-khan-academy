@@ -16,7 +16,7 @@ from ricecooker.config import LOGGER
 
 from constants import SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING, KHAN_ACADEMY_LANGUAGE_MAPPING
 from crowdin import retrieve_translations
-from network import cached_post
+from network import post_request
 
 translations = {}
 
@@ -428,7 +428,7 @@ class KhanExercise(KhanNode):
             }
         }
 
-        response_data = cached_post(url, data)
+        response_data = post_request(url, data)
 
         if response_data:
             return [KhanAssessmentItem(item["id"], item["itemData"], self.source_url) for item in response_data.get("data", {}).get("assessmentItems", [])]
