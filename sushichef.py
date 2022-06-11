@@ -320,15 +320,9 @@ class KhanAcademySushiChef(JsonTreeChef):
             files = [
                 dict(
                     file_type="video",
-                    web_url=ka_node.download_url,
-                    high_resolution=False,
-                    download_settings = {
-                        'postprocessors': [
-                            {
-                                'key': 'ExecAfterDownload',
-                                'exec_cmd': 'ffmpeg -hide_banner -loglevel panic -i {} -b:a 32k -ac 1 {}_tmp.mp4 && mv {}_tmp.mp4 {}',
-                            }
-                        ]
+                    path=ka_node.download_url,
+                    ffmpeg_settings={
+                        "max_height": 480,
                     }
                 )
             ]
