@@ -139,7 +139,7 @@ def get_subtitles_file_from_ka_api(youtube_id, lang_code, response_data_hash=Non
     response_data = post_request(url, data)
     if response_data:
         subtitles = response_data["data"]["subtitles"]
-        hash = hashlib.md5(json.dumps(subtitles, sort_keys=True))
+        hash = hashlib.md5(json.dumps(subtitles, sort_keys=True).encode("utf-8"))
         if response_data_hash and hash != response_data_hash:
             captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
             capset = CaptionSet({lang_code: CaptionList(captions)})
