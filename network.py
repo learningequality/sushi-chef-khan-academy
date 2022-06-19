@@ -143,7 +143,7 @@ def get_subtitles_file_from_ka_api(youtube_id, lang_code, response_data_hash=Non
     if response_data:
         subtitles = response_data["data"]["subtitles"]
         hash = hashlib.md5(json.dumps(subtitles, sort_keys=True).encode("utf-8"))
-        if response_data_hash and hash != response_data_hash:
+        if response_data_hash is None or hash != response_data_hash:
             captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
             capset = CaptionSet({INVERSE_VIDEO_LANGUAGE_MAPPING.get(lang_code, lang_code): CaptionList(captions)})
             writer = WebVTTWriter()
@@ -213,4 +213,5 @@ def get_subtitles(youtube_id, target_lang):
                     _, path = get_subtitles_file_from_ka_api(youtube_id, lang, response_data_hash=target_hash)
                     if path:
                         files.append((lang, path))
+    LOGGER.info("Downloaded subtitles for languages: {}".format(", ".join((f[0] for f in files))))
     return files
