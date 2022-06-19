@@ -1,5 +1,3 @@
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 import hashlib
 import json
 import os
@@ -12,14 +10,12 @@ from pycaption import CaptionSet
 from pycaption import CaptionList
 from pycaption import WebVTTWriter
 
-from ricecooker.config import LOGGER
 from ricecooker.utils.caching import (
     CacheControlAdapter,
     CacheForeverHeuristic,
     FileCache,
     InvalidatingCacheControlAdapter,
 )
-from ricecooker.utils.youtube import YouTubeResource
 
 YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', None)
 
@@ -131,7 +127,7 @@ query LearningEquality_getSubtitles($youtubeId: String!, $kaLocale: String) {
 """
 
 
-def get_subtitles_file_from_ka_api(youtube_id, lang_code):
+def get_subtitles_file_from_ka_api(youtube_id, lang_code, response_data_hash=None):
     url = "https://{}.khanacademy.org/graphql/LearningEquality_getSubtitles".format(lang_code)
     data = {
         "query": subtitles_query,
@@ -143,16 +139,22 @@ def get_subtitles_file_from_ka_api(youtube_id, lang_code):
     response_data = post_request(url, data)
     if response_data:
         subtitles = response_data["data"]["subtitles"]
-        captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
-        capset = CaptionSet({lang_code: CaptionList(captions)})
-        writer = WebVTTWriter()
-        path = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "{}-{}.vtt".format(youtube_id, lang_code))
-        with open(path, 'w') as f:
-            f.write(writer.write(capset))
-        return path
+        hash = hashlib.md5(json.dumps(subtitles, sort_keys=True))
+        if response_data_hash and hash != response_data_hash:
+            captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
+            capset = CaptionSet({lang_code: CaptionList(captions)})
+            writer = WebVTTWriter()
+            path = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "{}-{}.vtt".format(youtube_id, lang_code))
+            with open(path, 'w') as f:
+                f.write(writer.write(capset))
+            return hash, path
+    return None, None
 
 
-def get_subtitle_languages(youtube_id):
+_all_languages = set()
+
+
+def get_cached_subtitle_languages(youtube_id):
     """
     Returns a list of the subtitle language codes available for a given video.
     We'll try to get the list using two approach:
@@ -167,15 +169,11 @@ def get_subtitle_languages(youtube_id):
             cache_data = json.load(jsonf)
             return cache_data['lang_codes']
 
-    if YOUTUBE_API_KEY:
-        try:
-            lang_codes = get_subtitles_using_api(youtube_id)
-            return lang_codes
-        except HttpError as e:
-            LOGGER.info("Can't access API for video {} ...".format(youtube_id))
-    lang_codes = get_subtitles_using_youtube_dl(youtube_id)
 
+def set_cached_subtitle_languages(youtube_id, lang_codes):
     # Cache the results in chefdata/sublangscache/{youtube_id}__lang_codes.json
+    cache_filename = '{}__lang_codes.json'.format(youtube_id)
+    cache_filepath = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, cache_filename)
     cache_data = {"lang_codes": lang_codes}
     with open(cache_filepath, 'w') as jsonf:
         json.dump(cache_data, jsonf, ensure_ascii=True)
@@ -183,34 +181,32 @@ def get_subtitle_languages(youtube_id):
     return lang_codes
 
 
-def get_subtitles_using_api(youtube_id):
-    """
-    YouTube API call to get the subtitles langs available for video `youtube_id`.
-    Raises `HttpError` in case video is Private, Unlisted, or has been removed.
-    """
-    youtube = build("youtube", "v3", cache_discovery=False, developerKey=YOUTUBE_API_KEY)
-    request = youtube.captions().list(part="snippet", videoId=youtube_id)
-    response = request.execute()
-    all_subs = [item['snippet'] for item in response['items']]
-    lang_codes = [sub['language'] for sub in all_subs if sub['trackKind'] == 'standard']
-    return lang_codes
+def _set_all_languages():
+    if not _all_languages:
+        from tsvkhan import list_latest_tsv_exports
+        for lang, _ in list_latest_tsv_exports():
+            _all_languages.add(lang)
 
 
-def get_subtitles_using_youtube_dl(youtube_id):
-    youtube_url = 'https://youtube.com/watch?v=' + youtube_id
-    yt_resource = YouTubeResource(youtube_url)
-    lang_codes = []
-    try:
-        result = yt_resource.get_resource_subtitles()
-        # TODO(ivan) Consider including auto-generated subtitles to increase
-        #       coverage and handle edge cases of videos that are transalted
-        #       but no metadata: https://www.youtube.com/watch?v=qlGjA9p1UAM
-        if result:
-            for lang_code, lang_subs in result['subtitles'].items():
-                for lang_sub in lang_subs:
-                    if 'ext' in lang_sub and lang_sub['ext'] == 'vtt' and lang_code not in lang_codes:
-                        lang_codes.append(lang_code)
-    except Exception as e:
-        LOGGER.error('get_subtitles_using_youtube_dl failed for ' + youtube_url)
-        LOGGER.error(str(e))
-    return lang_codes
+def get_subtitles(youtube_id, target_lang):
+    target_hash, target_path = get_subtitles_file_from_ka_api(youtube_id, target_lang)
+    files = [(target_lang, target_path)]
+    if target_lang == "en":
+        _set_all_languages()
+        subtitle_langs = get_cached_subtitle_languages(youtube_id)
+        if not subtitle_langs:
+            langs = []
+            for lang in _all_languages:
+                if lang != target_lang:
+                    _, path = get_subtitles_file_from_ka_api(youtube_id, lang, response_data_hash=target_hash)
+                    if path:
+                        files.append((lang, path))
+                        langs.append(lang)
+            set_cached_subtitle_languages(youtube_id, langs)
+        else:
+            for lang in subtitle_langs:
+                if lang != target_lang:
+                    _, path = get_subtitles_file_from_ka_api(youtube_id, lang, response_data_hash=target_hash)
+                    if path:
+                        files.append((lang, path))
+    return files

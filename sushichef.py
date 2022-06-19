@@ -1,26 +1,20 @@
 #!/usr/bin/env python
-import copy
 import os
-import youtube_dl
 
 from le_utils.constants import content_kinds, exercises, licenses
 from le_utils.constants.languages import getlang
 from ricecooker.chefs import JsonTreeChef
-from ricecooker.classes.files import is_youtube_subtitle_file_supported_language
 from ricecooker.classes.nodes import ChannelNode
 from ricecooker.config import LOGGER
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
-from ricecooker.utils.youtube import get_language_with_alpha2_fallback
 
 from common_core_tags import generate_common_core_mapping
-from constants import DUBBED_VIDEOS_BY_LANG
 from constants import VIDEO_LANGUAGE_MAPPING
 from constants import get_channel_title
 from constants import get_channel_description
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
-from network import get_subtitle_languages
-from network import get_subtitles_file_from_ka_api
+from network import get_subtitles
 
 from tsvkhan import KhanArticle, KhanExercise, KhanTopic, KhanVideo, get_khan_topic_tree
 
@@ -67,6 +61,9 @@ EXERCISE_MAPPING = {
 
 
 CC_MAPPING = {}  # Common Core State Standards slug -> list(tag) to apply
+
+
+INVERSE_VIDEO_LANGUAGE_MAPPING = {v:k for k,v in VIDEO_LANGUAGE_MAPPING.items()}
 
 
 class KhanAcademySushiChef(JsonTreeChef):
@@ -305,7 +302,6 @@ class KhanAcademySushiChef(JsonTreeChef):
             return exercise
 
         elif isinstance(ka_node, KhanVideo):
-            le_target_lang = target_lang
             target_lang = VIDEO_LANGUAGE_MAPPING.get(target_lang, target_lang)
 
             if ka_node.youtube_id != ka_node.translated_youtube_id:
@@ -327,36 +323,14 @@ class KhanAcademySushiChef(JsonTreeChef):
                 )
             ]
             if ka_node.subbed:
-                # Find all subtitles that are available for this video
-                subtitle_languages = get_subtitle_languages(ka_node.translated_youtube_id)
-
-                # If the node is meant to be subbed, is not dubbed, and there are no subtitles, we should skip this node,
-                # as it has not been properly translated.
-                if not ka_node.dubbed and not any(should_include_subtitle(sub_code, le_target_lang) for sub_code in subtitle_languages):
-                    LOGGER.error("Untranslated video {} and no subs available. Skipping.".format(ka_node.translated_youtube_id))
-                    return None
-
-                for lang_code in subtitle_languages:
-                    if is_youtube_subtitle_file_supported_language(lang_code):
-                        if ka_node.dub_subbed or should_include_subtitle(lang_code, le_target_lang):
-                            # If dubbed and subtitled: use subs for all available langs
-                            # as any subtitles are specifically for this video.
-                            # Otherwise just use subtitles for langs that match the target lang
-                            # as the video has not been dubbed, so this is an english language
-                            # video to which we are adding subtitles.
-                            path = get_subtitles_file_from_ka_api(ka_node.translated_youtube_id, lang_code)
-                            if path:
-                                files.append(
-                                    dict(
-                                        file_type="subtitles",
-                                        path=path,
-                                        language=lang_code,
-                                    )
-                                )
-                        else:
-                            LOGGER.debug(
-                                'Skipping subs with lang_code {} for video {}'.format(
-                                    lang_code, ka_node.translated_youtube_id))
+                for lang_code, path in get_subtitles(ka_node.translated_youtube_id, target_lang):
+                    files.append(
+                        dict(
+                            file_type="subtitles",
+                            path=path,
+                            language=INVERSE_VIDEO_LANGUAGE_MAPPING.get(lang_code, lang_code),
+                        )
+                    )
 
             # convert KA's license format into our internal license classes
             if ka_node.license in LICENSE_MAPPING:
@@ -384,22 +358,6 @@ class KhanAcademySushiChef(JsonTreeChef):
         elif isinstance(ka_node, KhanArticle):
             # TODO
             return None
-
-
-def should_include_subtitle(youtube_language, target_lang):
-    """
-    Determine whether subtitles with language code `youtube_language` available
-    for a YouTube video should be imported as part of the Khan Academy chef run
-    for language `target_lang` (internal language code).
-    """
-    lang_obj = get_language_with_alpha2_fallback(youtube_language)
-    target_lang_obj = getlang(target_lang)
-    if lang_obj.primary_code == target_lang_obj.primary_code:
-        return True  # accept if the same language code even if different locale
-    else:
-        return False
-
-
 
 
 if __name__ == "__main__":
