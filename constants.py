@@ -108,6 +108,8 @@ VIDEO_LANGUAGE_MAPPING = {
     "zh-CN": "zh-hans",
 }
 
+INVERSE_VIDEO_LANGUAGE_MAPPING = {v:k for k,v in VIDEO_LANGUAGE_MAPPING.items()}
+
 
 # Videos with misleading translatedYoutubeLang organized by le-utils lang code.
 # Use this list to override the should-be-included logic and include the videos.

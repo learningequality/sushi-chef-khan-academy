@@ -10,12 +10,15 @@ from pycaption import CaptionSet
 from pycaption import CaptionList
 from pycaption import WebVTTWriter
 
+from ricecooker.config import LOGGER
 from ricecooker.utils.caching import (
     CacheControlAdapter,
     CacheForeverHeuristic,
     FileCache,
     InvalidatingCacheControlAdapter,
 )
+
+from constants import INVERSE_VIDEO_LANGUAGE_MAPPING
 
 YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', None)
 
@@ -142,7 +145,7 @@ def get_subtitles_file_from_ka_api(youtube_id, lang_code, response_data_hash=Non
         hash = hashlib.md5(json.dumps(subtitles, sort_keys=True).encode("utf-8"))
         if response_data_hash and hash != response_data_hash:
             captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
-            capset = CaptionSet({lang_code: CaptionList(captions)})
+            capset = CaptionSet({INVERSE_VIDEO_LANGUAGE_MAPPING.get(lang_code, lang_code): CaptionList(captions)})
             writer = WebVTTWriter()
             path = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "{}-{}.vtt".format(youtube_id, lang_code))
             with open(path, 'w') as f:
@@ -189,6 +192,7 @@ def _set_all_languages():
 
 
 def get_subtitles(youtube_id, target_lang):
+    LOGGER.info("Getting subtitles for youtube video {}".format(youtube_id))
     target_hash, target_path = get_subtitles_file_from_ka_api(youtube_id, target_lang)
     files = [(target_lang, target_path)]
     if target_lang == "en":

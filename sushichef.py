@@ -10,6 +10,7 @@ from ricecooker.utils.jsontrees import write_tree_to_json_tree
 
 from common_core_tags import generate_common_core_mapping
 from constants import VIDEO_LANGUAGE_MAPPING
+from constants import INVERSE_VIDEO_LANGUAGE_MAPPING
 from constants import get_channel_title
 from constants import get_channel_description
 from curation import get_slug_blacklist
@@ -61,9 +62,6 @@ EXERCISE_MAPPING = {
 
 
 CC_MAPPING = {}  # Common Core State Standards slug -> list(tag) to apply
-
-
-INVERSE_VIDEO_LANGUAGE_MAPPING = {v:k for k,v in VIDEO_LANGUAGE_MAPPING.items()}
 
 
 class KhanAcademySushiChef(JsonTreeChef):
