@@ -34,8 +34,7 @@ sess.mount("https://api.crowdin.com", forever_adapter)
 
 # Directory to store list-of-subtitles-available-for-
 SUBTITLE_LANGUAGES_CACHE_DIR = 'chefdata/sublangscache'
-if not os.path.exists(SUBTITLE_LANGUAGES_CACHE_DIR):
-    os.makedirs(SUBTITLE_LANGUAGES_CACHE_DIR)
+os.makedirs(SUBTITLE_LANGUAGES_CACHE_DIR, exist_ok=True)
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0",
@@ -129,89 +128,47 @@ query LearningEquality_getSubtitles($youtubeId: String!, $kaLocale: String) {
 }
 """
 
-
-def get_subtitles_file_from_ka_api(youtube_id, lang_code, response_data_hash=None):
-    url = "https://{}.khanacademy.org/graphql/LearningEquality_getSubtitles".format(lang_code)
-    data = {
-        "query": subtitles_query,
-        "variables": {
-            "youtubeId": youtube_id,
-            "kaLocale": lang_code,
-        }
-    }
-    response_data = post_request(url, data)
-    if response_data:
-        subtitles = response_data["data"]["subtitles"]
-        hash = hashlib.md5(json.dumps(subtitles, sort_keys=True).encode("utf-8"))
-        if response_data_hash is None or hash != response_data_hash:
-            captions = [Caption(subtitle["startTime"] * 1000, subtitle["endTime"] * 1000, [CaptionNode.create_text(subtitle["text"])]) for subtitle in subtitles]
-            capset = CaptionSet({INVERSE_VIDEO_LANGUAGE_MAPPING.get(lang_code, lang_code): CaptionList(captions)})
-            writer = WebVTTWriter()
-            path = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "{}-{}.vtt".format(youtube_id, lang_code))
-            with open(path, 'w') as f:
-                f.write(writer.write(capset))
-            return hash, path
-    return None, None
+SUBTITLE_LANGUAGES_CACHE_INDEX = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "index.json")
 
 
-_all_languages = set()
+def _populate_sublangscache_index():
+    LOGGER.info("Populating subtitle language cache index to create complete listing of all subtitles for all KA Youtube videos")
+    url = "https://amara.org/api/videos/?team=khan-academy&limit=100&format=json"
+    LOGGER.info("Fetching and processing {}".format(url))
+    response = make_request(url)
+    if response.status_code == 200:
+        index = {}
+        data = response.json()
+        while data:
+            for video in data["objects"]:
+                youtube_id = video["all_urls"][0].replace("http://www.youtube.com/watch?v=", "")
+                published_subtitles = []
+                for subtitle in video["languages"]:
+                    if subtitle.get("published", False):
+                        published_subtitles.append({
+                            "lang": subtitle["code"],
+                            "url": subtitle["subtitles_uri"].replace("format=json", "format=vtt"),
+                        })
+                index[youtube_id] = published_subtitles
+            url = data["meta"]["next"]
+            if url:
+                LOGGER.info("Fetching and processing {}".format(url))
+                response = make_request(url)
+                data = response.json()
+            else:
+                data = None
+    LOGGER.info("Writing subtitles language cache to disk")
+    with open(SUBTITLE_LANGUAGES_CACHE_INDEX, "w") as f:
+        json.dump(index, f)
+
+subtitle_language_cache = {}
 
 
-def get_cached_subtitle_languages(youtube_id):
-    """
-    Returns a list of the subtitle language codes available for a given video.
-    We'll try to get the list using two approach:
-    1. The Youtube API (works for public videos when YOUTUBE_API_KEY defined)
-    2. Slow by using YouTubeResource, which in turn calls youtube_dl
-    """
-    # Check if we already have the lang_codes list for this youtube_id cached...
-    cache_filename = '{}__lang_codes.json'.format(youtube_id)
-    cache_filepath = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, cache_filename)
-    if os.path.exists(cache_filepath):        # Cache hit!
-        with open(cache_filepath) as jsonf:
-            cache_data = json.load(jsonf)
-            return cache_data['lang_codes']
-
-
-def set_cached_subtitle_languages(youtube_id, lang_codes):
-    # Cache the results in chefdata/sublangscache/{youtube_id}__lang_codes.json
-    cache_filename = '{}__lang_codes.json'.format(youtube_id)
-    cache_filepath = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, cache_filename)
-    cache_data = {"lang_codes": lang_codes}
-    with open(cache_filepath, 'w') as jsonf:
-        json.dump(cache_data, jsonf, ensure_ascii=True)
-
-    return lang_codes
-
-
-def _set_all_languages():
-    if not _all_languages:
-        from tsvkhan import list_latest_tsv_exports
-        for lang, _ in list_latest_tsv_exports():
-            _all_languages.add(lang)
-
-
-def get_subtitles(youtube_id, target_lang):
-    LOGGER.info("Getting subtitles for youtube video {}".format(youtube_id))
-    target_hash, target_path = get_subtitles_file_from_ka_api(youtube_id, target_lang)
-    files = [(target_lang, target_path)]
-    if target_lang == "en":
-        _set_all_languages()
-        subtitle_langs = get_cached_subtitle_languages(youtube_id)
-        if not subtitle_langs:
-            langs = []
-            for lang in _all_languages:
-                if lang != target_lang:
-                    _, path = get_subtitles_file_from_ka_api(youtube_id, lang, response_data_hash=target_hash)
-                    if path:
-                        files.append((lang, path))
-                        langs.append(lang)
-            set_cached_subtitle_languages(youtube_id, langs)
-        else:
-            for lang in subtitle_langs:
-                if lang != target_lang:
-                    _, path = get_subtitles_file_from_ka_api(youtube_id, lang, response_data_hash=target_hash)
-                    if path:
-                        files.append((lang, path))
-    LOGGER.info("Downloaded subtitles for languages: {}".format(", ".join((f[0] for f in files))))
-    return files
+def get_subtitles(youtube_id):
+    if not subtitle_language_cache:
+        if not os.path.exists(SUBTITLE_LANGUAGES_CACHE_INDEX):
+            _populate_sublangscache_index()
+        with open(SUBTITLE_LANGUAGES_CACHE_INDEX, "r") as f:
+            data = json.load(f)
+            subtitle_language_cache.update(data)
+    return [(sub["lang"], sub["url"]) for sub in subtitle_language_cache.get(youtube_id, [])]

@@ -1,5 +1,11 @@
 
 from le_utils.constants.languages import getlang
+from ricecooker.classes.licenses import CC_BYLicense
+from ricecooker.classes.licenses import CC_BY_NCLicense
+from ricecooker.classes.licenses import CC_BY_NC_NDLicense
+from ricecooker.classes.licenses import CC_BY_NC_SALicense
+from ricecooker.classes.licenses import CC_BY_SALicense
+from ricecooker.classes.licenses import SpecialPermissionsLicense
 
 # These KA channels are supported on the KA website and topic trees for them are
 # availables as TSV exports. The list contains internal le-utils language codes.
@@ -151,3 +157,29 @@ DUBBED_VIDEOS_BY_LANG = {
 # To add to this list, look for ERROR message in the logs after a complete chef
 # like "Untranslated video {youtube_id} and no subs available. Skipping." and
 # add the `{youtube_id}` to the above list if the video is actually transalted.
+
+
+LICENSE_MAPPING = {
+    # OLD KEYS
+    "CC BY": CC_BYLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC": CC_BY_NCLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-ND": CC_BY_NC_NDLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-SA (KA default)": CC_BY_NC_SALicense(copyright_holder="Khan Academy"),
+    "CC BY-SA": CC_BY_SALicense(copyright_holder="Khan Academy"),
+    "Non-commercial/non-Creative Commons (College Board)": SpecialPermissionsLicense(
+        copyright_holder="Khan Academy",
+        description="Non-commercial/non-Creative Commons (College Board)",
+    ),
+    # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
+    #
+    #
+    #
+    # NEW KEYS
+    'cc-by-nc-nd': CC_BY_NC_NDLicense(copyright_holder="Khan Academy"),
+    'cc-by-nc-sa': CC_BY_NC_SALicense(copyright_holder="Khan Academy"),
+    'cb-ka-copyright': SpecialPermissionsLicense(
+        copyright_holder="Khan Academy",
+        description="Non-commercial/non-Creative Commons (College Board)",
+    ),
+    # 'yt-standard': licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
+}

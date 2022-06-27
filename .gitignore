@@ -5,22 +5,12 @@ credentials/
 
 # Cached data of things we download fromt from the web
 .webcache/
-chefdata/sublangscache
-chefdata/crowdin
-
-# Extract (what we get from KA)
-chefdata/khanapicache
-chefdata/khantsvcache
-
-# Transform (parsed trees of KhanNode objects -- serialized to json)
-chefdata/oldkhanapitrees
-chefdata/khanapitrees
-
+chefdata/
 
 # Load -- serialized ricecooker input and output trees
-chefdata/trees
 restore/
 .ricecookerfilecache/
+.ricecooker-temp
 storage/
 
 

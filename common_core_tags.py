@@ -5,6 +5,9 @@ from constants import COMMON_CORE_SPREADSHEET
 from network import make_request
 
 
+CC_MAPPING = {}  # Common Core State Standards slug -> list(tag) to apply
+
+
 def generate_common_core_mapping():
 
     resp = make_request(COMMON_CORE_SPREADSHEET, timeout=120)
@@ -12,7 +15,6 @@ def generate_common_core_mapping():
 
     # This CSV file is in standard format: separated by ",", quoted by '"'
     reader = csv.reader(StringIO(csv_data))
-    slug_standard_map = {}
     header_row = []
 
     # Loop through each row in the spreadsheet.
@@ -37,6 +39,4 @@ def generate_common_core_mapping():
 
             # parse out slug from link and set standard tag
             slug = link.split("e/")[1]
-            slug_standard_map[slug] = standard_tag
-
-    return slug_standard_map
+            CC_MAPPING[slug] = standard_tag

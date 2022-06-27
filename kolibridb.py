@@ -27,7 +27,7 @@ import uuid
 # DATABASE
 ################################################################################
 
-DATABSES_DIR = 'reports/databases'
+DATABASES_DIR = 'chefdata/databases'
 
 STUDIO_SERVER_LOOKUP = {
     'production': 'https://studio.learningequality.org',
@@ -39,7 +39,8 @@ def download_db_file(channel_id, server='production', update=False):
     """
     Download DB file for Kolibri channel `channel_id` from a Studio server.
     """
-    db_file_path = os.path.join(DATABSES_DIR, channel_id + '.sqlite3')
+    os.makedirs(DATABASES_DIR, exist_ok=True)
+    db_file_path = os.path.join(DATABASES_DIR, channel_id + '.sqlite3')
     if os.path.exists(db_file_path) and not update:
         return db_file_path
     if server in STUDIO_SERVER_LOOKUP.keys():
@@ -175,9 +176,16 @@ def get_nodes_by_id(conn, attach_files=True, attach_assessments=True):
     if attach_files:
         # attach all the files associated with each node under the key "files"
         files = get_files(conn)
+        local_files = get_local_files(conn)
+        local_file_lookup = {}
+        for local_file in local_files:
+            local_file_lookup[local_file["id"]] = local_file
         for file in files:
             node_id = file['contentnode_id']
             node = nodes_by_id[node_id]
+            local_file = local_file_lookup[file["local_file_id"]]
+            file["extension"] = local_file["extension"]
+            file["checksum"] = local_file["id"]
             if 'files' in node:
                 node['files'].append(file)
             else:
@@ -197,9 +205,20 @@ def get_nodes_by_id(conn, attach_files=True, attach_assessments=True):
     return nodes_by_id
 
 
+def get_nodes_for_remote_files(channel_id):
+    db_file_path = download_db_file(channel_id)
+    conn = sqlite3.connect(db_file_path)
+    return get_nodes_by_id(conn, attach_files=True, attach_assessments=False)
+
+
 def get_files(conn):
     files = dbex(conn, "SELECT * FROM content_file;")
     return files
+
+
+def get_local_files(conn):
+    localfiles = dbex(conn, "SELECT * FROM content_localfile;")
+    return localfiles
 
 
 def get_assessmentmetadata(conn):
