@@ -153,7 +153,26 @@ class TSVManager:
                     child_node = self.tree_dict[child_pointer["id"]]
                     self._recurse_create(channel, child_node)
     
-    def _recurse_create(self, parent, node, replacement=None):
+    def _create_replacement_node(self, parent, child):
+        fake_child_id = "{}_{}".format(parent["slug"], child["slug"])
+        if child["slug"] in self.topics_by_slug:
+            child_node = self.topics_by_slug[child["slug"]].copy()
+        else:
+            child_node = {
+                "translated_description_html": "",
+                "curriculum_key": "",
+                "kind": "Course",
+            }
+        child_node.update({
+            "id": fake_child_id,
+            "original_title": child.get("translatedTitle", child_node.get("original_title", "")),
+            "translated_title": child.get("translatedTitle", child_node.get("translated_title", "")),
+            "slug": child["slug"],
+        })
+        self.tree_dict[fake_child_id] = child_node
+        return child_node
+
+    def _recurse_create(self, parent, node):
         """
         Main tree-building function that takes the rows from the TSV data and makes
         a tree out of them. By default we want to process only nodes with
@@ -205,22 +224,25 @@ class TSVManager:
 
         elif node["kind"] in TOPIC_LIKE_KINDS:
             slug = node["slug"]
-            children_ids = node.get("children_ids", [])
-            if replacement is not None:
-                title = replacement.get("translatedTitle", title)
-                description = replacement.get("description", description)
-                slug = replacement.get("slug", slug)
-                children_ids = replacement.get("children_ids", children_ids)
             if slug in self.topic_replacements:
                 replacements = self.topic_replacements.pop(slug)
                 for replacement in replacements:
                     children_ids = []
+                    r_node = node.copy()
                     for child in replacement["children"]:
+                        child_node = self._create_replacement_node(replacement, child)
                         if "children" in child:
-                            self.topic_replacements[child["slug"]] = child["children"]
-                        children_ids.append({"id": self.topics_by_slug[child["slug"]]["id"], "title": child["translatedTitle"]})
-                    replacement["children_ids"] = children_ids
-                    self._recurse_create(parent, node, replacement=replacement)
+                            gchild_ids = []
+                            for gchild in child["children"]:
+                                gchild_node = self._create_replacement_node(child_node, gchild)
+                                gchild_ids.append({"id": gchild_node["id"]})
+                            child_node["children_ids"] = gchild_ids
+                        children_ids.append({"id": child_node["id"]})
+
+                    r_node["title"] = replacement.get("translatedTitle", title)
+                    r_node["slug"] = replacement.get("slug", slug)
+                    r_node["children_ids"] = children_ids
+                    self._recurse_create(parent, r_node)
             else:
                 khan_node = KhanTopic(
                     slug,   # set topic id to slug (used for source_id later)
@@ -228,12 +250,11 @@ class TSVManager:
                     description,
                 )
                 parent.add_child(khan_node)
-                self.topics_by_slug[node["slug"]] = node
 
-                for child_pointer in children_ids:
+                for child_pointer in node.get("children_ids", []):
                     if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
                         child_node = self.tree_dict[child_pointer["id"]]
-                        self._recurse_create(khan_node, child_node, replacement=child_pointer)
+                        self._recurse_create(khan_node, child_node)
                     else:
                         if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
                             # silentry skip unsupported content kinds like Article, Project,
