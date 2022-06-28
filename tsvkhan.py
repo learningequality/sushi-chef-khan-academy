@@ -142,6 +142,10 @@ class TSVManager:
         # Build a lookup table {slug --> KhanTopic} to be used for replacement logic
         self.topics_by_slug = {}
 
+        for node in self.tree_dict.values():
+            if node["kind"] in TOPIC_LIKE_KINDS:
+                self.topics_by_slug[node["slug"]] = node
+
         self.slug_blacklist = get_slug_blacklist(lang=lang, variant=variant)
         self.topic_replacements = get_topic_tree_replacements(lang=lang, variant=variant)
         for child_pointer in root_children:
@@ -159,6 +163,9 @@ class TSVManager:
             return None   # we want to keep only nodes with `listed=True`
         
         if node["slug"] in self.slug_blacklist:
+            return None
+        
+        if self.variant and node["curriculum_key"] and node["curriculum_key"] != self.variant:
             return None
 
         # Title info comes form different place if `en` vs. translated trees
@@ -197,8 +204,18 @@ class TSVManager:
             parent.add_child(khan_node)
 
         elif node["kind"] in TOPIC_LIKE_KINDS:
+            slug = node["slug"]
+            if slug in self.topic_replacements:
+                r = self.topic_replacements[slug]
+                title = r.get("translatedTitle", title)
+                description = r.get("description", description)
+                children_ids = []
+                for child in r["children"]:
+                    self.topic_replacements[child["slug"]] = child
+                    children_ids.append({"id": self.topics.by_slug[child["slug"]]["id"]})
+                node["children_ids"] = children_ids
             khan_node = KhanTopic(
-                node["slug"],   # set topic id to slug (used for source_id later)
+                slug,   # set topic id to slug (used for source_id later)
                 title,
                 description,
             )
@@ -208,52 +225,7 @@ class TSVManager:
             for child_pointer in node.get("children_ids", []):
                 if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
                     child_node = self.tree_dict[child_pointer["id"]]
-                    slug = child_node["slug"]
-                    if slug in self.topic_replacements:
-                        # This topic must be replaced by a list of other topic nodes
-                        replacements = self.topic_replacements[slug]
-                        LOGGER.debug('Replacing ka_node ' + slug + ' with replacements=' + str(replacements))
-                        for r in replacements:
-                            rtopic = KhanTopic(
-                                r['slug'],
-                                r['translatedTitle'],        # guaranteed to exist
-                                r.get('description'),  # (optional)
-                            )
-                            khan_node.add_child(rtopic)
-                            LOGGER.debug('  >>> rtopic = ' + rtopic["slug"])
-                            for rchild in r['children']:  # guaranteed to exist
-                                LOGGER.debug('      >>>> rchild["slug"] = ' + rchild["slug"])
-                                if 'children' not in rchild:
-                                    # CASE A: two-level replacement hierarchy
-                                    rchild_ka_node = self.topics_by_slug.get(rchild['slug'])
-                                    if rchild_ka_node:
-                                        rchild_ka_node = rchild_ka_node.copy()
-                                        if 'translatedTitle' in rchild:
-                                            rchild_ka_node["title"] = rchild['translatedTitle']
-                                        self._recurse_create(rtopic, rchild_ka_node)
-                                    else:
-                                        LOGGER.warning('Failed to find rchild slug=' + rchild['slug'])
-                                else:
-                                    # CASE B: three-level replacement hierarchy
-                                    rchildtopic = KhanTopic(
-                                        rchild['slug'],
-                                        rchild['translatedTitle'],   # guaranteed to exist
-                                        rchild.get('description'),  # (optional)
-                                    )
-                                    rtopic.add_child(rchildtopic)
-                                    for rgrandchild in rchild['children']:
-                                        rgrandchild_slug = rgrandchild['slug']
-                                        LOGGER.debug('               >>> rgrandchild_slug = ' + rgrandchild_slug)
-                                        rgrandchild_ka_node = self.topics_by_slug.get(rgrandchild_slug)
-                                        if rgrandchild_ka_node:
-                                            rgrandchild_ka_node = rgrandchild_ka_node.copy()
-                                            if 'translatedTitle' in rgrandchild:
-                                                rgrandchild_ka_node["title"] = rgrandchild['translatedTitle']
-                                            self._recurse_create(rchildtopic, rgrandchild_ka_node)
-                                        else:
-                                            LOGGER.warning('Failed to find rgrandchild slug=' + rgrandchild_slug)
-                    else:
-                        self._recurse_create(khan_node, child_node)
+                    self._recurse_create(khan_node, child_node)
                 else:
                     if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
                         # silentry skip unsupported content kinds like Article, Project,
