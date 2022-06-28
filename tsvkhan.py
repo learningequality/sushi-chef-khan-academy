@@ -218,7 +218,7 @@ class TSVManager:
                     for child in replacement["children"]:
                         if "children" in child:
                             self.topic_replacements[child["slug"]] = child["children"]
-                        children_ids.append({"id": self.topics.by_slug[child["slug"]]["id"], "title": child["translatedTitle"]})
+                        children_ids.append({"id": self.topics_by_slug[child["slug"]]["id"], "title": child["translatedTitle"]})
                     replacement["children_ids"] = children_ids
                     self._recurse_create(parent, node, replacement=replacement)
             else:
