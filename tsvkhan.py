@@ -153,7 +153,7 @@ class TSVManager:
                     child_node = self.tree_dict[child_pointer["id"]]
                     self._recurse_create(channel, child_node)
     
-    def _recurse_create(self, parent, node):
+    def _recurse_create(self, parent, node, replacement=None):
         """
         Main tree-building function that takes the rows from the TSV data and makes
         a tree out of them. By default we want to process only nodes with
@@ -205,37 +205,45 @@ class TSVManager:
 
         elif node["kind"] in TOPIC_LIKE_KINDS:
             slug = node["slug"]
+            children_ids = node.get("children_ids", [])
+            if replacement is not None:
+                title = replacement.get("translatedTitle", title)
+                description = replacement.get("description", description)
+                slug = replacement.get("slug", slug)
+                children_ids = replacement.get("children_ids", children_ids)
             if slug in self.topic_replacements:
-                r = self.topic_replacements[slug]
-                title = r.get("translatedTitle", title)
-                description = r.get("description", description)
-                children_ids = []
-                for child in r["children"]:
-                    self.topic_replacements[child["slug"]] = child
-                    children_ids.append({"id": self.topics.by_slug[child["slug"]]["id"]})
-                node["children_ids"] = children_ids
-            khan_node = KhanTopic(
-                slug,   # set topic id to slug (used for source_id later)
-                title,
-                description,
-            )
-            parent.add_child(khan_node)
-            self.topics_by_slug[node["slug"]] = node
+                replacements = self.topic_replacements.pop(slug)
+                for replacement in replacements:
+                    children_ids = []
+                    for child in replacement["children"]:
+                        if "children" in child:
+                            self.topic_replacements[child["slug"]] = child["children"]
+                        children_ids.append({"id": self.topics.by_slug[child["slug"]]["id"], "title": child["translatedTitle"]})
+                    replacement["children_ids"] = children_ids
+                    self._recurse_create(parent, node, replacement=replacement)
+            else:
+                khan_node = KhanTopic(
+                    slug,   # set topic id to slug (used for source_id later)
+                    title,
+                    description,
+                )
+                parent.add_child(khan_node)
+                self.topics_by_slug[node["slug"]] = node
 
-            for child_pointer in node.get("children_ids", []):
-                if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
-                    child_node = self.tree_dict[child_pointer["id"]]
-                    self._recurse_create(khan_node, child_node)
-                else:
-                    if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
-                        # silentry skip unsupported content kinds like Article, Project,
-                        # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
-                        pass
+                for child_pointer in children_ids:
+                    if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
+                        child_node = self.tree_dict[child_pointer["id"]]
+                        self._recurse_create(khan_node, child_node, replacement=child_pointer)
                     else:
-                        LOGGER.warning('Missing id=' + child_pointer.get('id') + \
-                            ' in children_ids of topic node with id=' + node["id"])
-            if not khan_node.children:
-                parent.children.remove(khan_node)
+                        if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
+                            # silentry skip unsupported content kinds like Article, Project,
+                            # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
+                            pass
+                        else:
+                            LOGGER.warning('Missing id=' + child_pointer.get('id') + \
+                                ' in children_ids of topic node with id=' + node["id"])
+                if not khan_node.children:
+                    parent.children.remove(khan_node)
 
         elif node["kind"] == "Video":
             slug_no_prefix = node['slug'].replace('v/','')  # remove the `v/`-prefix
