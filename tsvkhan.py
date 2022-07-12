@@ -162,6 +162,7 @@ class TSVManager:
                 "translated_description_html": "",
                 "curriculum_key": "",
                 "kind": "Course",
+                "listed": True,
             }
         child_node.update({
             "id": fake_child_id,
@@ -239,7 +240,8 @@ class TSVManager:
                             child_node["children_ids"] = gchild_ids
                         children_ids.append({"id": child_node["id"]})
 
-                    r_node["title"] = replacement.get("translatedTitle", title)
+                    r_node["original_title"] = replacement.get("translatedTitle", title)
+                    r_node["translated_title"] = replacement.get("translatedTitle", title)
                     r_node["slug"] = replacement.get("slug", slug)
                     r_node["children_ids"] = children_ids
                     self._recurse_create(parent, r_node)

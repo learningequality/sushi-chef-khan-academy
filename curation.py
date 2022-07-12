@@ -85,13 +85,6 @@ GLOBAL_SLUG_BLACKLIST += [
 
 # Empty/placeholder topics that are handled by TOPIC_TREE_REPLACMENTS_PER_LANG
 GLOBAL_SLUG_BLACKLIST += [
-    "k-8-grades",
-    "engageny",
-    "topic-foundations-engageny",
-    "on-grade-engageny",
-    "high-school-math",
-    "illustrative-math",
-    #
     "brazil-math-grades",               # empty topic in pt-BR topic tree
     "ciencias-por-ano",                 # empty topic in pt-BR topic tree
     #
