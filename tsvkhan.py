@@ -89,7 +89,7 @@ def get_khan_tsv(lang, update=False):
 
 
 class TSVManager:
-    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=True):
+    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=False):
         """
         Build the complete topic tree based on the results obtained from the KA API.
         Note this topic tree contains a combined topic strcuture that includes all
@@ -186,6 +186,11 @@ class TSVManager:
             return None
         
         if self.variant and node["curriculum_key"] and node["curriculum_key"] != self.variant:
+            return None
+
+        # The English TSV does not contain this information, and all content is created in English
+        # so it is always fully translated. If it is not fully translated we do not include it.
+        if not node.get("fully_translated", True):
             return None
 
         # Title info comes form different place if `en` vs. translated trees
