@@ -106,7 +106,7 @@ def get_khan_tsv(lang, update=False):
 
 
 class TSVManager:
-    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=False):
+    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=True):
         """
         Build the complete topic tree based on the results obtained from the KA API.
         Note this topic tree contains a combined topic strcuture that includes all
