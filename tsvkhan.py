@@ -62,6 +62,23 @@ EXERCISE_MAPPING = {
     "num_correct_in_a_row_10": {"mastery_model": exercises.NUM_CORRECT_IN_A_ROW_10},
 }
 
+# The TSV domains do not appear in sorted order so must sort them manually
+DOMAINS_SORT_ORDER = [
+    'math',
+    'science',
+    'economics-finance-domain',
+    'humanities',
+    'computing',
+    'test-prep',
+    'ela',
+    'partner-content',
+    'college-careers-more',
+    'khan-for-educators',
+    'kmap',                     # will be skipped later on
+    'internal-courses',         # will be skipped later on
+    'gtp',                      # will be skipped later on
+]
+
 
 # EXTERNAL API
 ################################################################################
@@ -115,22 +132,6 @@ class TSVManager:
         self.lang = lang
         self.variant = variant
 
-        # The TSV domains do not appear in sorted order so must sort them manually
-        DOMAINS_SORT_ORDER = [
-            'math',
-            'science',
-            'economics-finance-domain',
-            'humanities',
-            'computing',
-            'test-prep',
-            'ela',
-            'partner-content',
-            'college-careers-more',
-            'khan-for-educators',
-            'kmap',                     # will be skipped later on
-            'internal-courses',         # will be skipped later on
-            'gtp',                      # will be skipped later on
-        ]
         root_children = []
         domains = [row for row in self.tree_dict.values() if row['kind'] == 'Domain']
         domains_by_slug = dict((domain['slug'], domain) for domain in domains)
