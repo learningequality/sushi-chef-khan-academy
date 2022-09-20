@@ -106,7 +106,7 @@ def get_khan_tsv(lang, update=False):
 
 
 class TSVManager:
-    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=True):
+    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=True, verbose=False):
         """
         Build the complete topic tree based on the results obtained from the KA API.
         Note this topic tree contains a combined topic strcuture that includes all
@@ -131,6 +131,8 @@ class TSVManager:
         self.onlylisted = onlylisted
         self.lang = lang
         self.variant = variant
+        self.verbose = verbose
+        self.node_report = []
 
         root_children = []
         domains = [row for row in self.tree_dict.values() if row['kind'] == 'Domain']
@@ -153,7 +155,10 @@ class TSVManager:
             if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
                     child_node = self.tree_dict[child_pointer["id"]]
                     self._recurse_create(channel, child_node)
-    
+        if self.verbose:
+            with open("node_report.txt", "w") as f:
+                f.writelines(self.node_report)
+
     def _create_replacement_node(self, parent, child):
         fake_child_id = "{}_{}".format(parent["slug"], child["slug"])
         if child["slug"] in self.topics_by_slug:
@@ -174,15 +179,27 @@ class TSVManager:
         self.tree_dict[fake_child_id] = child_node
         return child_node
 
-    def _recurse_create(self, parent, node):
+    def _recurse_create(self, parent, node, level=0):
         """
         Main tree-building function that takes the rows from the TSV data and makes
-        a tree out of them. By default we want to process only nodes with
+        a tree out of them. By default we want to process only topic like nodes with
         `listed=True` (onlylisted=True). Use onlylisted=False only for debugging.
         """
-        if self.onlylisted and (node['listed'] == False or node['listed'] == None):
-            return None   # we want to keep only nodes with `listed=True`
-        
+        if self.verbose:
+            title = node['original_title'] if self.lang=='en' else node['translated_title']
+            text = ("  " * level) + title + "\n"
+            if node["kind"] in TOPIC_LIKE_KINDS and (node['listed'] == False or node['listed'] == None):
+                prefix = "EXCLUDE: "
+            else:
+                prefix = "INCLUDE: "
+            self.node_report.append(prefix + text)
+
+        # Only do this exclusion for topic like nodes, as this flag seems to gate what appears in top level
+        # navigation. Many resources get excluded by this, even though they are still accessible under their
+        # parent topic.
+        if self.onlylisted and node["kind"] in TOPIC_LIKE_KINDS and (node['listed'] == False or node['listed'] == None):
+            return None   # we want to keep only topic nodes with `listed=True`
+
         if node["slug"] in self.slug_blacklist:
             return None
         
@@ -250,7 +267,7 @@ class TSVManager:
                     r_node["translated_title"] = replacement.get("translatedTitle", title)
                     r_node["slug"] = replacement.get("slug", slug)
                     r_node["children_ids"] = children_ids
-                    self._recurse_create(parent, r_node)
+                    self._recurse_create(parent, r_node, level=level + 1)
             else:
                 khan_node = KhanTopic(
                     slug,   # set topic id to slug (used for source_id later)
@@ -262,7 +279,7 @@ class TSVManager:
                 for child_pointer in node.get("children_ids", []):
                     if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
                         child_node = self.tree_dict[child_pointer["id"]]
-                        self._recurse_create(khan_node, child_node)
+                        self._recurse_create(khan_node, child_node, level=level + 1)
                     else:
                         if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
                             # silentry skip unsupported content kinds like Article, Project,
