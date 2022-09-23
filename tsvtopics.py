@@ -16,14 +16,14 @@ from tsvkhan import DOMAINS_SORT_ORDER
 
 
 def _recurse_children(node, data, curriculum):
-    if "translatedTitle" not in node:
-        node["translatedTitle"] = node["original_title"]
+    if "translated_title" not in node:
+        node["translated_title"] = node["original_title"]
     if node["kind"] in TOPIC_LIKE_KINDS:
         children = []
         for child in node["children_ids"]:
             if child["id"] in data:
                 child = data[child["id"]]
-                if not curriculum or not child["curriculum_key"] or child["curriculum_key"] == curriculum:
+                if child.get("fully_translated", True) and (not curriculum or not child["curriculum_key"] or child["curriculum_key"] == curriculum):
                     children.append(child)
                     _recurse_children(child, data, curriculum)
         node["children"] = children
@@ -62,13 +62,13 @@ def print_curation_topic_tree(menu_topics, slugs=[]):
         if top_menu['slug'] in slugs:
             line = '    {'
             line += '"slug": "' + top_menu['slug'] + '", '
-            line += '"translatedTitle": "' + top_menu['translatedTitle'] + '", '
+            line += '"translated_title": "' + top_menu['translated_title'] + '", '
             line += '"children": ['
             print(line)
             for menu in top_menu['children']:
                 subline = '        {'
                 subline += '"slug": "' + menu['slug'] + '", '
-                subline += '"translatedTitle": "' + menu['translatedTitle'] + '"},'
+                subline += '"translated_title": "' + menu['translated_title'] + '"},'
                 print(subline)
             print('    ]},')
     print(']')
@@ -86,9 +86,9 @@ if __name__ == '__main__':
     print("Menu for lang", args.lang, 'and curriculum', args.curriculum, 'is:')
     if args.printmd:
         for top_menu in menu_topics:
-            print(' -', top_menu['translatedTitle'], 'slug='+top_menu['slug'], 'href='+top_menu['href'])
+            print(' -', top_menu['translated_title'], 'slug='+top_menu['slug'], 'href='+top_menu['href'])
             for menu in top_menu['children']:
-                print('    -', menu['translatedTitle'], 'slug='+menu['slug'], 'href='+menu['href'])
+                print('    -', menu['translated_title'], 'slug='+menu['slug'], 'href='+menu['href'])
                 if 'children' in menu:
                     print(menu['children'])
 
