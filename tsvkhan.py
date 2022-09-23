@@ -533,7 +533,8 @@ class KhanExercise(ExerciseNode):
         response_data = post_request(url, data)
 
         if response_data:
-            for item in response_data.get("data", {}).get("assessmentItems", []):
+            # It seems that sometimes assessmentItems can be None.
+            for item in response_data.get("data", {}).get("assessmentItems", []) or []:
                 if item["itemData"] and item["itemData"] != "null":
                     assessment_item = PerseusQuestion(
                         item["id"],
