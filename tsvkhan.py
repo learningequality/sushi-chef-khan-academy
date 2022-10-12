@@ -242,7 +242,7 @@ class TSVManager:
                 node["assessment_item_ids"],
                 node["suggested_completion_criteria"],
                 node["canonical_url"],
-                lang=self.lang,
+                self.lang,
             )
             parent.add_child(khan_node)
 
@@ -327,7 +327,8 @@ class TSVManager:
                 node.get("subbed", self.lang == "en"),
                 node.get("dubbed", self.lang == "en"),
                 node.get("dub_subbed", self.lang == "en"),
-                lang=self.lang if node.get("dubbed") else node["source_lang"],
+                self.lang if node.get("dubbed") else node["source_lang"],
+                self.lang,
             )
             # Add the video to the parent before setting any files, as we need the node id
             # to lookup any potentially pre-existing remote files.
@@ -481,7 +482,7 @@ class KhanExercise(ExerciseNode):
         assessment_items,
         mastery_model,
         source_url,
-        lang="en",
+        lang,
     ):
         self.assessment_items = assessment_items
         self.source_url = source_url
@@ -560,7 +561,11 @@ class KhanVideo(VideoNode):
         subbed,
         dubbed,
         dub_subbed,
-        lang="en",
+        # If it's a subtitled video the video language
+        # may not be in the target language, so we
+        # have to track these separately.
+        lang,
+        target_lang,
     ):
         super(KhanVideo, self).__init__(
             # POLICY: set the `source_id` based on the `youtube_id` of the
@@ -590,6 +595,7 @@ class KhanVideo(VideoNode):
         self.dubbed = dubbed
         self.dub_subbed = dub_subbed
         self.lang = lang
+        self.target_lang = target_lang
 
     @property
     def download_url(self):
@@ -628,7 +634,7 @@ class KhanVideo(VideoNode):
             )
 
         if self.subbed:
-            target_lang = VIDEO_LANGUAGE_MAPPING.get(self.lang, self.lang)
+            target_lang = VIDEO_LANGUAGE_MAPPING.get(self.target_lang, self.target_lang)
             for lang_code, path in get_subtitles(self.translated_youtube_id):
                 lang_obj = get_language_with_alpha2_fallback(lang_code)
                 if lang_obj is not None and (lang_code == target_lang or self.dub_subbed):
