@@ -414,6 +414,8 @@ COLUMN_TYPES_MAP = {
     'subbed': bool,
     'dubbed': bool,
     'dub_subbed': bool,
+    'listed_anywhere': bool,
+    'fully_translated': bool,
     # not needed but let's parse as int just for completeness
     'word_count': int,
     'approved_count': int,
