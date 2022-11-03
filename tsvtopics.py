@@ -34,7 +34,7 @@ def get_ka_learn_menu_topics(lang, curriculum=None):
     Obtain the custom menu from the Khan Academy website for language `lang` and
     `curriculum`, see for example https://es.khanacademy.org/?curriculum=pe-pe .
     """
-    data = get_khan_tsv(lang)
+    data = get_khan_tsv(lang, update=True)
 
     menu_topics = []
     domains = [row for row in data.values() if row['kind'] == 'Domain']

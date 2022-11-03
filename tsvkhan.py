@@ -11,6 +11,7 @@ from itertools import groupby
 import json
 from operator import itemgetter
 import os
+import re
 
 from le_utils.constants import exercises, file_formats, format_presets
 
@@ -367,10 +368,11 @@ def download_latest_tsv_export(kalang, filepath):
     bucket and save it to the local path `filepath`.
     """
     storage_client = storage.Client.create_anonymous_client()
-    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix=kalang)
+    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix=kalang + "-export")
     if not blobs:
         raise ValueError('An export for kalang=' + kalang + ' is not available.')
-    blob_names = [blob.name for blob in blobs]
+    valid_file_re = re.compile(kalang + "-export-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-]{1}[0-9]{4}\.tsv")
+    blob_names = [blob.name for blob in blobs if valid_file_re.match(blob.name)]
     LOGGER.debug('Found a total of ' + str(len(blob_names)) + ' export files.')
     # Get the blob with the most recent export file based on blob name
     # Example blob name: `es-export-2020-07-10T09:54:36+0000.tsv`
