@@ -769,7 +769,6 @@ TOPIC_TREE_REPLACMENTS_PER_LANG = {
                 {"slug": "organic-chemistry", "translatedTitle": "Química orgânica"},
                 {"slug": "biology", "translatedTitle": "Biologia"},
                 {"slug": "ap-biology", "translated_title": "Biologia avançada"},
-                {"slug": "health-and-medicine", "translatedTitle": "Saúde e medicina"},
                 {"slug": "electrical-engineering", "translatedTitle": "Engenharia elétrica"},
                 {"slug": "ap-college-environmental-science", "translated_title": "Ciências ambientais avançadas"},
 
