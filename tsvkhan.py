@@ -555,7 +555,14 @@ class KhanExercise(ExerciseNode):
             errors = response_data.get("errors", [])
             missing_items = any("assessment item not found in exercise" in x["message"] for x in errors)
             if assessment_items is None and missing_items:
-
+                assessment_items = []
+                for ai in self.assessment_items:
+                    data = self.get_query_data([ai])
+                    response_data = post_request(url, data)
+                    if response_data:
+                        items = response_data.get("data", {}).get("assessmentItems")
+                        if items:
+                            assessment_items.append(items[0])
             for item in assessment_items:
                 self.add_question(item)
 
