@@ -525,28 +525,39 @@ class KhanExercise(ExerciseNode):
         self.set_assessment_items()
         super(KhanExercise, self).validate()
 
+    def add_question(self, item):
+        if item["itemData"] and item["itemData"] != "null":
+            assessment_item = PerseusQuestion(
+                item["id"],
+                item["itemData"],
+                source_url=self.source_url,
+            )
+            self.questions.append(assessment_item)
+
+    def get_query_data(self, assessment_items):
+        return {
+            "query": assessment_item_query,
+            "variables": {
+                "itemDescriptors":["{}|{}".format(self.khan_id, ai_id) for ai_id in assessment_items]
+            }
+        }
+
     def set_assessment_items(self):
         kalang = ASSESSMENT_LANGUAGE_MAPPING.get(self.language, self.language)
         url = "https://{}.khanacademy.org/graphql/LearningEquality_assessmentItems".format(kalang)
-        data = {
-            "query": assessment_item_query,
-            "variables": {
-                "itemDescriptors":["{}|{}".format(self.khan_id, ai_id) for ai_id in self.assessment_items]
-            }
-        }
+        data = self.get_query_data(self.assessment_items)
 
         response_data = post_request(url, data)
 
         if response_data:
             # It seems that sometimes assessmentItems can be None.
-            for item in response_data.get("data", {}).get("assessmentItems", []) or []:
-                if item["itemData"] and item["itemData"] != "null":
-                    assessment_item = PerseusQuestion(
-                        item["id"],
-                        item["itemData"],
-                        source_url=self.source_url,
-                    )
-                    self.questions.append(assessment_item)
+            assessment_items = response_data.get("data", {}).get("assessmentItems")
+            errors = response_data.get("errors", [])
+            missing_items = any("assessment item not found in exercise" in x["message"] for x in errors)
+            if assessment_items is None and missing_items:
+
+            for item in assessment_items:
+                self.add_question(item)
 
     def __repr__(self):
         return "Exercise Node: {}".format(self.title)
