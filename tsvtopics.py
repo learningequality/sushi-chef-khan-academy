@@ -62,13 +62,13 @@ def print_curation_topic_tree(menu_topics, slugs=[]):
         if top_menu['slug'] in slugs:
             line = '    {'
             line += '"slug": "' + top_menu['slug'] + '", '
-            line += '"translated_title": "' + top_menu['translated_title'] + '", '
+            line += '"translatedTitle": "' + top_menu['translated_title'] + '", '
             line += '"children": ['
             print(line)
             for menu in top_menu['children']:
                 subline = '        {'
                 subline += '"slug": "' + menu['slug'] + '", '
-                subline += '"translated_title": "' + menu['translated_title'] + '"},'
+                subline += '"translatedTitle": "' + menu['translated_title'] + '"},'
                 print(subline)
             print('    ]},')
     print(']')

@@ -33,6 +33,7 @@ from constants import VIDEO_LANGUAGE_MAPPING
 from constants import LICENSE_MAPPING
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
+from curation import METADATA_BY_SLUG
 from crowdin import retrieve_translations
 from kolibridb import get_nodes_for_remote_files
 from network import post_request
@@ -317,6 +318,7 @@ class TSVManager:
                 return None
 
             khan_node = KhanVideo(
+                slug_no_prefix,
                 title,
                 description,
                 node["thumbnail_url"],
@@ -455,10 +457,12 @@ def clean_tsv_row(row):
 
 class KhanTopic(TopicNode):
     def __init__(self, id, title, description):
+        metadata = METADATA_BY_SLUG.get(id, {})
         super(KhanTopic, self).__init__(
             id,
             title,
             description=description[:400] if description else '',
+            **metadata
         )
 
     def __repr__(self):
@@ -507,6 +511,8 @@ class KhanExercise(ExerciseNode):
 
         self.khan_id = id
 
+        metadata = METADATA_BY_SLUG.get(slug, {})
+
         super(KhanExercise, self).__init__(
             slug,
             title,
@@ -519,6 +525,7 @@ class KhanExercise(ExerciseNode):
             language=lang,
             thumbnail=thumbnail,
             tags=tags,
+            **metadata,
         )
 
     def validate(self):
@@ -573,6 +580,7 @@ class KhanExercise(ExerciseNode):
 class KhanVideo(VideoNode):
     def __init__(
         self,
+        slug,
         title,
         description,
         thumbnail,
@@ -589,6 +597,7 @@ class KhanVideo(VideoNode):
         lang,
         target_lang,
     ):
+        metadata = METADATA_BY_SLUG.get(slug, {})
         super(KhanVideo, self).__init__(
             # POLICY: set the `source_id` based on the `youtube_id` of the
             # original English video and not the `translated_youtube_id`:
@@ -598,6 +607,7 @@ class KhanVideo(VideoNode):
             license=license,
             thumbnail=thumbnail,
             language=lang,
+            **metadata,
         )
         self.license = license
         self.thumbnail = thumbnail
