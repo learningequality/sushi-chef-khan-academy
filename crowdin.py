@@ -7,7 +7,7 @@ import tempfile
 import zipfile
 
 import polib
-from constants import CROWDIN_URL, SUPPORTED_LANGS, CROWDIN_LANGUAGE_MAPPING
+from constants import CROWDIN_URL, SUPPORTED_LANGS, KHAN_ACADEMY_LANGUAGE_MAPPING
 from network import make_request
 from ricecooker.config import LOGGER
 
@@ -58,7 +58,7 @@ def retrieve_translations(lang, includes="*.po"):
     if lang in SUPPORTED_LANGS:
         return {}
 
-    lang_code = CROWDIN_LANGUAGE_MAPPING.get(lang, lang)
+    lang_code = KHAN_ACADEMY_LANGUAGE_MAPPING.get(lang, lang)
 
     if 'CROWDIN_USERNAME' not in os.environ or 'CROWDIN_ACCOUNT_KEY' not in os.environ:
         LOGGER.error("Error missing Crowdin creds needed to get KA contnet translations.")

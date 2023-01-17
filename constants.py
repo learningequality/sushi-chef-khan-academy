@@ -91,32 +91,9 @@ KHAN_ACADEMY_LANGUAGE_MAPPING = {
     "pt-BR": 'pt',
     "pt-PT": 'pt-pt',
     "zh-CN": 'zh-hans',
+    "fuv": "fv",
+    "zul": "zu", 
 }
-
-# map from le-utils language codes to language codes used on CROWDIN
-CROWDIN_LANGUAGE_MAPPING = {
-    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
-    "zul": "zu",            # Zulu
-}
-
-# map from le-utils codes to language codes used by the KA assesment items API
-ASSESSMENT_LANGUAGE_MAPPING = {
-    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
-    "zul": "zu",            # Zulu
-    "pt-BR": "pt",
-    "zh-CN": "zh-hans",
-}
-
-# map from le-utils codes to language codes for video nodes translated_  from youtube do not have the same language code as le-utils
-VIDEO_LANGUAGE_MAPPING = {
-    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
-    "zul": "zu",            # Zulu
-    "pt-BR": "pt",
-    "zh-CN": "zh-hans",
-}
-
-INVERSE_VIDEO_LANGUAGE_MAPPING = {v:k for k,v in VIDEO_LANGUAGE_MAPPING.items()}
-
 
 # Videos with misleading translatedYoutubeLang organized by le-utils lang code.
 # Use this list to override the should-be-included logic and include the videos.

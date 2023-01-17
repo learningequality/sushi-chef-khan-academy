@@ -28,8 +28,8 @@ from ricecooker.config import LOGGER
 from ricecooker.utils.youtube import get_language_with_alpha2_fallback
 
 from common_core_tags import CC_MAPPING
-from constants import SUPPORTED_LANGS, ASSESSMENT_LANGUAGE_MAPPING, KHAN_ACADEMY_LANGUAGE_MAPPING
-from constants import VIDEO_LANGUAGE_MAPPING
+from constants import SUPPORTED_LANGS
+from constants import KHAN_ACADEMY_LANGUAGE_MAPPING
 from constants import LICENSE_MAPPING
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
@@ -550,7 +550,7 @@ class KhanExercise(ExerciseNode):
         }
 
     def set_assessment_items(self):
-        kalang = ASSESSMENT_LANGUAGE_MAPPING.get(self.language, self.language)
+        kalang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(self.language, self.language)
         url = "https://{}.khanacademy.org/graphql/LearningEquality_assessmentItems".format(kalang)
         data = self.get_query_data(self.assessment_items)
 
@@ -666,7 +666,7 @@ class KhanVideo(VideoNode):
             )
 
         if self.subbed:
-            target_lang = VIDEO_LANGUAGE_MAPPING.get(self.target_lang, self.target_lang)
+            target_lang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(self.target_lang, self.target_lang)
             for lang_code, path in get_subtitles(self.translated_youtube_id):
                 lang_obj = get_language_with_alpha2_fallback(lang_code)
                 if lang_obj is not None and (lang_code == target_lang or self.dub_subbed):

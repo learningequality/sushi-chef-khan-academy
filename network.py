@@ -18,8 +18,6 @@ from ricecooker.utils.caching import (
     InvalidatingCacheControlAdapter,
 )
 
-from constants import INVERSE_VIDEO_LANGUAGE_MAPPING
-
 YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', None)
 
 sess = requests.Session()
