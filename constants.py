@@ -1,5 +1,11 @@
 
 from le_utils.constants.languages import getlang
+from ricecooker.classes.licenses import CC_BYLicense
+from ricecooker.classes.licenses import CC_BY_NCLicense
+from ricecooker.classes.licenses import CC_BY_NC_NDLicense
+from ricecooker.classes.licenses import CC_BY_NC_SALicense
+from ricecooker.classes.licenses import CC_BY_SALicense
+from ricecooker.classes.licenses import SpecialPermissionsLicense
 
 # These KA channels are supported on the KA website and topic trees for them are
 # availables as TSV exports. The list contains internal le-utils language codes.
@@ -21,7 +27,6 @@ UNSUPPORTED_LANGS = [
 ]
 
 
-ASSESSMENT_URL = "http://www.khanacademy.org/api/internal/assessment_items/{assessment_item}?lang={kalang}"
 CROWDIN_URL = "https://api.crowdin.com/api/project/khanacademy/download/{lang_code}.zip?login={username}&account-key={account_key}"
 COMMON_CORE_SPREADSHEET = "https://storage.googleapis.com/ka_uploads/share/Common_Core_Spreadsheet.csv"
 
@@ -62,6 +67,7 @@ CHANNEL_DESCRIPTION_LOOKUP = {
     "km": "Khan Academy ផ្តល់ជូននូវវីដេអូ និងលំហាត់គណិតវិទ្យាជាច្រើន។ គ្រប់មុខវិជ្ជាទាំងអស់ត្រូវបានផ្សព្វផ្សាយតាមរយៈវីដេអូវិចារណញាណ និងមានលំហាត់ជាច្រើនទៀតដើម្បីជួយឱ្យសិស្សមានគន្លឹះក្នុងការដោះស្រាយលំហាត់កាន់តែងាយស្រួល។",
     "gu": "ખાન એકેડેમી ગણિત અને વિજ્ઞાન ના વિડિયો અને સ્વાધ્યાય પ્રદાન કરે છે. દરેક વિષય સાહજિક વિડિયો અને અસંખ્ય સ્વાધ્યાયના સાથે આવરી લેવામાં આવે છે. તેઓ વિષયોને માસ્ટર બનાવવામાં મદદ કરે છે.",
     "my": "Khan Academy မှဗွီဒီယိုများနှင့်သင်္ချာဆိုင်ရာလေ့ကျင့်ခန်းများကိုတင်ဆက်သည်။ ဘာသာရပ်တိုင်းကိုထိုးထွင်းသိမြင်နိုင်သောဗီဒီယိုများဖြင့်ဖော်ပြပြီးကျောင်းသားများကိုသဘောတရားများကိုကျွမ်းကျင်အောင်ကူညီရန်လေ့ကျင့်ခန်းများစွာပါ ၀ င်သည်။",  # via google transalte
+    "uk": "Khan Academy пропонує практичні вправи a пояснювальні відео. У нас є матеріали з математики, природничих наук, програмування, історії, історії мистецтв, економіки та багатьох інших предметів.",
 }
 
 
@@ -85,30 +91,9 @@ KHAN_ACADEMY_LANGUAGE_MAPPING = {
     "pt-BR": 'pt',
     "pt-PT": 'pt-pt',
     "zh-CN": 'zh-hans',
+    "fuv": "fv",
+    "zul": "zu", 
 }
-
-# map from le-utils language codes to language codes used on CROWDIN
-CROWDIN_LANGUAGE_MAPPING = {
-    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
-    "zul": "zu",            # Zulu
-}
-
-# map from le-utils codes to language codes used by the KA assesment items API
-ASSESSMENT_LANGUAGE_MAPPING = {
-    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
-    "zul": "zu",            # Zulu
-    "pt-BR": "pt",
-    "zh-CN": "zh-hans",
-}
-
-# map from le-utils codes to language codes for video nodes translated_  from youtube do not have the same language code as le-utils
-VIDEO_LANGUAGE_MAPPING = {
-    "fuv": "fv",            # Fulfulde Mbororo (note different from ful and ff)
-    "zul": "zu",            # Zulu
-    "pt-BR": "pt",
-    "zh-CN": "zh-hans",
-}
-
 
 # Videos with misleading translatedYoutubeLang organized by le-utils lang code.
 # Use this list to override the should-be-included logic and include the videos.
@@ -150,3 +135,29 @@ DUBBED_VIDEOS_BY_LANG = {
 # To add to this list, look for ERROR message in the logs after a complete chef
 # like "Untranslated video {youtube_id} and no subs available. Skipping." and
 # add the `{youtube_id}` to the above list if the video is actually transalted.
+
+
+LICENSE_MAPPING = {
+    # OLD KEYS
+    "CC BY": CC_BYLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC": CC_BY_NCLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-ND": CC_BY_NC_NDLicense(copyright_holder="Khan Academy"),
+    "CC BY-NC-SA (KA default)": CC_BY_NC_SALicense(copyright_holder="Khan Academy"),
+    "CC BY-SA": CC_BY_SALicense(copyright_holder="Khan Academy"),
+    "Non-commercial/non-Creative Commons (College Board)": SpecialPermissionsLicense(
+        copyright_holder="Khan Academy",
+        description="Non-commercial/non-Creative Commons (College Board)",
+    ),
+    # "Standard Youtube": licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
+    #
+    #
+    #
+    # NEW KEYS
+    'cc-by-nc-nd': CC_BY_NC_NDLicense(copyright_holder="Khan Academy"),
+    'cc-by-nc-sa': CC_BY_NC_SALicense(copyright_holder="Khan Academy"),
+    'cb-ka-copyright': SpecialPermissionsLicense(
+        copyright_holder="Khan Academy",
+        description="Non-commercial/non-Creative Commons (College Board)",
+    ),
+    # 'yt-standard': licenses.ALL_RIGHTS_RESERVED,  # warn and skip these
+}

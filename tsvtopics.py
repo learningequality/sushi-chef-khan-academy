@@ -3,45 +3,49 @@
 This script can be used to extract the main menu info from the KA website.
 Usage:
 
-    ./graphql.py  --lang=bg
-    ./graphql.py  --lang=es --curriculum=mx-eb
+    ./tsvtopics.py  --lang=bg
+    ./tsvtopics.py  --lang=es --curriculum=mx-eb
 
 """
 
 import argparse
-import requests
+
+from tsvkhan import get_khan_tsv
+from tsvkhan import TOPIC_LIKE_KINDS
+from tsvkhan import DOMAINS_SORT_ORDER
 
 
-# KA WEBSITE GRAPHQL HACKS
-################################################################################
+def _recurse_children(node, data, curriculum):
+    if "translated_title" not in node:
+        node["translated_title"] = node["original_title"]
+    if node["kind"] in TOPIC_LIKE_KINDS:
+        children = []
+        for child in node["children_ids"]:
+            if child["id"] in data:
+                child = data[child["id"]]
+                if child.get("fully_translated", True) and (not curriculum or not child["curriculum_key"] or child["curriculum_key"] == curriculum):
+                    children.append(child)
+                    _recurse_children(child, data, curriculum)
+        node["children"] = children
+
 
 def get_ka_learn_menu_topics(lang, curriculum=None):
     """
     Obtain the custom menu from the Khan Academy website for language `lang` and
     `curriculum`, see for example https://es.khanacademy.org/?curriculum=pe-pe .
     """
-    post_data = {
-        "operationName": "learnMenuTopicsQuery",
-        "variables": {},
-        "query":"query learnMenuTopicsQuery($curriculum: String) {\n  learnMenuTopics(curriculum: $curriculum) {\n    slug\n    translatedTitle\n    href\n    children {\n      slug\n      translatedTitle\n      href\n      loggedOutHref\n      nonContentLink\n      __typename\n    }\n    __typename\n  }\n}\n"
-    }
-    if curriculum:
-        post_data["variables"]["curriculum"] = curriculum
+    data = get_khan_tsv(lang, update=True)
 
-    url = 'https://www.khanacademy.org/api/internal/graphql/learnMenuTopicsQuery'
-    url += '?lang=' + lang
-    print('Sending POST', url)
-    response = requests.post(url, json=post_data)
-    response_data = response.json()
-    menu_topics = response_data['data']['learnMenuTopics']
-    for top_menu in menu_topics:
-        del top_menu['__typename']
-        top_menu['slug'] = top_menu['href'].split('/')[-1]
-        for menu in top_menu['children']:
-            del menu['loggedOutHref']
-            del menu['nonContentLink']
-            del menu['__typename']
-            menu['slug'] = menu['href'].split('/')[-1]
+    menu_topics = []
+    domains = [row for row in data.values() if row['kind'] == 'Domain']
+    domains_by_slug = dict((domain['slug'], domain) for domain in domains)
+    for domain_slug in DOMAINS_SORT_ORDER:
+        if domain_slug in domains_by_slug:
+            domain = domains_by_slug[domain_slug]
+            if not curriculum or not domain["curriculum_key"] or domain["curriculum_key"] == curriculum:
+                menu_topics.append(domain)
+                _recurse_children(domain, data, curriculum)
+
     return menu_topics
 
 
@@ -58,13 +62,13 @@ def print_curation_topic_tree(menu_topics, slugs=[]):
         if top_menu['slug'] in slugs:
             line = '    {'
             line += '"slug": "' + top_menu['slug'] + '", '
-            line += '"translatedTitle": "' + top_menu['translatedTitle'] + '", '
+            line += '"translatedTitle": "' + top_menu['translated_title'] + '", '
             line += '"children": ['
             print(line)
             for menu in top_menu['children']:
                 subline = '        {'
                 subline += '"slug": "' + menu['slug'] + '", '
-                subline += '"translatedTitle": "' + menu['translatedTitle'] + '"},'
+                subline += '"translatedTitle": "' + menu['translated_title'] + '"},'
                 print(subline)
             print('    ]},')
     print(']')
@@ -82,9 +86,9 @@ if __name__ == '__main__':
     print("Menu for lang", args.lang, 'and curriculum', args.curriculum, 'is:')
     if args.printmd:
         for top_menu in menu_topics:
-            print(' -', top_menu['translatedTitle'], 'slug='+top_menu['slug'], 'href='+top_menu['href'])
+            print(' -', top_menu['translated_title'], 'slug='+top_menu['slug'], 'href='+top_menu['href'])
             for menu in top_menu['children']:
-                print('    -', menu['translatedTitle'], 'slug='+menu['slug'], 'href='+menu['href'])
+                print('    -', menu['translated_title'], 'slug='+menu['slug'], 'href='+menu['href'])
                 if 'children' in menu:
                     print(menu['children'])
 

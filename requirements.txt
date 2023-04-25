@@ -1,5 +1,5 @@
 html2text==2018.1.9
-ricecooker>=0.7.0b3
+ricecooker>=0.7.0b6
 polib==1.1.0
 google-api-python-client==1.8.2
 google-cloud-storage==1.29.0
