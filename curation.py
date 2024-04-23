@@ -2144,9 +2144,9 @@ def get_topic_tree_replacements(lang=None, variant=None):
     Returns a dictionary of replacements directives for the KA language `lang`
     and channel variant `variant` taken from TOPIC_TREE_REPLACMENTS_PER_LANG.
     """
-    if variant and (lang, variant) in TOPIC_TREE_REPLACMENTS_PER_LANG:
+    if variant is not None and (lang, variant) in TOPIC_TREE_REPLACMENTS_PER_LANG:
         return TOPIC_TREE_REPLACMENTS_PER_LANG[(lang, variant)]
-    elif lang in TOPIC_TREE_REPLACMENTS_PER_LANG:
+    elif variant is None and lang in TOPIC_TREE_REPLACMENTS_PER_LANG:
         return TOPIC_TREE_REPLACMENTS_PER_LANG[lang]
     else:
         LOGGER.warning(
