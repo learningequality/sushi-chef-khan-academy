@@ -18,7 +18,7 @@ from ricecooker.utils.caching import (
     InvalidatingCacheControlAdapter,
 )
 
-YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', None)
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", None)
 
 sess = requests.Session()
 cache = FileCache(".webcache")
@@ -31,7 +31,7 @@ sess.mount("https://api.crowdin.com", forever_adapter)
 # TODO: review caching used by make_request to avoid need to delete .webcache
 
 # Directory to store list-of-subtitles-available-for-
-SUBTITLE_LANGUAGES_CACHE_DIR = 'chefdata/sublangscache'
+SUBTITLE_LANGUAGES_CACHE_DIR = "chefdata/sublangscache"
 os.makedirs(SUBTITLE_LANGUAGES_CACHE_DIR, exist_ok=True)
 
 headers = {
@@ -95,7 +95,9 @@ def post_request(url, data, clear_cookies=True, timeout=60, *args, **kwargs):
     max_retries = 5
     while True:
         try:
-            response = sess.post(url, json=data, headers=headers, timeout=timeout, *args, **kwargs)
+            response = sess.post(
+                url, json=data, headers=headers, timeout=timeout, *args, **kwargs
+            )
             response.raise_for_status()
             break
         except (
@@ -126,11 +128,15 @@ query LearningEquality_getSubtitles($youtubeId: String!, $kaLocale: String) {
 }
 """
 
-SUBTITLE_LANGUAGES_CACHE_INDEX = os.path.join(SUBTITLE_LANGUAGES_CACHE_DIR, "index.json")
+SUBTITLE_LANGUAGES_CACHE_INDEX = os.path.join(
+    SUBTITLE_LANGUAGES_CACHE_DIR, "index.json"
+)
 
 
 def _populate_sublangscache_index():
-    LOGGER.info("Populating subtitle language cache index to create complete listing of all subtitles for all KA Youtube videos")
+    LOGGER.info(
+        "Populating subtitle language cache index to create complete listing of all subtitles for all KA Youtube videos"
+    )
     url = "https://amara.org/api/videos/?team=khan-academy&limit=100&format=json"
     LOGGER.info("Fetching and processing {}".format(url))
     response = make_request(url)
@@ -139,14 +145,20 @@ def _populate_sublangscache_index():
         data = response.json()
         while data:
             for video in data["objects"]:
-                youtube_id = video["all_urls"][0].replace("http://www.youtube.com/watch?v=", "")
+                youtube_id = video["all_urls"][0].replace(
+                    "http://www.youtube.com/watch?v=", ""
+                )
                 published_subtitles = []
                 for subtitle in video["languages"]:
                     if subtitle.get("published", False):
-                        published_subtitles.append({
-                            "lang": subtitle["code"],
-                            "url": subtitle["subtitles_uri"].replace("format=json", "format=vtt"),
-                        })
+                        published_subtitles.append(
+                            {
+                                "lang": subtitle["code"],
+                                "url": subtitle["subtitles_uri"].replace(
+                                    "format=json", "format=vtt"
+                                ),
+                            }
+                        )
                 index[youtube_id] = published_subtitles
             url = data["meta"]["next"]
             if url:
@@ -159,6 +171,7 @@ def _populate_sublangscache_index():
     with open(SUBTITLE_LANGUAGES_CACHE_INDEX, "w") as f:
         json.dump(index, f)
 
+
 subtitle_language_cache = {}
 
 
@@ -169,4 +182,6 @@ def get_subtitles(youtube_id):
         with open(SUBTITLE_LANGUAGES_CACHE_INDEX, "r") as f:
             data = json.load(f)
             subtitle_language_cache.update(data)
-    return [(sub["lang"], sub["url"]) for sub in subtitle_language_cache.get(youtube_id, [])]
+    return [
+        (sub["lang"], sub["url"]) for sub in subtitle_language_cache.get(youtube_id, [])
+    ]

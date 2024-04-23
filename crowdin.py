@@ -60,15 +60,23 @@ def retrieve_translations(lang, includes="*.po"):
 
     lang_code = KHAN_ACADEMY_LANGUAGE_MAPPING.get(lang, lang)
 
-    if 'CROWDIN_USERNAME' not in os.environ or 'CROWDIN_ACCOUNT_KEY' not in os.environ:
-        LOGGER.error("Error missing Crowdin creds needed to get KA contnet translations.")
+    if "CROWDIN_USERNAME" not in os.environ or "CROWDIN_ACCOUNT_KEY" not in os.environ:
+        LOGGER.error(
+            "Error missing Crowdin creds needed to get KA contnet translations."
+        )
         LOGGER.error("Must set ENV vars CROWDIN_USERNAME and/or CROWDIN_ACCOUNT_KEY")
-        LOGGER.error("get from /data/sushi-chef-khan-academy/credentials/crowdinkeys.env on vader")
-        LOGGER.error("or crate an account and get from https://crowdin.com/settings#api-key")
+        LOGGER.error(
+            "get from /data/sushi-chef-khan-academy/credentials/crowdinkeys.env on vader"
+        )
+        LOGGER.error(
+            "or crate an account and get from https://crowdin.com/settings#api-key"
+        )
         sys.exit(1)
-    username = os.environ['CROWDIN_USERNAME']
-    account_key = os.environ['CROWDIN_ACCOUNT_KEY']
-    url = CROWDIN_URL.format(lang_code=lang_code, username=username, account_key=account_key)
+    username = os.environ["CROWDIN_USERNAME"]
+    account_key = os.environ["CROWDIN_ACCOUNT_KEY"]
+    url = CROWDIN_URL.format(
+        lang_code=lang_code, username=username, account_key=account_key
+    )
 
     filename = "khanacademy_{lang_code}.zip".format(lang_code=lang_code)
     filepath = os.path.join(CROWDIN_CACHE_DIR, filename)
@@ -84,10 +92,7 @@ def retrieve_translations(lang, includes="*.po"):
     zip_extraction_path = tempfile.mkdtemp()
     with zipfile.ZipFile(filepath) as zf:
         zf.extractall(zip_extraction_path)
-    all_filenames = glob.iglob(
-        os.path.join(zip_extraction_path, "**"),
-        recursive=True
-    )
+    all_filenames = glob.iglob(os.path.join(zip_extraction_path, "**"), recursive=True)
     filenames = fnmatch.filter(all_filenames, includes)
 
     # use the polib library, since it's much faster at concatenating

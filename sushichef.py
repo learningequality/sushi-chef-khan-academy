@@ -13,16 +13,14 @@ from constants import get_channel_description
 from tsvkhan import TSVManager
 
 
-
-
 class KhanAcademySushiChef(SushiChef):
     """
     Khan Academy sushi chef.
     """
-    slug_blacklist = []      # spec about `KhanTopic`s to be skipped
-    topics_by_slug = {}      # lookup table { slug --> KhanTopic }
-    topic_replacements = {}  # spec about `KhanTopic`s to be replaced
 
+    slug_blacklist = []  # spec about `KhanTopic`s to be skipped
+    topics_by_slug = {}  # lookup table { slug --> KhanTopic }
+    topic_replacements = {}  # spec about `KhanTopic`s to be replaced
 
     def parse_lang_and_variant_from_kwargs(self, kwargs):
         """
@@ -31,12 +29,11 @@ class KhanAcademySushiChef(SushiChef):
         and `variant` (str or None) identifies different channel version.
         """
         if "lang" not in kwargs:
-            raise ValueError('Khan Academy chef must be run with lang=<code>')
+            raise ValueError("Khan Academy chef must be run with lang=<code>")
         lang = kwargs["lang"]
-        assert getlang(lang), 'Language code ' + lang + ' not recognized'
+        assert getlang(lang), "Language code " + lang + " not recognized"
         variant = kwargs.get("variant", None)
         return lang, variant
-
 
     def get_channel_dict(self, kwargs):
         """
@@ -64,7 +61,6 @@ class KhanAcademySushiChef(SushiChef):
         """
         channel_dict = self.get_channel_dict(kwargs)
         return ChannelNode(**channel_dict)
-
 
     def get_json_tree_path(self, **kwargs):
         """
@@ -99,6 +95,7 @@ class KhanAcademySushiChef(SushiChef):
         TSVManager(channel, lang=lang, variant=variant)
 
         return channel
+
 
 if __name__ == "__main__":
     chef = KhanAcademySushiChef()

@@ -45,8 +45,8 @@ translations = {}
 TOPIC_LIKE_KINDS = ["Domain", "Course", "Unit", "Lesson"]
 SUPPORTED_KINDS = TOPIC_LIKE_KINDS + ["Exercise", "Video"]
 UNSUPPORTED_KINDS = ["Article", "Interactive"]
-UNSUPPORTED_KINDS += ["TopicQuiz", "TopicUnitTest"]            # exercise-like
-UNSUPPORTED_KINDS += ["Challenge", "Project", "Talkthrough"]   # scratchpad-like
+UNSUPPORTED_KINDS += ["TopicQuiz", "TopicUnitTest"]  # exercise-like
+UNSUPPORTED_KINDS += ["Challenge", "Project", "Talkthrough"]  # scratchpad-like
 
 KHAN_TSV_EXPORT_BUCKET_NAME = "public-content-export-data"
 
@@ -67,24 +67,25 @@ EXERCISE_MAPPING = {
 
 # The TSV domains do not appear in sorted order so must sort them manually
 DOMAINS_SORT_ORDER = [
-    'math',
-    'science',
-    'economics-finance-domain',
-    'humanities',
-    'computing',
-    'test-prep',
-    'ela',
-    'partner-content',
-    'college-careers-more',
-    'khan-for-educators',
-    'kmap',                     # will be skipped later on
-    'internal-courses',         # will be skipped later on
-    'gtp',                      # will be skipped later on
+    "math",
+    "science",
+    "economics-finance-domain",
+    "humanities",
+    "computing",
+    "test-prep",
+    "ela",
+    "partner-content",
+    "college-careers-more",
+    "khan-for-educators",
+    "kmap",  # will be skipped later on
+    "internal-courses",  # will be skipped later on
+    "gtp",  # will be skipped later on
 ]
 
 
 # EXTERNAL API
 ################################################################################
+
 
 def get_khan_tsv(lang, update=False):
     """
@@ -94,13 +95,13 @@ def get_khan_tsv(lang, update=False):
         kalang = KHAN_ACADEMY_LANGUAGE_MAPPING[lang]
     else:
         kalang = lang
-    filename = 'topic_tree_export.{}.tsv'.format(kalang)
+    filename = "topic_tree_export.{}.tsv".format(kalang)
     filepath = os.path.join(KHAN_TSV_CACHE_DIR, filename)
     if os.path.exists(filepath) and not update:
-        LOGGER.info('Loaded KA TSV data from cache ' + filepath)
+        LOGGER.info("Loaded KA TSV data from cache " + filepath)
         data = parse_tsv_file(filepath)
     else:
-        LOGGER.info('Downloading KA TSV data for kalang=' + kalang)
+        LOGGER.info("Downloading KA TSV data for kalang=" + kalang)
         if not os.path.exists(KHAN_TSV_CACHE_DIR):
             os.makedirs(KHAN_TSV_CACHE_DIR, exist_ok=True)
         download_latest_tsv_export(kalang, filepath)
@@ -109,7 +110,15 @@ def get_khan_tsv(lang, update=False):
 
 
 class TSVManager:
-    def __init__(self, channel, lang="en", variant=None, update=True, onlylisted=True, verbose=False):
+    def __init__(
+        self,
+        channel,
+        lang="en",
+        variant=None,
+        update=True,
+        onlylisted=True,
+        verbose=False,
+    ):
         """
         Build the complete topic tree based on the results obtained from the KA API.
         Note this topic tree contains a combined topic strcuture that includes all
@@ -138,12 +147,12 @@ class TSVManager:
         self.node_report = []
 
         root_children = []
-        domains = [row for row in self.tree_dict.values() if row['kind'] == 'Domain']
-        domains_by_slug = dict((domain['slug'], domain) for domain in domains)
+        domains = [row for row in self.tree_dict.values() if row["kind"] == "Domain"]
+        domains_by_slug = dict((domain["slug"], domain) for domain in domains)
         for domain_slug in DOMAINS_SORT_ORDER:
             if domain_slug in domains_by_slug:
                 domain = domains_by_slug[domain_slug]
-                root_children.append({'kind':'Domain', 'id':domain['id']})
+                root_children.append({"kind": "Domain", "id": domain["id"]})
 
         # Build a lookup table {slug --> KhanTopic} to be used for replacement logic
         self.topics_by_slug = {}
@@ -153,11 +162,13 @@ class TSVManager:
                 self.topics_by_slug[node["slug"]] = node
 
         self.slug_blacklist = get_slug_blacklist(lang=lang, variant=variant)
-        self.topic_replacements = get_topic_tree_replacements(lang=lang, variant=variant)
+        self.topic_replacements = get_topic_tree_replacements(
+            lang=lang, variant=variant
+        )
         for child_pointer in root_children:
             if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
-                    child_node = self.tree_dict[child_pointer["id"]]
-                    self._recurse_create(channel, child_node)
+                child_node = self.tree_dict[child_pointer["id"]]
+                self._recurse_create(channel, child_node)
         if self.verbose:
             with open("node_report.txt", "w") as f:
                 f.writelines(self.node_report)
@@ -167,7 +178,10 @@ class TSVManager:
         # If we have a variant specified and it is not one that we have a custom curation tree for,
         # then we will strictly generate it, including only the Courses that have been tagged with the
         # curriculum_key specified by the variant.
-        return self.variant is not None and (self.lang, self.variant) not in TOPIC_TREE_REPLACMENTS_PER_LANG
+        return (
+            self.variant is not None
+            and (self.lang, self.variant) not in TOPIC_TREE_REPLACMENTS_PER_LANG
+        )
 
     def _create_replacement_node(self, parent, child):
         fake_child_id = "{}_{}".format(parent["slug"], child["slug"])
@@ -180,12 +194,18 @@ class TSVManager:
                 "kind": "Course",
                 "listed": True,
             }
-        child_node.update({
-            "id": fake_child_id,
-            "original_title": child.get("translatedTitle", child_node.get("original_title", "")),
-            "translated_title": child.get("translatedTitle", child_node.get("translated_title", "")),
-            "slug": child["slug"],
-        })
+        child_node.update(
+            {
+                "id": fake_child_id,
+                "original_title": child.get(
+                    "translatedTitle", child_node.get("original_title", "")
+                ),
+                "translated_title": child.get(
+                    "translatedTitle", child_node.get("translated_title", "")
+                ),
+                "slug": child["slug"],
+            }
+        )
         self.tree_dict[fake_child_id] = child_node
         return child_node
 
@@ -196,9 +216,15 @@ class TSVManager:
         `listed=True` (onlylisted=True). Use onlylisted=False only for debugging.
         """
         if self.verbose:
-            title = node['original_title'] if self.lang=='en' else node['translated_title']
+            title = (
+                node["original_title"]
+                if self.lang == "en"
+                else node["translated_title"]
+            )
             text = ("  " * level) + title + "\n"
-            if node["kind"] in TOPIC_LIKE_KINDS and (node['listed'] == False or node['listed'] == None):
+            if node["kind"] in TOPIC_LIKE_KINDS and (
+                node["listed"] == False or node["listed"] == None
+            ):
                 prefix = "EXCLUDE: "
             else:
                 prefix = "INCLUDE: "
@@ -207,16 +233,28 @@ class TSVManager:
         # Only do this exclusion for topic like nodes, as this flag seems to gate what appears in top level
         # navigation. Many resources get excluded by this, even though they are still accessible under their
         # parent topic.
-        if self.onlylisted and node["kind"] in TOPIC_LIKE_KINDS and (node['listed'] == False or node['listed'] == None):
-            return None   # we want to keep only topic nodes with `listed=True`
+        if (
+            self.onlylisted
+            and node["kind"] in TOPIC_LIKE_KINDS
+            and (node["listed"] == False or node["listed"] == None)
+        ):
+            return None  # we want to keep only topic nodes with `listed=True`
 
         if node["slug"] in self.slug_blacklist:
             return None
-        
-        if self.variant and node["curriculum_key"] and node["curriculum_key"] != self.variant:
+
+        if (
+            self.variant
+            and node["curriculum_key"]
+            and node["curriculum_key"] != self.variant
+        ):
             return None
-        
-        if self.variant_only and node["kind"] == "Course" and node["curriculum_key"] != self.variant:
+
+        if (
+            self.variant_only
+            and node["kind"] == "Course"
+            and node["curriculum_key"] != self.variant
+        ):
             return None
 
         # The English TSV does not contain this information, and all content is created in English
@@ -225,8 +263,10 @@ class TSVManager:
             return None
 
         # Title info comes form different place if `en` vs. translated trees
-        title = node['original_title'] if self.lang=='en' else node['translated_title']
-        description_html = node['translated_description_html']
+        title = (
+            node["original_title"] if self.lang == "en" else node["translated_title"]
+        )
+        description_html = node["translated_description_html"]
 
         # Check if crowdin translations for title or description are available:
         if title in translations:
@@ -240,17 +280,17 @@ class TSVManager:
         if description_html:
             full_description = html2text(description_html, bodywidth=0)
             raw_description = full_description[0:400]
-            description = raw_description.replace('\n', ' ').strip()
+            description = raw_description.replace("\n", " ").strip()
         else:
-            description =  ""
+            description = ""
 
         if node["kind"] == "Exercise":
-            slug_no_prefix = node['slug'].replace('e/','')  # remove the `e/`-prefix
+            slug_no_prefix = node["slug"].replace("e/", "")  # remove the `e/`-prefix
             khan_node = KhanExercise(
                 node["id"],
                 title,
                 description,
-                slug_no_prefix, # set slug to slug_no_prefix (used for source_id)
+                slug_no_prefix,  # set slug to slug_no_prefix (used for source_id)
                 node["thumbnail_url"],
                 node["assessment_item_ids"],
                 node["suggested_completion_criteria"],
@@ -271,19 +311,23 @@ class TSVManager:
                         if "children" in child:
                             gchild_ids = []
                             for gchild in child["children"]:
-                                gchild_node = self._create_replacement_node(child_node, gchild)
+                                gchild_node = self._create_replacement_node(
+                                    child_node, gchild
+                                )
                                 gchild_ids.append({"id": gchild_node["id"]})
                             child_node["children_ids"] = gchild_ids
                         children_ids.append({"id": child_node["id"]})
 
                     r_node["original_title"] = replacement.get("translatedTitle", title)
-                    r_node["translated_title"] = replacement.get("translatedTitle", title)
+                    r_node["translated_title"] = replacement.get(
+                        "translatedTitle", title
+                    )
                     r_node["slug"] = replacement.get("slug", slug)
                     r_node["children_ids"] = children_ids
                     self._recurse_create(parent, r_node, level=level + 1)
             else:
                 khan_node = KhanTopic(
-                    slug,   # set topic id to slug (used for source_id later)
+                    slug,  # set topic id to slug (used for source_id later)
                     title,
                     description,
                 )
@@ -294,18 +338,25 @@ class TSVManager:
                         child_node = self.tree_dict[child_pointer["id"]]
                         self._recurse_create(khan_node, child_node, level=level + 1)
                     else:
-                        if "kind" in child_pointer and child_pointer["kind"] not in SUPPORTED_KINDS:
+                        if (
+                            "kind" in child_pointer
+                            and child_pointer["kind"] not in SUPPORTED_KINDS
+                        ):
                             # silentry skip unsupported content kinds like Article, Project,
                             # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
                             pass
                         else:
-                            LOGGER.warning('Missing id=' + child_pointer.get('id') + \
-                                ' in children_ids of topic node with id=' + node["id"])
+                            LOGGER.warning(
+                                "Missing id="
+                                + child_pointer.get("id")
+                                + " in children_ids of topic node with id="
+                                + node["id"]
+                            )
                 if not khan_node.children:
                     parent.children.remove(khan_node)
 
         elif node["kind"] == "Video":
-            slug_no_prefix = node['slug'].replace('v/','')  # remove the `v/`-prefix
+            slug_no_prefix = node["slug"].replace("v/", "")  # remove the `v/`-prefix
 
             # The `translated_youtube_id` attr will be used to create the file later
             if "translated_youtube_id" in node:
@@ -316,7 +367,11 @@ class TSVManager:
                 translated_youtube_id = node["youtube_id"]
 
             if not node["download_urls"]:
-                LOGGER.warning("Node with youtube id: {} has no download urls".format(translated_youtube_id))
+                LOGGER.warning(
+                    "Node with youtube id: {} has no download urls".format(
+                        translated_youtube_id
+                    )
+                )
                 return None
 
             # convert KA's license format into our internal license classes
@@ -324,8 +379,11 @@ class TSVManager:
                 license = LICENSE_MAPPING[node["license"]]
             else:
                 # license = licenses.CC_BY_NC_SA # or?
-                LOGGER.error("Unknown license ({}) on video with youtube id: {}".format(
-                    node["license"], translated_youtube_id))
+                LOGGER.error(
+                    "Unknown license ({}) on video with youtube id: {}".format(
+                        node["license"], translated_youtube_id
+                    )
+                )
                 return None
 
             khan_node = KhanVideo(
@@ -335,7 +393,9 @@ class TSVManager:
                 node["thumbnail_url"],
                 license,
                 node["download_urls"],
-                node["youtube_id"],  # original English video (used for `source_id` later)
+                node[
+                    "youtube_id"
+                ],  # original English video (used for `source_id` later)
                 translated_youtube_id,
                 # The en TSV doesn't include these fields, so default to True in this case.
                 node.get("subbed", self.lang == "en"),
@@ -354,23 +414,23 @@ class TSVManager:
                 # Talkthrough, Challenge, Interactive, TopicQuiz, TopicUnitTest
                 pass
             else:
-                LOGGER.warning('Unrecognized node kind ' + node["kind"] + ' ' + title)
-
+                LOGGER.warning("Unrecognized node kind " + node["kind"] + " " + title)
 
 
 # EXTRACT (download TSV export files from the KHAN_TSV_EXPORT_BUCKET_NAME)
 ################################################################################
+
 
 def list_latest_tsv_exports():
     """
     List the language codes available in the KHAN_TSV_EXPORT_BUCKET_NAME bucket.
     """
     storage_client = storage.Client.create_anonymous_client()
-    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix='')
+    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix="")
     blob_names = [blob.name for blob in blobs]
     exports = []
     for blob_name in blob_names:
-        kalang = blob_name.split('-export')[0]
+        kalang = blob_name.split("-export")[0]
         exports.append((kalang, blob_name))
     return sorted(exports, key=itemgetter(1))
 
@@ -381,12 +441,17 @@ def download_latest_tsv_export(kalang, filepath):
     bucket and save it to the local path `filepath`.
     """
     storage_client = storage.Client.create_anonymous_client()
-    blobs = storage_client.list_blobs(KHAN_TSV_EXPORT_BUCKET_NAME, prefix=kalang + "-export")
+    blobs = storage_client.list_blobs(
+        KHAN_TSV_EXPORT_BUCKET_NAME, prefix=kalang + "-export"
+    )
     if not blobs:
-        raise ValueError('An export for kalang=' + kalang + ' is not available.')
-    valid_file_re = re.compile(kalang + "-export-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-]{1}[0-9]{4}\.tsv")
+        raise ValueError("An export for kalang=" + kalang + " is not available.")
+    valid_file_re = re.compile(
+        kalang
+        + "-export-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-]{1}[0-9]{4}\.tsv"
+    )
     blob_names = [blob.name for blob in blobs if valid_file_re.match(blob.name)]
-    LOGGER.debug('Found a total of ' + str(len(blob_names)) + ' export files.')
+    LOGGER.debug("Found a total of " + str(len(blob_names)) + " export files.")
     # Get the blob with the most recent export file based on blob name
     # Example blob name: `es-export-2020-07-10T09:54:36+0000.tsv`
     latest_blob_name = sorted(blob_names, reverse=True)[0]
@@ -401,44 +466,45 @@ def parse_tsv_file(filepath):
     Load data from the TSV file located at `filepath` using csv.DictReader.
     Returns: a dict {id --> datum} of all the rows.
     """
-    print('Loading TSV file', filepath)
+    print("Loading TSV file", filepath)
     data_by_id = {}
     with open(filepath, encoding="utf-8-sig") as tsvfile:
-        reader = csv.DictReader(tsvfile, dialect='excel-tab')
+        reader = csv.DictReader(tsvfile, dialect="excel-tab")
         for row in reader:
-            if not row['id']:
+            if not row["id"]:
                 raise ValueError("Row with missing id " + str(row))
             try:
                 clean_row = clean_tsv_row(row)
-                data_by_id[row['id']] = clean_row
+                data_by_id[row["id"]] = clean_row
             except json.JSONDecodeError as e:
-                LOGGER.error('Failed to parse row=' + str(dict(row)))
+                LOGGER.error("Failed to parse row=" + str(dict(row)))
     return data_by_id
 
 
 COLUMN_TYPES_MAP = {
-    'listed': bool,
-    'children_ids': json.loads,
+    "listed": bool,
+    "children_ids": json.loads,
     # 'standards': json.loads,  # not implemented yet, but it will prob. be json
-    'duration': int,
-    'download_urls': json.loads,
-    'prerequisites': json.loads,
-    'related_content': json.loads,
-    'time_estimate': json.loads,
-    'assessment_item_ids': json.loads,
-    'subbed': bool,
-    'dubbed': bool,
-    'dub_subbed': bool,
-    'listed_anywhere': bool,
-    'fully_translated': bool,
+    "duration": int,
+    "download_urls": json.loads,
+    "prerequisites": json.loads,
+    "related_content": json.loads,
+    "time_estimate": json.loads,
+    "assessment_item_ids": json.loads,
+    "subbed": bool,
+    "dubbed": bool,
+    "dub_subbed": bool,
+    "listed_anywhere": bool,
+    "fully_translated": bool,
     # not needed but let's parse as int just for completeness
-    'word_count': int,
-    'approved_count': int,
-    'translated_count': int,
-    'word_count_revised': int,
-    'approved_count_revised': int,
-    'translated_count_revised': int,
+    "word_count": int,
+    "approved_count": int,
+    "translated_count": int,
+    "word_count_revised": int,
+    "approved_count_revised": int,
+    "translated_count_revised": int,
 }
+
 
 def clean_tsv_row(row):
     """
@@ -447,33 +513,30 @@ def clean_tsv_row(row):
     """
     clean_row = {}
     for key, val in row.items():
-        if val is None or val == '':
+        if val is None or val == "":
             clean_row[key] = None
         else:
             if key in COLUMN_TYPES_MAP:
                 dest_type = COLUMN_TYPES_MAP[key]
                 if dest_type == bool:
-                    clean_val = True if val == 'True' or val == 'true' else False
+                    clean_val = True if val == "True" or val == "true" else False
                     clean_row[key] = clean_val
                 else:
                     clean_row[key] = dest_type(val)
             else:
                 clean_row[key] = val.strip()
-    return clean_row 
-
+    return clean_row
 
 
 # DATA CLASSES
 ################################################################################
 
+
 class KhanTopic(TopicNode):
     def __init__(self, id, title, description):
         metadata = METADATA_BY_SLUG.get(id, {})
         super(KhanTopic, self).__init__(
-            id,
-            title,
-            description=description[:400] if description else '',
-            **metadata
+            id, title, description=description[:400] if description else "", **metadata
         )
 
     def __repr__(self):
@@ -527,7 +590,7 @@ class KhanExercise(ExerciseNode):
         super(KhanExercise, self).__init__(
             slug,
             title,
-            description=description[:400] if description else '',
+            description=description[:400] if description else "",
             exercise_data=mastery_model,
             license=SpecialPermissionsLicense(
                 copyright_holder="Khan Academy",
@@ -556,13 +619,17 @@ class KhanExercise(ExerciseNode):
         return {
             "query": assessment_item_query,
             "variables": {
-                "itemDescriptors":["{}|{}".format(self.khan_id, ai_id) for ai_id in assessment_items]
-            }
+                "itemDescriptors": [
+                    "{}|{}".format(self.khan_id, ai_id) for ai_id in assessment_items
+                ]
+            },
         }
 
     def set_assessment_items(self):
         kalang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(self.language, self.language)
-        url = "https://{}.khanacademy.org/graphql/LearningEquality_assessmentItems".format(kalang)
+        url = "https://{}.khanacademy.org/graphql/LearningEquality_assessmentItems".format(
+            kalang
+        )
         data = self.get_query_data(self.assessment_items)
 
         response_data = post_request(url, data)
@@ -571,7 +638,9 @@ class KhanExercise(ExerciseNode):
             # It seems that sometimes assessmentItems can be None.
             assessment_items = response_data.get("data", {}).get("assessmentItems")
             errors = response_data.get("errors", [])
-            missing_items = any("assessment item not found in exercise" in x["message"] for x in errors)
+            missing_items = any(
+                "assessment item not found in exercise" in x["message"] for x in errors
+            )
             if assessment_items is None and missing_items:
                 assessment_items = []
                 for ai in self.assessment_items:
@@ -614,7 +683,7 @@ class KhanVideo(VideoNode):
             # original English video and not the `translated_youtube_id`:
             youtube_id,
             title,
-            description=description[:400] if description else '',
+            description=description[:400] if description else "",
             license=license,
             thumbnail=thumbnail,
             language=lang,
@@ -626,11 +695,11 @@ class KhanVideo(VideoNode):
         self.low_res_video = None
         self.low_res_ios_video = None
         for durl in download_urls:
-            if durl['filetype'] == "mp4":
+            if durl["filetype"] == "mp4":
                 self.high_res_video = durl["url"]
-            if durl['filetype'] == "mp4-low":
+            if durl["filetype"] == "mp4-low":
                 self.low_res_video = durl["url"]
-            if durl['filetype'] == "mp4-low-ios":
+            if durl["filetype"] == "mp4-low-ios":
                 self.low_res_ios_video = durl["url"]
         self.youtube_id = youtube_id
         self.translated_youtube_id = translated_youtube_id
@@ -646,7 +715,7 @@ class KhanVideo(VideoNode):
 
     def __repr__(self):
         return "Video Node: {}".format(self.title)
-    
+
     def _set_video_files(self, remote_nodes):
         video_node_id = self.get_node_id().hex
 
@@ -655,7 +724,10 @@ class KhanVideo(VideoNode):
         remote_files = False
 
         for file in remote_node_files:
-            if file["preset"] == format_presets.VIDEO_HIGH_RES or file["preset"] == format_presets.VIDEO_LOW_RES:
+            if (
+                file["preset"] == format_presets.VIDEO_HIGH_RES
+                or file["preset"] == format_presets.VIDEO_LOW_RES
+            ):
                 remote_file = RemoteFile(
                     file["checksum"],
                     file["extension"],
@@ -672,15 +744,19 @@ class KhanVideo(VideoNode):
                     self.download_url,
                     ffmpeg_settings={
                         "max_height": 480,
-                    }
+                    },
                 )
             )
 
         if self.subbed:
-            target_lang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(self.target_lang, self.target_lang)
+            target_lang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(
+                self.target_lang, self.target_lang
+            )
             for lang_code, path in get_subtitles(self.translated_youtube_id):
                 lang_obj = get_language_with_alpha2_fallback(lang_code)
-                if lang_obj is not None and (lang_code == target_lang or self.dub_subbed):
+                if lang_obj is not None and (
+                    lang_code == target_lang or self.dub_subbed
+                ):
                     self.add_file(
                         SubtitleFile(
                             path,
@@ -693,23 +769,30 @@ class KhanVideo(VideoNode):
 # REPORTS
 ################################################################################
 
+
 def report_from_raw_data(lang, tree_dict):
     """
     Basic report on raw, flat data from the API (not parsed into a tree yet).
     Counts not representative since they include listed=False and listed=None.
     """
-    report = {'lang': lang}
+    report = {"lang": lang}
 
     # general counts
-    sorted_items = sorted(tree_dict.values(), key=itemgetter('kind'))
-    nodes_by_kind = dict((k, list(g)) for k, g in groupby(sorted_items, key=itemgetter('kind')))
-    report['#TSV rows of Topics'] = 0
+    sorted_items = sorted(tree_dict.values(), key=itemgetter("kind"))
+    nodes_by_kind = dict(
+        (k, list(g)) for k, g in groupby(sorted_items, key=itemgetter("kind"))
+    )
+    report["#TSV rows of Topics"] = 0
     for kind in SUPPORTED_KINDS:
-        report['#TSV rows of ' + kind] = len(nodes_by_kind.get(kind, []))
+        report["#TSV rows of " + kind] = len(nodes_by_kind.get(kind, []))
         if kind in TOPIC_LIKE_KINDS:
-            report['#TSV rows of Topics'] = report['#TSV rows of Topics'] + len(nodes_by_kind.get(kind, []))
+            report["#TSV rows of Topics"] = report["#TSV rows of Topics"] + len(
+                nodes_by_kind.get(kind, [])
+            )
     for kind in UNSUPPORTED_KINDS:
-        report['#TSV rows of ' + kind + ' (unsupported)'] = len(nodes_by_kind.get(kind, []))
+        report["#TSV rows of " + kind + " (unsupported)"] = len(
+            nodes_by_kind.get(kind, [])
+        )
 
     # video stats
     translated_videos = []
@@ -720,72 +803,72 @@ def report_from_raw_data(lang, tree_dict):
     has_mp4 = []
     has_mp4_low = []
     has_mp4_low_ios = []
-    for v in nodes_by_kind['Video']:
-        vid = v['id']
-        if v.get('dubbed'):
+    for v in nodes_by_kind["Video"]:
+        vid = v["id"]
+        if v.get("dubbed"):
             dubbed_videos.append(vid)
-        if v.get('subbed'):
+        if v.get("subbed"):
             subbed_videos.append(vid)
-        if v.get('dub_subbed'):
+        if v.get("dub_subbed"):
             dub_subbed_videos.append(vid)
-        if v.get('dubbed') or v.get('subbed') or v.get('dub_subbed'):
+        if v.get("dubbed") or v.get("subbed") or v.get("dub_subbed"):
             translated_videos.append(vid)
         else:
             untranslated_videos.append(vid)
 
-        durls = v['download_urls']
+        durls = v["download_urls"]
         if durls:
             for durl in durls:
-                if durl['filetype'] == "mp4":
+                if durl["filetype"] == "mp4":
                     has_mp4.append(vid)
-                if durl['filetype'] == "mp4-low":
+                if durl["filetype"] == "mp4-low":
                     has_mp4_low.append(vid)
-                if durl['filetype'] == "mp4-low-ios":
+                if durl["filetype"] == "mp4-low-ios":
                     has_mp4_low_ios.append(vid)
 
-    report['#dubbed_videos'] = len(dubbed_videos)
-    report['#subbed_videos'] = len(subbed_videos)
-    report['#dub_subbed_videos'] = len(dub_subbed_videos)
-    report['#translated_videos'] = len(translated_videos)
-    report['#untranslated_videos'] = len(untranslated_videos)
-    report['#has_mp4'] = len(has_mp4)
-    report['#has_mp4_low'] = len(has_mp4_low)
-    report['#has_mp4_low_ios'] = len(has_mp4_low_ios)
+    report["#dubbed_videos"] = len(dubbed_videos)
+    report["#subbed_videos"] = len(subbed_videos)
+    report["#dub_subbed_videos"] = len(dub_subbed_videos)
+    report["#translated_videos"] = len(translated_videos)
+    report["#untranslated_videos"] = len(untranslated_videos)
+    report["#has_mp4"] = len(has_mp4)
+    report["#has_mp4_low"] = len(has_mp4_low)
+    report["#has_mp4_low_ios"] = len(has_mp4_low_ios)
 
     # Keys <k> that can be used in https://{lang}.khanacademy.org/?curriculum=<k>
-    report['curriculum_keys'] = []
+    report["curriculum_keys"] = []
     for node in tree_dict.values():
-        if node['kind'] in TOPIC_LIKE_KINDS:
+        if node["kind"] in TOPIC_LIKE_KINDS:
             curriculum = node.get("curriculum_key", None)
-            if curriculum and curriculum not in report['curriculum_keys']:
-                report['curriculum_keys'].append(curriculum)
+            if curriculum and curriculum not in report["curriculum_keys"]:
+                report["curriculum_keys"].append(curriculum)
 
     return report
-
-
 
 
 # CLI
 ################################################################################
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Khan Academy TSV exports viewer')
-    parser.add_argument('--latest', action='store_true', help="show only most recent")
-    parser.add_argument('--kalang', help="language code filter")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Khan Academy TSV exports viewer")
+    parser.add_argument("--latest", action="store_true", help="show only most recent")
+    parser.add_argument("--kalang", help="language code filter")
     args = parser.parse_args()
 
     all_exports = list_latest_tsv_exports()
-    exports_by_kalang = dict((k, list(g)) for k, g in groupby(all_exports, key=itemgetter(0)))
+    exports_by_kalang = dict(
+        (k, list(g)) for k, g in groupby(all_exports, key=itemgetter(0))
+    )
     if args.latest:
         for kalang in exports_by_kalang.keys():
             exports_by_kalang[kalang] = [exports_by_kalang[kalang][-1]]
 
-    print('all supported kalang =', sorted(exports_by_kalang.keys()))
+    print("all supported kalang =", sorted(exports_by_kalang.keys()))
     if args.kalang:
         for export in exports_by_kalang[args.kalang]:
             print(export)
     else:
         for kalang, exports in exports_by_kalang.items():
-            print('Exports for kalang =', kalang)
+            print("Exports for kalang =", kalang)
             for export in exports:
-                print('  -', export[1])
+                print("  -", export[1])
