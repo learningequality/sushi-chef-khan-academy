@@ -89,7 +89,7 @@ class KhanAcademySushiChef(SushiChef):
         """
         lang, variant = self.parse_lang_and_variant_from_kwargs(options)
 
-        if lang == "en" and variant != "in-in":
+        if lang == "en" and (variant is None or variant == "us-cc"):
             generate_common_core_mapping()
 
         channel = self.get_channel(**options)

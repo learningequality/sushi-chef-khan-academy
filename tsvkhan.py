@@ -34,6 +34,7 @@ from constants import LICENSE_MAPPING
 from curation import get_slug_blacklist
 from curation import get_topic_tree_replacements
 from curation import METADATA_BY_SLUG
+from curation import TOPIC_TREE_REPLACMENTS_PER_LANG
 from crowdin import retrieve_translations
 from kolibridb import get_nodes_for_remote_files
 from network import post_request
@@ -161,6 +162,13 @@ class TSVManager:
             with open("node_report.txt", "w") as f:
                 f.writelines(self.node_report)
 
+    @property
+    def variant_only(self):
+        # If we have a variant specified and it is not one that we have a custom curation tree for,
+        # then we will strictly generate it, including only the Courses that have been tagged with the
+        # curriculum_key specified by the variant.
+        return self.variant is not None and (self.lang, self.variant) not in TOPIC_TREE_REPLACMENTS_PER_LANG
+
     def _create_replacement_node(self, parent, child):
         fake_child_id = "{}_{}".format(parent["slug"], child["slug"])
         if child["slug"] in self.topics_by_slug:
@@ -206,6 +214,9 @@ class TSVManager:
             return None
         
         if self.variant and node["curriculum_key"] and node["curriculum_key"] != self.variant:
+            return None
+        
+        if self.variant_only and node["kind"] == "Course" and node["curriculum_key"] != self.variant:
             return None
 
         # The English TSV does not contain this information, and all content is created in English

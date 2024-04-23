@@ -24,8 +24,10 @@ def _recurse_children(node, data, curriculum):
             if child["id"] in data:
                 child = data[child["id"]]
                 if child.get("fully_translated", True) and (not curriculum or not child["curriculum_key"] or child["curriculum_key"] == curriculum):
-                    children.append(child)
+                    if curriculum and child.get("kind") == "Course" and child["curriculum_key"] != curriculum:
+                        continue
                     _recurse_children(child, data, curriculum)
+                    children.append(child)
         node["children"] = children
 
 
@@ -43,8 +45,9 @@ def get_ka_learn_menu_topics(lang, curriculum=None):
         if domain_slug in domains_by_slug:
             domain = domains_by_slug[domain_slug]
             if not curriculum or not domain["curriculum_key"] or domain["curriculum_key"] == curriculum:
-                menu_topics.append(domain)
                 _recurse_children(domain, data, curriculum)
+                if domain["children"]:
+                    menu_topics.append(domain)
 
     return menu_topics
 
