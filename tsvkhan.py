@@ -238,9 +238,11 @@ class TSVManager:
             and node["kind"] in TOPIC_LIKE_KINDS
             and (node["listed"] == False or node["listed"] == None)
         ):
+            LOGGER.debug(node["original_title"] + " is not listed")
             return None  # we want to keep only topic nodes with `listed=True`
 
         if node["slug"] in self.slug_blacklist:
+            LOGGER.debug(node["original_title"] + " is in the blacklist")
             return None
 
         if (
@@ -248,6 +250,7 @@ class TSVManager:
             and node["curriculum_key"]
             and node["curriculum_key"] != self.variant
         ):
+            LOGGER.debug(node["original_title"] + " is not in the variant")
             return None
 
         if (
@@ -255,11 +258,13 @@ class TSVManager:
             and node["kind"] == "Course"
             and node["curriculum_key"] != self.variant
         ):
+            LOGGER.debug(node["original_title"] + " is a course and not in the variant")
             return None
 
         # The English TSV does not contain this information, and all content is created in English
         # so it is always fully translated. If it is not fully translated we do not include it.
         if not node.get("fully_translated", True):
+            LOGGER.debug(node["original_title"] + " is not fully translated")
             return None
 
         # Title info comes form different place if `en` vs. translated trees
@@ -353,6 +358,7 @@ class TSVManager:
                                 + node["id"]
                             )
                 if not khan_node.children:
+                    LOGGER.debug("No children for " + title)
                     parent.children.remove(khan_node)
 
         elif node["kind"] == "Video":
