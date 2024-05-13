@@ -118,6 +118,7 @@ class TSVManager:
         update=True,
         onlylisted=True,
         verbose=False,
+        hires=False,
     ):
         """
         Build the complete topic tree based on the results obtained from the KA API.
@@ -144,6 +145,7 @@ class TSVManager:
         self.lang = lang
         self.variant = variant
         self.verbose = verbose
+        self.hires = hires
         self.node_report = []
 
         root_children = []
@@ -409,6 +411,7 @@ class TSVManager:
                 node.get("dub_subbed", self.lang == "en"),
                 self.lang if node.get("dubbed") else node["source_lang"],
                 self.lang,
+                self.hires,
             )
             # Add the video to the parent before setting any files, as we need the node id
             # to lookup any potentially pre-existing remote files.
@@ -682,6 +685,8 @@ class KhanVideo(VideoNode):
         # have to track these separately.
         lang,
         target_lang,
+        # Whether to create a hi res video.
+        hires,
     ):
         metadata = METADATA_BY_SLUG.get(slug, {})
         super(KhanVideo, self).__init__(
@@ -714,6 +719,7 @@ class KhanVideo(VideoNode):
         self.dub_subbed = dub_subbed
         self.lang = lang
         self.target_lang = target_lang
+        self.hires = hires
 
     @property
     def download_url(self):
@@ -749,7 +755,7 @@ class KhanVideo(VideoNode):
                 VideoFile(
                     self.download_url,
                     ffmpeg_settings={
-                        "max_height": 480,
+                        "max_height": 720 if self.hires else 480,
                     },
                 )
             )

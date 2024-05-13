@@ -33,17 +33,20 @@ class KhanAcademySushiChef(SushiChef):
         lang = kwargs["lang"]
         assert getlang(lang), "Language code " + lang + " not recognized"
         variant = kwargs.get("variant", None)
-        return lang, variant
+        hires = bool(kwargs.get("hires", False))
+        return lang, variant, hires
 
     def get_channel_dict(self, kwargs):
         """
         Returns the channel info as a Python dictionary (to avoid duplication).
         """
-        lang, variant = self.parse_lang_and_variant_from_kwargs(kwargs)
+        lang, variant, hires = self.parse_lang_and_variant_from_kwargs(kwargs)
+        variant_id = lang
         if variant:
-            channel_source_id = "KA ({}/{})".format(lang, variant)
-        else:
-            channel_source_id = "KA ({})".format(lang)
+            variant_id += "/" + variant
+        if hires:
+            variant_id += "/hires"
+        channel_source_id = "KA ({})".format(variant_id)
         # Build dict with all the info required to create the ChannelNode object
         channel_dict = dict(
             source_id=channel_source_id,
@@ -66,7 +69,7 @@ class KhanAcademySushiChef(SushiChef):
         """
         Return path to file that contains the ricecooker json tree.
         """
-        lang, variant = self.parse_lang_and_variant_from_kwargs(kwargs)
+        lang, variant, _ = self.parse_lang_and_variant_from_kwargs(kwargs)
         if variant:
             filename_suffix = "{}_{}".format(lang, variant)
         else:
@@ -83,7 +86,7 @@ class KhanAcademySushiChef(SushiChef):
         - Convert the tree of Khan-objects in ricecooker_json dicts objects
         - Write ricecooker json tree to the appropriate file
         """
-        lang, variant = self.parse_lang_and_variant_from_kwargs(options)
+        lang, variant, hires = self.parse_lang_and_variant_from_kwargs(options)
 
         if lang == "en" and (variant is None or variant == "us-cc"):
             generate_common_core_mapping()
@@ -92,7 +95,7 @@ class KhanAcademySushiChef(SushiChef):
 
         LOGGER.info("Downloading KA topic tree")
         # Obtain the complete topic tree for lang=lang from the KA API
-        TSVManager(channel, lang=lang, variant=variant)
+        TSVManager(channel, lang=lang, variant=variant, hires=hires)
 
         return channel
 
