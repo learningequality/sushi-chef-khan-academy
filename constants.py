@@ -84,6 +84,7 @@ def get_channel_title(lang=None, variant=None):
 
 
 CHANNEL_DESCRIPTION_LOOKUP = {
+    "az": "Khan Academy tələbələrə istənilən vaxt tapşırıqların üzərində işləmək, təlimat videolarını izləmək və fərdiləşdirilmiş öyrənmə paneli ilə həm sinifdə, həm də sinifdən kənar təhsil almaq imkanı verir. Khan Academy-də uşaq bağçasından başlayaraq ali təhsil daxil olmaqla müxtəlif fənləri, o cümlədən riyaziyyat, həyat bilgisi, oxu, hesablama, tarix, incəsənət tarixi, iqtisadiyyat, maliyyə savadlılığı, SAT, MCAT və digər sahələri əhatə edən tədris resursları yer alır. Beləliklə, təhsilalanların məktəbdə, ali təhsildə və peşəkar fəaliyyətdə lazım olan təməl biliklərin əldə olunması üçün imkanlar yaradır.",
     "en": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to U.S. and India curricular standards. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
     (
         "en",
