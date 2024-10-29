@@ -194,7 +194,7 @@ class TSVManager:
                 "translated_description_html": "",
                 "curriculum_key": "",
                 "kind": "Course",
-                "listed": True,
+                "fully_translated": True,
             }
         child_node.update(
             {
@@ -215,7 +215,9 @@ class TSVManager:
         """
         Main tree-building function that takes the rows from the TSV data and makes
         a tree out of them. By default we want to process only topic like nodes with
-        `listed=True` (onlylisted=True). Use onlylisted=False only for debugging.
+        `fully_translated=True` (onlylisted=True). Use onlylisted=False only for debugging.
+        We use fully_translated instead of the listed flag because the listed flag is
+        bugged in the TSV exports we get from Khan Academy.
         """
         if self.verbose:
             title = (
@@ -225,7 +227,7 @@ class TSVManager:
             )
             text = ("  " * level) + title + "\n"
             if node["kind"] in TOPIC_LIKE_KINDS and (
-                node["listed"] == False or node["listed"] == None
+                node["fully_translated"] == False or node["fully_translated"] == None
             ):
                 prefix = "EXCLUDE: "
             else:
@@ -238,13 +240,13 @@ class TSVManager:
         if (
             self.onlylisted
             and node["kind"] in TOPIC_LIKE_KINDS
-            and (node["listed"] == False or node["listed"] == None)
+            and (node["fully_translated"] == False or node["fully_translated"] == None)
         ):
-            LOGGER.debug(node["original_title"] + " is not listed")
-            return None  # we want to keep only topic nodes with `listed=True`
+            LOGGER.warning(node["original_title"] + " is not fully_translated")
+            return None  # we want to keep only topic nodes with `fully_translated=True`
 
         if node["slug"] in self.slug_blacklist:
-            LOGGER.debug(node["original_title"] + " is in the blacklist")
+            LOGGER.warning(node["original_title"] + " is in the blacklist")
             return None
 
         if (
@@ -252,7 +254,7 @@ class TSVManager:
             and node["curriculum_key"]
             and node["curriculum_key"] != self.variant
         ):
-            LOGGER.debug(node["original_title"] + " is not in the variant")
+            LOGGER.warning(node["original_title"] + " is not in the variant")
             return None
 
         if (
@@ -260,13 +262,13 @@ class TSVManager:
             and node["kind"] == "Course"
             and node["curriculum_key"] != self.variant
         ):
-            LOGGER.debug(node["original_title"] + " is a course and not in the variant")
+            LOGGER.warning(node["original_title"] + " is a course and not in the variant")
             return None
 
         # The English TSV does not contain this information, and all content is created in English
         # so it is always fully translated. If it is not fully translated we do not include it.
         if not node.get("fully_translated", True):
-            LOGGER.debug(node["original_title"] + " is not fully translated")
+            LOGGER.warning(node["original_title"] + " is not fully translated")
             return None
 
         # Title info comes form different place if `en` vs. translated trees
@@ -360,7 +362,7 @@ class TSVManager:
                                 + node["id"]
                             )
                 if not khan_node.children:
-                    LOGGER.debug("No children for " + title)
+                    LOGGER.warning("No children for " + title)
                     parent.children.remove(khan_node)
 
         elif node["kind"] == "Video":
@@ -460,14 +462,14 @@ def download_latest_tsv_export(kalang, filepath):
         + "-export-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-]{1}[0-9]{4}\.tsv"
     )
     blob_names = [blob.name for blob in blobs if valid_file_re.match(blob.name)]
-    LOGGER.debug("Found a total of " + str(len(blob_names)) + " export files.")
+    LOGGER.warning("Found a total of " + str(len(blob_names)) + " export files.")
     # Get the blob with the most recent export file based on blob name
     # Example blob name: `es-export-2020-07-10T09:54:36+0000.tsv`
     latest_blob_name = sorted(blob_names, reverse=True)[0]
     bucket = storage_client.bucket(KHAN_TSV_EXPORT_BUCKET_NAME)
     blob = bucket.blob(latest_blob_name)
     blob.download_to_filename(filepath)
-    LOGGER.debug("Blob {} downloaded to {}.".format(latest_blob_name, filepath))
+    LOGGER.warning("Blob {} downloaded to {}.".format(latest_blob_name, filepath))
 
 
 def parse_tsv_file(filepath):
@@ -785,7 +787,7 @@ class KhanVideo(VideoNode):
 def report_from_raw_data(lang, tree_dict):
     """
     Basic report on raw, flat data from the API (not parsed into a tree yet).
-    Counts not representative since they include listed=False and listed=None.
+    Counts not representative since they include fully_translated=False and fully_translated=None.
     """
     report = {"lang": lang}
 
