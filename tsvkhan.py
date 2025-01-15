@@ -664,6 +664,14 @@ class KhanExercise(ExerciseNode):
                             assessment_items.append(items[0])
             for item in assessment_items:
                 self.add_question(item)
+            if self.language == "fuv":
+                # By special request from SIL International who are the primary translators and users of the Fufulde channel
+                # we are setting the mastery model to 10 out of 10 for all exercises.
+                # Unless there are fewer than 10 questions in the exercise, in which case the mastery model is set to 100%.
+                number_correct = min(len(self.questions), 10)
+                self.extra_fields["mastery_model"] = exercises.M_OF_N
+                self.extra_fields["m"] = number_correct
+                self.extra_fields["n"] = number_correct
 
     def __repr__(self):
         return "Exercise Node: {}".format(self.title)
