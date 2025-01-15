@@ -652,8 +652,9 @@ class KhanExercise(ExerciseNode):
             missing_items = any(
                 "assessment item not found in exercise" in x["message"] for x in errors
             )
-            if assessment_items is None and missing_items:
+            if assessment_items is None:
                 assessment_items = []
+            if missing_items:
                 for ai in self.assessment_items:
                     data = self.get_query_data([ai])
                     response_data = post_request(url, data)
