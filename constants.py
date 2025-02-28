@@ -19,6 +19,7 @@ SUPPORTED_LANGS = [
     "en",
     "es",
     "fr",
+    "fuv",
     "gu",
     "hi",
     "hu",

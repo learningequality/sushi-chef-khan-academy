@@ -5,6 +5,7 @@ converting to a topic tree of ricecooker classes.
 """
 import argparse
 import csv
+import tempfile
 from google.cloud import storage
 from html2text import html2text
 from itertools import groupby
@@ -15,7 +16,13 @@ import re
 
 from le_utils.constants import exercises, file_formats, format_presets
 
+from ricecooker import config
 from ricecooker.config import LOGGER
+from ricecooker.classes.files import get_cache_filename
+from ricecooker.classes.files import copy_file_to_storage
+from ricecooker.classes.files import FILECACHE
+from ricecooker.classes.files import write_path_to_filename
+from ricecooker.classes.files import _ExerciseGraphieFile
 from ricecooker.classes.files import RemoteFile
 from ricecooker.classes.files import SubtitleFile
 from ricecooker.classes.files import VideoFile
@@ -109,6 +116,54 @@ def get_khan_tsv(lang, update=False):
     return data
 
 
+def generate_graphie_file(self, ka_language=None):
+    if ka_language is None:
+        raise ValueError("ka_language must be specified")
+    key = "GRAPHIE: {}".format(self.path + (ka_language if ka_language != "en" else ""))
+
+    cache_file = get_cache_filename(key)
+    if not config.UPDATE and cache_file:
+        return cache_file
+
+    # Create graphie file combining svg and json files
+    tempf_svg = tempfile.NamedTemporaryFile(suffix=".svg", delete=False)
+    tempf_svg.close()
+    tempf_json = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+    tempf_json.close()
+
+    tempf = tempfile.NamedTemporaryFile(
+        suffix=".{}".format(file_formats.GRAPHIE), delete=False
+    )
+    # Initialize hash and files
+    delimiter = bytes(exercises.GRAPHIE_DELIMITER, "UTF-8")
+    config.LOGGER.info("\tDownloading graphie {}".format(self.original_filename))
+    # Write to graphie file
+    write_path_to_filename(self.path + ".svg", tempf_svg.name)
+    with open(tempf_svg.name, "rb") as f:
+        for chunk in iter(lambda: f.read(2097152), b""):
+            tempf.write(chunk)
+    tempf.write(delimiter)
+    # Separate the path into these components, splitting on the final /
+    # in the same way that the KA frontend code does for localization here:
+    # https://github.com/Khan/perseus/blob/458d3ed600be91dd75a30a80bfac1fbd87c60bcd/packages/perseus/src/util/graphie-utils.ts#L75
+    if ka_language == "en":
+        json_path_base = self.path
+    else:
+        base_path, _ , file_hash = self.path.rpartition("/")
+        json_path_base = base_path + "/" + ka_language + "/" + file_hash
+    write_path_to_filename(json_path_base + "-data.json", tempf_json.name)
+    with open(tempf_json.name, "rb") as f:
+        for chunk in iter(lambda: f.read(2097152), b""):
+            tempf.write(chunk)
+    tempf.close()
+    filename = copy_file_to_storage(tempf.name, ext=file_formats.GRAPHIE)
+    os.unlink(tempf.name)
+    os.unlink(tempf_svg.name)
+    os.unlink(tempf_json.name)
+    FILECACHE.set(key, bytes(filename, "utf-8"))
+    return filename
+
+
 class TSVManager:
     def __init__(
         self,
@@ -167,6 +222,14 @@ class TSVManager:
         self.topic_replacements = get_topic_tree_replacements(
             lang=lang, variant=variant
         )
+
+        # Before we start creating the channel, monkeypatch _ExerciseGraphieFile.generate_graphie_file
+        # to use the new generate_graphie_file function partially applied with the KA language code.
+        def patched_generate_graphie_file(self):
+            return generate_graphie_file(self, ka_language=KHAN_ACADEMY_LANGUAGE_MAPPING.get(lang, lang))
+
+        _ExerciseGraphieFile.generate_graphie_file = patched_generate_graphie_file
+
         for child_pointer in root_children:
             if "id" in child_pointer and child_pointer["id"] in self.tree_dict:
                 child_node = self.tree_dict[child_pointer["id"]]
@@ -611,6 +674,15 @@ class KhanExercise(ExerciseNode):
             thumbnail=thumbnail,
             tags=tags,
             **metadata,
+        )
+
+    def __str__(self):
+        num_questions = len(self.questions) or len(self.assessment_items)
+        metadata = "{0} {1}".format(
+            num_questions, "question" if num_questions == 1 else "questions"
+        )
+        return "{title} ({kind}): {metadata}".format(
+            title=self.title, kind=self.__class__.__name__, metadata=metadata
         )
 
     def validate(self):
