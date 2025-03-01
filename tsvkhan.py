@@ -15,6 +15,7 @@ import os
 import re
 
 from le_utils.constants import exercises, file_formats, format_presets
+from requests.exceptions import HTTPError
 
 from ricecooker import config
 from ricecooker.config import LOGGER
@@ -151,7 +152,16 @@ def generate_graphie_file(self, ka_language=None):
     else:
         base_path, _ , file_hash = self.path.rpartition("/")
         json_path_base = base_path + "/" + ka_language + "/" + file_hash
-    write_path_to_filename(json_path_base + "-data.json", tempf_json.name)
+    should_cache = True
+    try:
+        write_path_to_filename(json_path_base + "-data.json", tempf_json.name)
+    except HTTPError:
+        if ka_language == "en":
+            raise
+        # If we can't find the translated version, try the english version
+        write_path_to_filename(self.path + "-data.json", tempf_json.name)
+        # Don't cache as we want to update these files if translations become available
+        should_cache = False
     with open(tempf_json.name, "rb") as f:
         for chunk in iter(lambda: f.read(2097152), b""):
             tempf.write(chunk)
@@ -160,7 +170,8 @@ def generate_graphie_file(self, ka_language=None):
     os.unlink(tempf.name)
     os.unlink(tempf_svg.name)
     os.unlink(tempf_json.name)
-    FILECACHE.set(key, bytes(filename, "utf-8"))
+    if should_cache:
+        FILECACHE.set(key, bytes(filename, "utf-8"))
     return filename
 
 
