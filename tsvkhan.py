@@ -303,7 +303,7 @@ class TSVManager:
         if (
             self.onlylisted
             and node["kind"] in TOPIC_LIKE_KINDS
-            and (node["fully_translated"] == False or node["fully_translated"] == None)
+            and (not node["listed"] and (node["fully_translated"] == False or node["fully_translated"] is None))
         ):
             LOGGER.warning(node["original_title"] + " is not fully_translated")
             return None  # we want to keep only topic nodes with `fully_translated=True`
@@ -330,7 +330,7 @@ class TSVManager:
 
         # The English TSV does not contain this information, and all content is created in English
         # so it is always fully translated. If it is not fully translated we do not include it.
-        if not node.get("fully_translated", True):
+        if node["kind"] not in TOPIC_LIKE_KINDS and not node.get("fully_translated", True):
             LOGGER.warning(node["original_title"] + " is not fully translated")
             return None
 
