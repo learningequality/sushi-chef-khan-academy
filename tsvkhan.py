@@ -308,6 +308,7 @@ class TSVManager:
                 self.lang,
             )
             parent.add_child(khan_node)
+            khan_node.set_metadata_from_ancestors()
 
         elif node["kind"] in TOPIC_LIKE_KINDS:
             slug = node["slug"]
@@ -420,6 +421,7 @@ class TSVManager:
             # to lookup any potentially pre-existing remote files.
             parent.add_child(khan_node)
             khan_node._set_video_files(self.remote_nodes)
+            khan_node.set_metadata_from_ancestors()
         else:
             if node["kind"] in UNSUPPORTED_KINDS:
                 # silentry skip unsupported content kinds like Article, Project,
