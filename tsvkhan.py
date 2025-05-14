@@ -137,7 +137,7 @@ class TSVManager:
             global translations
             translations = retrieve_translations(lang)
 
-        channel_id = channel.channel_id or channel.get_node_id().hex
+        channel_id = channel.get_node_id().hex
 
         self.remote_nodes = get_nodes_for_remote_files(channel_id)
         self.update = update
