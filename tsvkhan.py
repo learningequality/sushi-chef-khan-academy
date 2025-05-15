@@ -598,6 +598,7 @@ class KhanExercise(ExerciseNode):
             tags.append(CC_MAPPING[slug])
 
         self.khan_id = id
+        self._assessment_items_set = False
 
         metadata = METADATA_BY_SLUG.get(slug, {})
 
@@ -650,6 +651,8 @@ class KhanExercise(ExerciseNode):
         }
 
     def set_assessment_items(self):
+        if self._assessment_items_set:
+            return
         kalang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(self.language, self.language)
         url = "https://{}.khanacademy.org/graphql/LearningEquality_assessmentItems".format(
             kalang
@@ -685,6 +688,7 @@ class KhanExercise(ExerciseNode):
                 self.extra_fields["mastery_model"] = exercises.M_OF_N
                 self.extra_fields["m"] = number_correct
                 self.extra_fields["n"] = number_correct
+        self._assessment_items_set = True
 
     def __repr__(self):
         return "Exercise Node: {}".format(self.title)
