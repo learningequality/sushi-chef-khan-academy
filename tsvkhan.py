@@ -109,6 +109,9 @@ def get_khan_tsv(lang, update=False):
     return data
 
 
+METADATA_MAPPING_FILE = "chefdata/metadata_mapping.json"
+
+
 class TSVManager:
     def __init__(
         self,
@@ -148,6 +151,22 @@ class TSVManager:
         self.hires = hires
         self.node_report = []
 
+        # Check if we should generate metadata mapping
+        self.generate_metadata = (lang == "en" and variant is None)
+        if self.generate_metadata:
+            self.onlylisted = False
+        self.collected_nodes = {} if self.generate_metadata else None
+
+        # Load JSON mapping for source_id to metadata (skip if generating)
+        if not self.generate_metadata:
+            try:
+                with open(METADATA_MAPPING_FILE, 'r', encoding='utf-8') as f:
+                    METADATA_BY_SLUG.update(json.load(f))
+                LOGGER.info(f"Loaded metadata mapping from {METADATA_MAPPING_FILE}")
+            except (json.JSONDecodeError, IOError) as e:
+                LOGGER.error(f"Failed to load metadata mapping. Rerun with lang=en and no variant to force generation.")
+                exit(1)
+
         root_children = []
         domains = [row for row in self.tree_dict.values() if row["kind"] == "Domain"]
         domains_by_slug = dict((domain["slug"], domain) for domain in domains)
@@ -176,6 +195,11 @@ class TSVManager:
             with open("node_report.txt", "w") as f:
                 f.writelines(self.node_report)
 
+        # Generate metadata mapping if in generation mode
+        if self.generate_metadata:
+            self._generate_metadata_mapping()
+            exit(0)
+
     @property
     def variant_only(self):
         # If we have a variant specified and it is not one that we have a custom curation tree for,
@@ -185,6 +209,61 @@ class TSVManager:
             self.variant is not None
             and (self.lang, self.variant) not in TOPIC_TREE_REPLACMENTS_PER_LANG
         )
+
+    def _generate_metadata_mapping(self):
+        """
+        Generate metadata mapping from collected nodes and save to JSON file.
+        """
+        LOGGER.info("Generating metadata mapping...")
+        metadata_mapping = {}
+        
+        for slug, nodes in self.collected_nodes.items():
+            # Collect all grade_levels and categories values from all nodes with this slug
+            grade_levels = set()
+            categories = set()
+            
+            for node in nodes:
+                if node.grade_levels:
+                    grade_levels.update(node.grade_levels)
+                
+                if node.categories:
+                    categories.update(node.categories)
+            
+            # Convert sets to sorted lists
+            grade_levels_list = sorted(list(grade_levels))
+            categories_list = self._remove_prefix_categories(categories)
+
+            # Only add to mapping if we have metadata
+            if grade_levels_list or categories_list:
+                metadata_mapping[slug] = {}
+                if grade_levels_list:
+                    metadata_mapping[slug]['grade_levels'] = grade_levels_list
+                if categories_list:
+                    metadata_mapping[slug]['categories'] = categories_list
+
+        # Save to file
+        with open(METADATA_MAPPING_FILE, 'w', encoding='utf-8') as f:
+            json.dump(metadata_mapping, f)
+
+        LOGGER.info(f"Generated metadata mapping for {len(metadata_mapping)} slugs")
+
+    def _remove_prefix_categories(self, categories):
+        """
+        Remove categories that are prefixes of other categories.
+        """
+        sorted_categories = sorted(categories)
+        filtered = []
+        
+        for i, category in enumerate(sorted_categories):
+            is_prefix = False
+            for j, other_category in enumerate(sorted_categories):
+                if i != j and other_category.startswith(category):
+                    is_prefix = True
+                    break
+            if not is_prefix:
+                filtered.append(category)
+        
+        return filtered
 
     def _create_replacement_node(self, parent, child):
         fake_child_id = "{}_{}".format(parent["slug"], child["slug"])
@@ -241,7 +320,7 @@ class TSVManager:
         if (
             self.onlylisted
             and node["kind"] in TOPIC_LIKE_KINDS
-            and (not node["listed"] and (node["fully_translated"] == False or node["fully_translated"] is None))
+            and (not node.get("listed", True) and (node["fully_translated"] == False or node["fully_translated"] is None))
         ):
             LOGGER.warning(node["original_title"] + " is not fully_translated")
             return None  # we want to keep only topic nodes with `fully_translated=True`
@@ -308,7 +387,13 @@ class TSVManager:
                 self.lang,
             )
             parent.add_child(khan_node)
-            khan_node.set_metadata_from_ancestors()
+            
+            # Collect node for metadata generation
+            if self.generate_metadata:
+                khan_node.set_metadata_from_ancestors()
+                if slug_no_prefix not in self.collected_nodes:
+                    self.collected_nodes[slug_no_prefix] = []
+                self.collected_nodes[slug_no_prefix].append(khan_node)
 
         elif node["kind"] in TOPIC_LIKE_KINDS:
             slug = node["slug"]
@@ -421,7 +506,13 @@ class TSVManager:
             # to lookup any potentially pre-existing remote files.
             parent.add_child(khan_node)
             khan_node._set_video_files(self.remote_nodes)
-            khan_node.set_metadata_from_ancestors()
+            
+            # Collect node for metadata generation
+            if self.generate_metadata:
+                khan_node.set_metadata_from_ancestors()
+                if slug_no_prefix not in self.collected_nodes:
+                    self.collected_nodes[slug_no_prefix] = []
+                self.collected_nodes[slug_no_prefix].append(khan_node)
         else:
             if node["kind"] in UNSUPPORTED_KINDS:
                 # silentry skip unsupported content kinds like Article, Project,
