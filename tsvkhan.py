@@ -136,13 +136,16 @@ class TSVManager:
         # Get fresh TSV data (combined topics, videos, exercises, etc.)
         self.tree_dict = get_khan_tsv(lang, update=update)  # a {id --> datum} dict
 
+        # Check if we should generate metadata mapping
+        self.generate_metadata = (lang == "en" and variant is None)
+
         if lang not in SUPPORTED_LANGS:
             global translations
             translations = retrieve_translations(lang)
 
         channel_id = channel.get_node_id().hex
 
-        self.remote_nodes = get_nodes_for_remote_files(channel_id)
+        self.remote_nodes = get_nodes_for_remote_files(channel_id) if not self.generate_metadata else {}
         self.update = update
         self.onlylisted = onlylisted
         self.lang = lang
@@ -151,8 +154,6 @@ class TSVManager:
         self.hires = hires
         self.node_report = []
 
-        # Check if we should generate metadata mapping
-        self.generate_metadata = (lang == "en" and variant is None)
         if self.generate_metadata:
             self.onlylisted = False
         self.collected_nodes = {} if self.generate_metadata else None
@@ -307,7 +308,7 @@ class TSVManager:
             )
             text = ("  " * level) + title + "\n"
             if node["kind"] in TOPIC_LIKE_KINDS and (
-                node["fully_translated"] == False or node["fully_translated"] == None
+                node.get("fully_translated") == False or node.get("fully_translated") == None
             ):
                 prefix = "EXCLUDE: "
             else:
@@ -320,7 +321,7 @@ class TSVManager:
         if (
             self.onlylisted
             and node["kind"] in TOPIC_LIKE_KINDS
-            and (not node.get("listed", True) and (node["fully_translated"] == False or node["fully_translated"] is None))
+            and (not node.get("listed", True) and (node.get("fully_translated", True) == False or node.get("fully_translated", True) is None))
         ):
             LOGGER.warning(node["original_title"] + " is not fully_translated")
             return None  # we want to keep only topic nodes with `fully_translated=True`
