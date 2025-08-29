@@ -21,6 +21,11 @@ class KhanAcademySushiChef(SushiChef):
     slug_blacklist = []  # spec about `KhanTopic`s to be skipped
     topics_by_slug = {}  # lookup table { slug --> KhanTopic }
     topic_replacements = {}  # spec about `KhanTopic`s to be replaced
+    DOMAIN_AUTH_HEADERS = {
+        "amara.org": {
+            "X-api-key": "AMARA_API_KEY",
+        },
+    }
 
     def parse_lang_and_variant_from_kwargs(self, kwargs):
         """
