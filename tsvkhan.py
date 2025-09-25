@@ -477,7 +477,7 @@ class TSVManager:
                 license = LICENSE_MAPPING[node["license"]]
             else:
                 # license = licenses.CC_BY_NC_SA # or?
-                LOGGER.error(
+                LOGGER.warning(
                     "Unknown license ({}) on video with youtube id: {}".format(
                         node["license"], translated_youtube_id
                     )
@@ -514,6 +514,8 @@ class TSVManager:
                 if slug_no_prefix not in self.collected_nodes:
                     self.collected_nodes[slug_no_prefix] = []
                 self.collected_nodes[slug_no_prefix].append(khan_node)
+            if not khan_node.has_video_file:
+                parent.children.remove(khan_node)
         else:
             if node["kind"] in UNSUPPORTED_KINDS:
                 # silentry skip unsupported content kinds like Article, Project,
@@ -840,6 +842,7 @@ class KhanVideo(VideoNode):
         self.lang = lang
         self.target_lang = target_lang
         self.hires = hires
+        self.has_video_file = False
 
     @property
     def download_url(self):
@@ -869,7 +872,7 @@ class KhanVideo(VideoNode):
                 self.add_file(remote_file)
                 remote_files = True
 
-        if not remote_files:
+        if not remote_files and self.download_url:
             # If we didn't find any pre-existing remote files, add a file for download here.
             self.add_file(
                 VideoFile(
@@ -879,6 +882,7 @@ class KhanVideo(VideoNode):
                     },
                 )
             )
+        self.has_video_file = remote_files or self.download_url is not None
 
         if self.subbed:
             target_lang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(
