@@ -790,6 +790,13 @@ class KhanExercise(ExerciseNode):
         return "Exercise Node: {}".format(self.title)
 
 
+NO_OVERRIDE_FIELDS = {
+    "thumbnail",
+    "extra_fields",
+    "suggested_duration",
+}
+
+
 class KhanVideo(VideoNode):
     def __init__(
         self,
@@ -873,7 +880,7 @@ class KhanVideo(VideoNode):
             "source_node_id": self.content_node_id,
         }
         for key in StudioContentNode.ALLOWED_OVERRIDES:
-            if key in data and data[key] and key != "thumbnail":
+            if key in data and data[key] and key not in NO_OVERRIDE_FIELDS:
                 return_value[key] = data[key]
         return return_value
 
