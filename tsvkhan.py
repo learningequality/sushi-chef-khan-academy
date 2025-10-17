@@ -16,12 +16,13 @@ import re
 from le_utils.constants import exercises, file_formats, format_presets
 
 from ricecooker.config import LOGGER
-from ricecooker.classes.files import RemoteFile
 from ricecooker.classes.files import SubtitleFile
 from ricecooker.classes.files import VideoFile
 from ricecooker.classes.licenses import SpecialPermissionsLicense
+from ricecooker.classes.nodes import Node
 from ricecooker.classes.nodes import VideoNode
 from ricecooker.classes.nodes import ExerciseNode
+from ricecooker.classes.nodes import StudioContentNode
 from ricecooker.classes.nodes import TopicNode
 from ricecooker.classes.questions import PerseusQuestion
 from ricecooker.config import LOGGER
@@ -143,9 +144,9 @@ class TSVManager:
             global translations
             translations = retrieve_translations(lang)
 
-        channel_id = channel.get_node_id().hex
+        self.channel_id = channel.get_node_id().hex
 
-        self.remote_nodes = get_nodes_for_remote_files(channel_id) if not self.generate_metadata else {}
+        self.remote_nodes = get_nodes_for_remote_files(self.channel_id) if not self.generate_metadata else {}
         self.update = update
         self.onlylisted = onlylisted
         self.lang = lang
@@ -502,6 +503,7 @@ class TSVManager:
                 self.lang if node.get("dubbed") else node["source_lang"],
                 self.lang,
                 self.hires,
+                self.channel_id,
             )
             # Add the video to the parent before setting any files, as we need the node id
             # to lookup any potentially pre-existing remote files.
@@ -809,6 +811,8 @@ class KhanVideo(VideoNode):
         target_lang,
         # Whether to create a hi res video.
         hires,
+        # The channel id this video belongs to.
+        channel_id,
     ):
         metadata = METADATA_BY_SLUG.get(slug, {})
         super(KhanVideo, self).__init__(
@@ -843,6 +847,9 @@ class KhanVideo(VideoNode):
         self.target_lang = target_lang
         self.hires = hires
         self.has_video_file = False
+        self.remote_node = False
+        self.channel_id = channel_id
+        self.content_node_id = None
 
     @property
     def download_url(self):
@@ -851,28 +858,38 @@ class KhanVideo(VideoNode):
     def __repr__(self):
         return "Video Node: {}".format(self.title)
 
+    def _validate(self):
+        if not self.remote_node:
+            return super(KhanVideo, self)._validate()
+        return Node._validate(self)
+
+    def to_dict(self):
+        data = super(KhanVideo, self).to_dict()
+        if not self.remote_node:
+            return data
+        return_value = {
+            "node_id": self.content_node_id,
+            "source_channel_id": self.channel_id,
+            "source_node_id": self.content_node_id,
+        }
+        for key in StudioContentNode.ALLOWED_OVERRIDES:
+            if key in data and data[key] and key != "thumbnail":
+                return_value[key] = data[key]
+        return return_value
+
     def _set_video_files(self, remote_nodes):
-        video_node_id = self.get_node_id().hex
+        self.content_node_id = self.get_node_id().hex
 
-        remote_node_files = remote_nodes.get(video_node_id, {}).get("files", [])
-
-        remote_files = False
+        remote_node_files = remote_nodes.get(self.content_node_id , {}).get("files", [])
 
         for file in remote_node_files:
             if (
                 file["preset"] == format_presets.VIDEO_HIGH_RES
                 or file["preset"] == format_presets.VIDEO_LOW_RES
             ):
-                remote_file = RemoteFile(
-                    file["checksum"],
-                    file["extension"],
-                    file["preset"],
-                    is_primary=True,
-                )
-                self.add_file(remote_file)
-                remote_files = True
+                self.remote_node = True
 
-        if not remote_files and self.download_url:
+        if not self.remote_node and self.download_url:
             # If we didn't find any pre-existing remote files, add a file for download here.
             self.add_file(
                 VideoFile(
@@ -882,7 +899,7 @@ class KhanVideo(VideoNode):
                     },
                 )
             )
-        self.has_video_file = remote_files or self.download_url is not None
+        self.has_video_file = self.remote_node or self.download_url is not None
 
         if self.subbed:
             target_lang = KHAN_ACADEMY_LANGUAGE_MAPPING.get(
