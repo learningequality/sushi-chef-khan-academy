@@ -13,7 +13,7 @@ from operator import itemgetter
 import os
 import re
 
-from le_utils.constants import exercises, file_formats, format_presets
+from le_utils.constants import content_kinds, exercises, file_formats, format_presets
 
 from ricecooker.config import LOGGER
 from ricecooker.classes.files import SubtitleFile
@@ -293,6 +293,53 @@ class TSVManager:
         self.tree_dict[fake_child_id] = child_node
         return child_node
 
+    def _share_sibling_metadata(self, topic_node):
+        """
+        Accumulate categories and grade_levels from all resource children
+        (non-topic children) within a topic, then ensure each resource
+        has all the accumulated metadata from its siblings.
+
+        This ensures that sibling resources share their metadata, making
+        them more discoverable when filtering by category or grade level.
+        """
+        # Get only resource children (not nested topics)
+        resource_children = [
+            child for child in topic_node.children
+            if child.kind != content_kinds.TOPIC
+        ]
+
+        # If no resources or only one resource, nothing to share
+        if len(resource_children) <= 1:
+            return
+
+        # Accumulate all unique categories and grade_levels from siblings
+        all_categories = set()
+        all_grade_levels = set()
+
+        for resource in resource_children:
+            if hasattr(resource, 'categories') and resource.categories:
+                all_categories.update(resource.categories)
+            if hasattr(resource, 'grade_levels') and resource.grade_levels:
+                all_grade_levels.update(resource.grade_levels)
+
+        final_categories = set()
+
+        all_categories = sorted(all_categories, key=len, reverse=True)
+
+        for value in all_categories:
+            if not any(k != value and k.startswith(value) for k in final_categories):
+                final_categories.add(value)
+        final_categories = sorted(final_categories)
+        final_grade_levels = sorted(all_grade_levels)
+
+        # Distribute accumulated metadata to each resource
+        if all_categories or all_grade_levels:
+            for resource in resource_children:
+                if all_categories:
+                    resource.categories = final_categories
+                if all_grade_levels:
+                    resource.grade_levels = final_grade_levels
+
     def _recurse_create(self, parent, node, level=0):
         """
         Main tree-building function that takes the rows from the TSV data and makes
@@ -389,10 +436,10 @@ class TSVManager:
                 self.lang,
             )
             parent.add_child(khan_node)
+            khan_node.set_metadata_from_ancestors()
             
             # Collect node for metadata generation
             if self.generate_metadata:
-                khan_node.set_metadata_from_ancestors()
                 if slug_no_prefix not in self.collected_nodes:
                     self.collected_nodes[slug_no_prefix] = []
                 self.collected_nodes[slug_no_prefix].append(khan_node)
@@ -450,6 +497,10 @@ class TSVManager:
                                 + " in children_ids of topic node with id="
                                 + node["id"]
                             )
+
+                # Share metadata among resource siblings
+                self._share_sibling_metadata(khan_node)
+
                 if not khan_node.children:
                     LOGGER.warning("No children for " + title)
                     parent.children.remove(khan_node)
@@ -509,10 +560,10 @@ class TSVManager:
             # to lookup any potentially pre-existing remote files.
             parent.add_child(khan_node)
             khan_node._set_video_files(self.remote_nodes)
+            khan_node.set_metadata_from_ancestors()
             
             # Collect node for metadata generation
             if self.generate_metadata:
-                khan_node.set_metadata_from_ancestors()
                 if slug_no_prefix not in self.collected_nodes:
                     self.collected_nodes[slug_no_prefix] = []
                 self.collected_nodes[slug_no_prefix].append(khan_node)
