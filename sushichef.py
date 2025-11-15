@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import os
+import subprocess
+import sys
 
 from le_utils.constants.languages import getlang
 from ricecooker.chefs import SushiChef
@@ -9,8 +11,56 @@ from ricecooker.config import LOGGER
 from common_core_tags import generate_common_core_mapping
 from constants import get_channel_title
 from constants import get_channel_description
+from constants import LANGUAGE_CURRICULUM_MAP
 
 from tsvkhan import TSVManager
+
+
+def get_supported_language_variants():
+    """
+    Get all supported language and variant combinations.
+
+    Returns:
+        list: List of tuples (lang, variant) where variant is None for languages without curricula
+    """
+    result = []
+    for entry in LANGUAGE_CURRICULUM_MAP:
+        le_lang = entry["le_lang"]
+        if "curricula" in entry:
+            # Language has curricula - include only supported variants
+            for curriculum in entry["curricula"]:
+                if curriculum.get("supported", False):
+                    result.append((le_lang, curriculum["curriculum_key"]))
+        else:
+            # Language without curricula - include if supported
+            if entry.get("supported", False):
+                result.append((le_lang, None))
+    return result
+
+
+def get_all_language_variants(include_all_variants=False):
+    """
+    Get all language and variant combinations.
+
+    Args:
+        include_all_variants: If True, include all curriculum variants.
+                            If False, only include supported curriculum variants.
+
+    Returns:
+        list: List of tuples (lang, variant) where variant is None for languages without curricula
+    """
+    result = []
+    for entry in LANGUAGE_CURRICULUM_MAP:
+        le_lang = entry["le_lang"]
+        if "curricula" in entry:
+            # Language has curricula
+            for curriculum in entry["curricula"]:
+                if include_all_variants or curriculum.get("supported", False):
+                    result.append((le_lang, curriculum["curriculum_key"]))
+        else:
+            # Language without curricula - always include
+            result.append((le_lang, None))
+    return result
 
 
 class KhanAcademySushiChef(SushiChef):
@@ -106,5 +156,88 @@ class KhanAcademySushiChef(SushiChef):
 
 
 if __name__ == "__main__":
-    chef = KhanAcademySushiChef()
-    chef.main()
+    # Check if lang="supported" or lang="all" in command line arguments
+    import argparse
+
+    # Parse args to check for special lang values
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lang", help="Language code or special value (supported/all)")
+    parser.add_argument("--variant", help="Curriculum variant or special value (all)")
+    args, unknown = parser.parse_known_args()
+
+    if args.lang == "supported":
+        # Run chef for all supported language/variant combinations
+        LOGGER.info("Running chef for all supported languages and variants")
+        combinations = get_supported_language_variants()
+        LOGGER.info(f"Found {len(combinations)} supported language/variant combinations")
+
+        for lang, variant in combinations:
+            LOGGER.info(f"\n{'='*80}")
+            LOGGER.info(f"Starting chef run for lang={lang}, variant={variant}")
+            LOGGER.info(f"{'='*80}\n")
+
+            # Build subprocess command
+            cmd = [sys.executable, __file__]
+            cmd.extend(["--lang", lang])
+            if variant:
+                cmd.extend(["--variant", variant])
+            # Add all other arguments
+            for arg in sys.argv[1:]:
+                if not arg.startswith("--lang"):
+                    # Skip --lang arguments (and their values)
+                    if arg in ["--lang", "supported"]:
+                        continue
+                    cmd.append(arg)
+
+            # Run subprocess
+            result = subprocess.run(cmd)
+            if result.returncode != 0:
+                LOGGER.warning(f"Chef run failed for lang={lang}, variant={variant}")
+
+        LOGGER.info(f"\n{'='*80}")
+        LOGGER.info("Completed all supported language/variant combinations")
+        LOGGER.info(f"{'='*80}\n")
+
+    elif args.lang == "all":
+        # Run chef for all languages (respecting supported flag for variants)
+        LOGGER.info("Running chef for all languages")
+        include_all_variants = (args.variant == "all")
+        combinations = get_all_language_variants(include_all_variants=include_all_variants)
+        LOGGER.info(f"Found {len(combinations)} language/variant combinations")
+
+        for lang, variant in combinations:
+            LOGGER.info(f"\n{'='*80}")
+            LOGGER.info(f"Starting chef run for lang={lang}, variant={variant}")
+            LOGGER.info(f"{'='*80}\n")
+
+            # Build subprocess command
+            cmd = [sys.executable, __file__]
+            cmd.extend(["--lang", lang])
+            if variant:
+                cmd.extend(["--variant", variant])
+            # Add all other arguments except --lang and --variant
+            skip_next = False
+            for i, arg in enumerate(sys.argv[1:], 1):
+                if skip_next:
+                    skip_next = False
+                    continue
+                if arg in ["--lang", "--variant"]:
+                    skip_next = True
+                    continue
+                if arg in ["supported", "all"]:
+                    continue
+                cmd.append(arg)
+
+            # Run subprocess
+            result = subprocess.run(cmd)
+            if result.returncode != 0:
+                LOGGER.warning(f"Chef run failed for lang={lang}, variant={variant}")
+
+        LOGGER.info(f"\n{'='*80}")
+        LOGGER.info("Completed all language/variant combinations")
+        LOGGER.info(f"{'='*80}\n")
+
+    else:
+        # Normal single-language run
+        chef = KhanAcademySushiChef()
+        chef.main()
