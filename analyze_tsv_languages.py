@@ -242,12 +242,15 @@ def analyze_all_languages():
             "native_name": lang_obj.native_name,
         }
 
-        # Find existing entry in LANGUAGE_CURRICULUM_MAP to preserve titles/descriptions
+        # Find existing entry in LANGUAGE_CURRICULUM_MAP to preserve titles/descriptions/supported flags
         existing_entry = None
         for entry in LANGUAGE_CURRICULUM_MAP:
             if entry["le_lang"] == le_lang:
                 existing_entry = entry
                 break
+
+        # Preserve supported flag from existing entry, default to False for new languages
+        lang_data["supported"] = existing_entry.get("supported", False) if existing_entry else False
 
         # Add curricula if any exist
         if curricula_codes:
@@ -258,16 +261,19 @@ def analyze_all_languages():
                     "curriculum_key": curriculum_key,
                 }
 
-                # Try to get title and description from existing entry
+                # Try to get title, description, and supported flag from existing entry
                 title = ""
                 description = ""
+                supported = False  # Default to False for new curricula
                 if existing_entry and "curricula" in existing_entry:
                     for existing_curr in existing_entry["curricula"]:
                         if existing_curr["curriculum_key"] == curriculum_key:
                             title = existing_curr.get("title", "")
                             description = existing_curr.get("description", "")
+                            supported = existing_curr.get("supported", False)
                             break
 
+                curriculum_obj["supported"] = supported
                 curriculum_obj["title"] = title
                 curriculum_obj["description"] = description
 
@@ -316,7 +322,9 @@ def generate_constants_update(results):
     lines.append("#   - le_lang: le-utils language code")
     lines.append("#   - name: English name of the language")
     lines.append("#   - native_name: Native name of the language")
+    lines.append("#   - supported: Boolean flag indicating if this language is supported for content import")
     lines.append("#   - curricula: Optional list of curriculum variants (if any)")
+    lines.append("#       - Each curriculum has a 'supported' flag indicating if that specific variant is supported")
     lines.append("#   - title: Channel title (if no curricula)")
     lines.append("#   - description: Channel description (if no curricula)")
     lines.append("LANGUAGE_CURRICULUM_MAP = [")
@@ -327,12 +335,14 @@ def generate_constants_update(results):
         lines.append(f"        \"le_lang\": {json.dumps(lang['le_lang'], ensure_ascii=False)},")
         lines.append(f"        \"name\": {json.dumps(lang['name'], ensure_ascii=False)},")
         lines.append(f"        \"native_name\": {json.dumps(lang['native_name'], ensure_ascii=False)},")
+        lines.append(f"        \"supported\": {lang.get('supported', False)},")
 
         if "curricula" in lang:
             lines.append("        \"curricula\": [")
             for curriculum in lang["curricula"]:
                 lines.append("            {")
                 lines.append(f"                \"curriculum_key\": {json.dumps(curriculum['curriculum_key'], ensure_ascii=False)},")
+                lines.append(f"                \"supported\": {curriculum.get('supported', False)},")
                 lines.append(f"                \"title\": {json.dumps(curriculum['title'], ensure_ascii=False)},")
                 lines.append(f"                \"description\": {json.dumps(curriculum['description'], ensure_ascii=False)},")
                 lines.append("            },")
