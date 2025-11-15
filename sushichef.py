@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import os
 import subprocess
 import sys
@@ -61,6 +62,71 @@ def get_all_language_variants(include_all_variants=False):
             # Language without curricula - always include
             result.append((le_lang, None))
     return result
+
+
+def get_language_variants_to_run(lang_arg, variant_arg):
+    """
+    Determine which language/variant combinations to run based on arguments.
+
+    Args:
+        lang_arg: Value of --lang argument
+        variant_arg: Value of --variant argument
+
+    Returns:
+        list of (lang, variant) tuples, or None for single-language mode
+    """
+    if lang_arg == "supported":
+        return get_supported_language_variants()
+    elif lang_arg == "all":
+        include_all_variants = (variant_arg == "all")
+        return get_all_language_variants(include_all_variants=include_all_variants)
+    else:
+        return None  # Single language mode
+
+
+def run_chef_for_multiple_languages(combinations, mode_description):
+    """
+    Run chef in subprocess for each language/variant combination.
+
+    Args:
+        combinations: List of (lang, variant) tuples
+        mode_description: Description for logging (e.g., "all supported languages")
+    """
+    LOGGER.info(f"Running chef for {mode_description}")
+    LOGGER.info(f"Found {len(combinations)} language/variant combinations")
+
+    for lang, variant in combinations:
+        LOGGER.info(f"\n{'='*80}")
+        LOGGER.info(f"Starting chef run for lang={lang}, variant={variant}")
+        LOGGER.info(f"{'='*80}\n")
+
+        # Build subprocess command
+        cmd = [sys.executable, __file__]
+        cmd.extend(["--lang", lang])
+        if variant:
+            cmd.extend(["--variant", variant])
+
+        # Add all other arguments except --lang and --variant
+        skip_next = False
+        for arg in sys.argv[1:]:
+            if skip_next:
+                skip_next = False
+                continue
+            if arg in ["--lang", "--variant"]:
+                skip_next = True
+                continue
+            if arg in ["supported", "all"]:
+                continue
+            cmd.append(arg)
+
+        # Run subprocess
+        result = subprocess.run(cmd)
+        if result.returncode != 0:
+            LOGGER.warning(f"Chef run failed for lang={lang}, variant={variant}")
+
+    LOGGER.info(f"\n{'='*80}")
+    LOGGER.info(f"Completed {mode_description}")
+    LOGGER.info(f"{'='*80}\n")
 
 
 class KhanAcademySushiChef(SushiChef):
@@ -156,87 +222,25 @@ class KhanAcademySushiChef(SushiChef):
 
 
 if __name__ == "__main__":
-    # Check if lang="supported" or lang="all" in command line arguments
-    import argparse
-
     # Parse args to check for special lang values
     parser = argparse.ArgumentParser()
     parser.add_argument("--lang", help="Language code or special value (supported/all)")
     parser.add_argument("--variant", help="Curriculum variant or special value (all)")
     args, unknown = parser.parse_known_args()
 
-    if args.lang == "supported":
-        # Run chef for all supported language/variant combinations
-        LOGGER.info("Running chef for all supported languages and variants")
-        combinations = get_supported_language_variants()
-        LOGGER.info(f"Found {len(combinations)} supported language/variant combinations")
+    # Determine which combinations to run
+    combinations = get_language_variants_to_run(args.lang, args.variant)
 
-        for lang, variant in combinations:
-            LOGGER.info(f"\n{'='*80}")
-            LOGGER.info(f"Starting chef run for lang={lang}, variant={variant}")
-            LOGGER.info(f"{'='*80}\n")
+    if combinations is not None:
+        # Multi-language mode - determine description for logging
+        if args.lang == "supported":
+            mode_desc = "all supported languages and variants"
+        elif args.variant == "all":
+            mode_desc = "all languages and all variants"
+        else:
+            mode_desc = "all languages (supported variants only)"
 
-            # Build subprocess command
-            cmd = [sys.executable, __file__]
-            cmd.extend(["--lang", lang])
-            if variant:
-                cmd.extend(["--variant", variant])
-            # Add all other arguments
-            for arg in sys.argv[1:]:
-                if not arg.startswith("--lang"):
-                    # Skip --lang arguments (and their values)
-                    if arg in ["--lang", "supported"]:
-                        continue
-                    cmd.append(arg)
-
-            # Run subprocess
-            result = subprocess.run(cmd)
-            if result.returncode != 0:
-                LOGGER.warning(f"Chef run failed for lang={lang}, variant={variant}")
-
-        LOGGER.info(f"\n{'='*80}")
-        LOGGER.info("Completed all supported language/variant combinations")
-        LOGGER.info(f"{'='*80}\n")
-
-    elif args.lang == "all":
-        # Run chef for all languages (respecting supported flag for variants)
-        LOGGER.info("Running chef for all languages")
-        include_all_variants = (args.variant == "all")
-        combinations = get_all_language_variants(include_all_variants=include_all_variants)
-        LOGGER.info(f"Found {len(combinations)} language/variant combinations")
-
-        for lang, variant in combinations:
-            LOGGER.info(f"\n{'='*80}")
-            LOGGER.info(f"Starting chef run for lang={lang}, variant={variant}")
-            LOGGER.info(f"{'='*80}\n")
-
-            # Build subprocess command
-            cmd = [sys.executable, __file__]
-            cmd.extend(["--lang", lang])
-            if variant:
-                cmd.extend(["--variant", variant])
-            # Add all other arguments except --lang and --variant
-            skip_next = False
-            for i, arg in enumerate(sys.argv[1:], 1):
-                if skip_next:
-                    skip_next = False
-                    continue
-                if arg in ["--lang", "--variant"]:
-                    skip_next = True
-                    continue
-                if arg in ["supported", "all"]:
-                    continue
-                cmd.append(arg)
-
-            # Run subprocess
-            result = subprocess.run(cmd)
-            if result.returncode != 0:
-                LOGGER.warning(f"Chef run failed for lang={lang}, variant={variant}")
-
-        LOGGER.info(f"\n{'='*80}")
-        LOGGER.info("Completed all language/variant combinations")
-        LOGGER.info(f"{'='*80}\n")
-
+        run_chef_for_multiple_languages(combinations, mode_desc)
     else:
         # Normal single-language run
         chef = KhanAcademySushiChef()

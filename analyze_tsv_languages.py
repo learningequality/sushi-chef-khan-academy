@@ -341,13 +341,13 @@ def generate_constants_update(results):
                 lines.append(f"                \"curriculum_key\": {json.dumps(curriculum['curriculum_key'], ensure_ascii=False)},")
                 lines.append(f"                \"title\": {json.dumps(curriculum['title'], ensure_ascii=False)},")
                 lines.append(f"                \"description\": {json.dumps(curriculum['description'], ensure_ascii=False)},")
-                lines.append(f"                \"supported\": {json.dumps(curriculum.get('supported', False))},")
+                lines.append(f"                \"supported\": {curriculum.get('supported', False)},")
                 lines.append("            },")
             lines.append("        ],")
         else:
             lines.append(f"        \"title\": {json.dumps(lang.get('title', ''), ensure_ascii=False)},")
             lines.append(f"        \"description\": {json.dumps(lang.get('description', ''), ensure_ascii=False)},")
-            lines.append(f"        \"supported\": {json.dumps(lang.get('supported', False))},")
+            lines.append(f"        \"supported\": {lang.get('supported', False)},")
 
         lines.append("    },")
 
