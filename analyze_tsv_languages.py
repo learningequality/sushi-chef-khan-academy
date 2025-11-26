@@ -258,32 +258,37 @@ def analyze_all_languages():
                     "curriculum_key": curriculum_key,
                 }
 
-                # Try to get title and description from existing entry
+                # Try to get title, description, and supported from existing entry
                 title = ""
                 description = ""
+                supported = False  # Default to False for new curricula
                 if existing_entry and "curricula" in existing_entry:
                     for existing_curr in existing_entry["curricula"]:
                         if existing_curr["curriculum_key"] == curriculum_key:
                             title = existing_curr.get("title", "")
                             description = existing_curr.get("description", "")
+                            supported = existing_curr.get("supported", False)
                             break
 
                 curriculum_obj["title"] = title
                 curriculum_obj["description"] = description
+                curriculum_obj["supported"] = supported
 
                 curricula_list.append(curriculum_obj)
 
             lang_data["curricula"] = curricula_list
             print(f"  Unique curricula ({len(curricula_list)}): {', '.join([c['curriculum_key'] for c in curricula_list])}")
         else:
-            # No curricula - get default title and description from existing entry or use fallback
+            # No curricula - get default title, description, and supported from existing entry or use fallback
             if existing_entry:
                 lang_data["title"] = existing_entry.get("title", f"Khan Academy ({lang_obj.first_native_name})")
                 lang_data["description"] = existing_entry.get("description", f"Khan Academy content for {lang_obj.name}.")
+                lang_data["supported"] = existing_entry.get("supported", False)
             else:
                 # Fallback for new languages not yet in LANGUAGE_CURRICULUM_MAP
                 lang_data["title"] = f"Khan Academy ({lang_obj.first_native_name})"
                 lang_data["description"] = f"Khan Academy content for {lang_obj.name}."
+                lang_data["supported"] = False  # Default to False for new languages
 
             print(f"  No curricula - using default title and description")
 
@@ -319,6 +324,7 @@ def generate_constants_update(results):
     lines.append("#   - curricula: Optional list of curriculum variants (if any)")
     lines.append("#   - title: Channel title (if no curricula)")
     lines.append("#   - description: Channel description (if no curricula)")
+    lines.append("#   - supported: Whether this language/curriculum is supported (default: false for new additions)")
     lines.append("LANGUAGE_CURRICULUM_MAP = [")
 
     for lang in results:
@@ -335,11 +341,13 @@ def generate_constants_update(results):
                 lines.append(f"                \"curriculum_key\": {json.dumps(curriculum['curriculum_key'], ensure_ascii=False)},")
                 lines.append(f"                \"title\": {json.dumps(curriculum['title'], ensure_ascii=False)},")
                 lines.append(f"                \"description\": {json.dumps(curriculum['description'], ensure_ascii=False)},")
+                lines.append(f"                \"supported\": {curriculum.get('supported', False)},")
                 lines.append("            },")
             lines.append("        ],")
         else:
             lines.append(f"        \"title\": {json.dumps(lang.get('title', ''), ensure_ascii=False)},")
             lines.append(f"        \"description\": {json.dumps(lang.get('description', ''), ensure_ascii=False)},")
+            lines.append(f"        \"supported\": {lang.get('supported', False)},")
 
         lines.append("    },")
 

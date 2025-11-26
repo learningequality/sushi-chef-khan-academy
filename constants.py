@@ -222,6 +222,7 @@ LICENSE_MAPPING = {
 #   - curricula: Optional list of curriculum variants (if any)
 #   - title: Channel title (if no curricula)
 #   - description: Channel description (if no curricula)
+#   - supported: Whether this language/curriculum is supported (default: false for new additions)
 LANGUAGE_CURRICULUM_MAP = [
     {
         "ka_lang": "ar",
@@ -230,6 +231,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "العربية",
         "title": "Khan Academy (العربية)",
         "description": "Khan Academy content for Arabic.",
+        "supported": False,
     },
     {
         "ka_lang": "as",
@@ -238,6 +240,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "অসমীয়া",
         "title": "Khan Academy (অসমীয়া)",
         "description": "Khan Academy content for Assamese.",
+        "supported": False,
     },
     {
         "ka_lang": "az",
@@ -246,6 +249,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "azərbaycan dili",
         "title": "Khan Academy (azərbaycan dili)",
         "description": "Khan Academy tələbələrə istənilən vaxt tapşırıqların üzərində işləmək, təlimat videolarını izləmək və fərdiləşdirilmiş öyrənmə paneli ilə həm sinifdə, həm də sinifdən kənar təhsil almaq imkanı verir. Khan Academy-də uşaq bağçasından başlayaraq ali təhsil daxil olmaqla müxtəlif fənləri, o cümlədən riyaziyyat, həyat bilgisi, oxu, hesablama, tarix, incəsənət tarixi, iqtisadiyyat, maliyyə savadlılığı, SAT, MCAT və digər sahələri əhatə edən tədris resursları yer alır. Beləliklə, təhsilalanların məktəbdə, ali təhsildə və peşəkar fəaliyyətdə lazım olan təməl biliklərin əldə olunması üçün imkanlar yaradır.",
+        "supported": True,
     },
     {
         "ka_lang": "bg",
@@ -254,6 +258,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "български език",
         "title": "Khan Academy (български език)",
         "description": "Khan Academy предоставя видео уроци и упражнения по математика, физика, химия и биология, съобразени с българските учебни стандарти. Темите са представени чрез лесно разбираеми обяснения и многобройни упражнения за самооценка на наученото. Материалите са подходящи както за ученици от началните и стредните класове, така и за студенти.",
+        "supported": True,
     },
     {
         "ka_lang": "bn",
@@ -262,6 +267,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "বাংলা",
         "title": "Khan Academy (বাংলা)",
         "description": "খান একাডেমিতে বাংলাদেশের শিক্ষাক্রম অনুযায়ী গণিতের ভিডিও এবং অনুশীলনী রয়েছে। প্রতিটি অধ্যায়ে বিষয়ভিত্তিক মূল ধারণার ভিডিও এবং অসংখ্য অনুশীলনী রয়েছে যা নিয়মিত চর্চার মাধ্যমে শিক্ষার্থীরা ঐ বিষয়ে দক্ষতা অর্জন করতে পারে। প্রাথমিক ও মাধ্যমিক শিক্ষার্থীদের জন্য উপযোগী, সেইসাথে বয়স্ক শিক্ষার্থীরাও এটি ব্যবহার করতে পারবে।",
+        "supported": True,
     },
     {
         "ka_lang": "cs",
@@ -270,6 +276,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "česky, čeština",
         "title": "Khan Academy (česky)",
         "description": "Khan Academy content for Czech.",
+        "supported": True,
     },
     {
         "ka_lang": "da",
@@ -278,6 +285,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Dansk",
         "title": "Khan Academy (Dansk)",
         "description": "Khan Academy content for Danish.",
+        "supported": True,
     },
     {
         "ka_lang": "de",
@@ -286,6 +294,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Deutsch",
         "title": "Khan Academy (Deutsch)",
         "description": "Khan Academy content for German.",
+        "supported": True,
     },
     {
         "ka_lang": "el",
@@ -294,6 +303,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Ελληνικά",
         "title": "Khan Academy (Ελληνικά)",
         "description": "Khan Academy content for Greek, Modern.",
+        "supported": True,
     },
     {
         "ka_lang": "en",
@@ -305,56 +315,67 @@ LANGUAGE_CURRICULUM_MAP = [
                 "curriculum_key": "ca-ab",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "ca-on",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "in-in",
                 "title": "Khan Academy (English - CBSE India Curriculum)",
                 "description": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the CBSE India curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+                "supported": True,
             },
             {
                 "curriculum_key": "ke-ke",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "ph-ph",
                 "title": "Khan Academy (English - Philippines Curriculum)",
                 "description": "",
+                "supported": True,
             },
             {
                 "curriculum_key": "pk-pk",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "sl-sl",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "us-cc",
                 "title": "Khan Academy (English - US curriculum)",
                 "description": "Khan Academy provides videos and exercises on math, physics, chemistry, biology, and history, aligned to the U.S. curriculum. Each topic is covered through intuitive video explanations and provides numerous practice exercises to help students achieve mastery of the subjects. Appropriate for middle and secondary students, as well as adult learners.",
+                "supported": True,
             },
             {
                 "curriculum_key": "us-fl",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "us-tx",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "us-va",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
         ],
     },
@@ -368,11 +389,13 @@ LANGUAGE_CURRICULUM_MAP = [
                 "curriculum_key": "mx-eb",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "pe-pe",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
         ],
     },
@@ -386,11 +409,13 @@ LANGUAGE_CURRICULUM_MAP = [
                 "curriculum_key": "be-be",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
             {
                 "curriculum_key": "fr-fr",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
         ],
     },
@@ -401,6 +426,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Fulfulde",
         "title": "Khan Academy (Fulfulde)",
         "description": "Nder Kaan Akademi, bee Fulfulde, a taway wideyo e kuuɗe ngam ekkitaago lissaafi. Bee ɗemle feere, a foti jannga kemestiri, fisiks, e bayoloji fuu. Kala ekkitinol fuu e woodi wideyo ngam janngingo pukaraajo, bee kuuɗe ɗuɗɗe ɗe pukaraajo huwata ngam ɗiggingo ko mo ekkiti. Ekkitinki kin nafay fukaraaɓe diga fuɗɗoode janngirde haa janngirde suudu 12 e yeeso. Mawɓe maa njanngay.",
+        "supported": True,
     },
     {
         "ka_lang": "gu",
@@ -409,6 +435,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ગુજરાતી",
         "title": "Khan Academy (ગુજરાતી)",
         "description": "ખાન એકેડેમી ગણિત અને વિજ્ઞાન ના વિડિયો અને સ્વાધ્યાય પ્રદાન કરે છે. દરેક વિષય સાહજિક વિડિયો અને અસંખ્ય સ્વાધ્યાયના સાથે આવરી લેવામાં આવે છે. તેઓ વિષયોને માસ્ટર બનાવવામાં મદદ કરે છે.",
+        "supported": True,
     },
     {
         "ka_lang": "hi",
@@ -417,6 +444,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "हिन्दी, हिंदी",
         "title": "Khan Academy (हिन्दी)",
         "description": "खान अकादमी गणित वीडियो और अभ्यास प्रदान करता है। प्रत्येक विषय सहज वीडियो और कई अभ्यासों के साथ कवर किया गया है। वे विषयों में निपुण होने में मदद करते हैं।",
+        "supported": True,
     },
     {
         "ka_lang": "hu",
@@ -428,6 +456,7 @@ LANGUAGE_CURRICULUM_MAP = [
                 "curriculum_key": "uk-nc",
                 "title": "",
                 "description": "",
+                "supported": False,
             },
         ],
     },
@@ -438,6 +467,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Հայերեն",
         "title": "Khan Academy (Հայերեն)",
         "description": "Khan Academy content for Armenian.",
+        "supported": True,
     },
     {
         "ka_lang": "id",
@@ -446,6 +476,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Bahasa Indonesia",
         "title": "Khan Academy (Bahasa Indonesia)",
         "description": "Khan Academy content for Indonesian.",
+        "supported": True,
     },
     {
         "ka_lang": "it",
@@ -454,6 +485,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Italiano",
         "title": "Khan Academy (Italiano)",
         "description": "Khan Academy offre i video e gli esercizi di matematica, allineati al curriculum degli Stati Uniti. Ogni argomento è trattato in modo intuitivo attraverso spiegazioni video, e fornisce numerosi esercizi pratici per aiutare gli studenti raggiungere la competenza sulla materia. Adatto agli studenti di scuola elementare, media e secondaria, nonché agli adulti.",
+        "supported": True,
     },
     {
         "ka_lang": "ja",
@@ -462,6 +494,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "日本語 (にほんご／にっぽんご)",
         "title": "Khan Academy (日本語 (にほんご／にっぽんご))",
         "description": "Khan Academy content for Japanese.",
+        "supported": True,
     },
     {
         "ka_lang": "ka",
@@ -470,6 +503,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ქართული",
         "title": "Khan Academy (ქართული)",
         "description": "Khan Academy content for Georgian.",
+        "supported": True,
     },
     {
         "ka_lang": "kk",
@@ -478,6 +512,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Қазақ тілі",
         "title": "Khan Academy (Қазақ тілі)",
         "description": "Khan Academy content for Kazakh.",
+        "supported": False,
     },
     {
         "ka_lang": "km",
@@ -486,6 +521,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ភាសាខ្មែរ",
         "title": "Khan Academy (ភាសាខ្មែរ)",
         "description": "Khan Academy ផ្តល់ជូននូវវីដេអូ និងលំហាត់គណិតវិទ្យាជាច្រើន។ គ្រប់មុខវិជ្ជាទាំងអស់ត្រូវបានផ្សព្វផ្សាយតាមរយៈវីដេអូវិចារណញាណ និងមានលំហាត់ជាច្រើនទៀតដើម្បីជួយឱ្យសិស្សមានគន្លឹះក្នុងការដោះស្រាយលំហាត់កាន់តែងាយស្រួល។",
+        "supported": True,
     },
     {
         "ka_lang": "kn",
@@ -494,6 +530,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ಕನ್ನಡ",
         "title": "Khan Academy (ಕನ್ನಡ)",
         "description": "Khan Academy content for Kannada.",
+        "supported": True,
     },
     {
         "ka_lang": "ko",
@@ -502,6 +539,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "한국어 (韓國語), 조선말 (朝鮮語)",
         "title": "Khan Academy (한국어 (韓國語))",
         "description": "Khan Academy content for Korean.",
+        "supported": True,
     },
     {
         "ka_lang": "ky",
@@ -510,6 +548,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "кыргыз тили",
         "title": "Khan Academy (кыргыз тили)",
         "description": "Khan Academy content for Kirghiz; Kyrgyz.",
+        "supported": True,
     },
     {
         "ka_lang": "lt",
@@ -518,6 +557,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "lietuvių kalba",
         "title": "Khan Academy (lietuvių kalba)",
         "description": "Khan Academy content for Lithuanian.",
+        "supported": True,
     },
     {
         "ka_lang": "lv",
@@ -526,6 +566,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "latviešu valoda",
         "title": "Khan Academy (latviešu valoda)",
         "description": "Khan Academy content for Latvian.",
+        "supported": False,
     },
     {
         "ka_lang": "mn",
@@ -534,6 +575,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "монгол",
         "title": "Khan Academy (монгол)",
         "description": "Khan Academy content for Mongolian.",
+        "supported": False,
     },
     {
         "ka_lang": "mr",
@@ -542,6 +584,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "मराठी",
         "title": "Khan Academy (मराठी)",
         "description": "Khan Academy content for Marathi (Marāṭhī).",
+        "supported": False,
     },
     {
         "ka_lang": "my",
@@ -550,6 +593,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ဗမာစာ",
         "title": "Khan Academy (ဗမာစာ)",
         "description": "Khan Academy မှဗွီဒီယိုများနှင့်သင်္ချာဆိုင်ရာလေ့ကျင့်ခန်းများကိုတင်ဆက်သည်။ ဘာသာရပ်တိုင်းကိုထိုးထွင်းသိမြင်နိုင်သောဗီဒီယိုများဖြင့်ဖော်ပြပြီးကျောင်းသားများကိုသဘောတရားများကိုကျွမ်းကျင်အောင်ကူညီရန်လေ့ကျင့်ခန်းများစွာပါ ၀ င်သည်။",
+        "supported": True,
     },
     {
         "ka_lang": "nb",
@@ -558,6 +602,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Norsk bokmål",
         "title": "Khan Academy (Norsk bokmål)",
         "description": "Khan Academy content for Norwegian Bokmål.",
+        "supported": True,
     },
     {
         "ka_lang": "nl",
@@ -566,6 +611,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Nederlands, Vlaams",
         "title": "Khan Academy (Nederlands)",
         "description": "Khan Academy content for Dutch.",
+        "supported": True,
     },
     {
         "ka_lang": "or",
@@ -574,6 +620,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ଓଡ଼ିଆ",
         "title": "Khan Academy (ଓଡ଼ିଆ)",
         "description": "Khan Academy content for Oriya.",
+        "supported": False,
     },
     {
         "ka_lang": "pa",
@@ -582,6 +629,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "ਪੰਜਾਬੀ, پنجابی‎",
         "title": "Khan Academy (ਪੰਜਾਬੀ)",
         "description": "Khan Academy content for Panjabi; Punjabi.",
+        "supported": False,
     },
     {
         "ka_lang": "pl",
@@ -590,6 +638,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Polski",
         "title": "Khan Academy (Polski)",
         "description": "Khan Academy content for Polish.",
+        "supported": True,
     },
     {
         "ka_lang": "pt",
@@ -598,6 +647,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Português (Brasil)",
         "title": "Khan Academy (Português - Brasil)",
         "description": "Khan Academy oferece cursos em matemática, física, química, biologia e história. Cada matéria contém vídeos explicativos e exercícios para para a prática e revisão. Próprio para alunos do ensino médio e secundário, bem como para adultos.",
+        "supported": True,
     },
     {
         "ka_lang": "pt-pt",
@@ -606,6 +656,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Português (Portugal)",
         "title": "Khan Academy (Português (Portugal))",
         "description": "Khan Academy oferece cursos em matemática, física, química e biologia. Cada matéria contém vídeos explicativos e exercícios para para a prática e revisão. Próprio para alunos do ensino médio e secundário, bem como para adultos.",
+        "supported": True,
     },
     {
         "ka_lang": "ro",
@@ -614,6 +665,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "română",
         "title": "Khan Academy (română)",
         "description": "Khan Academy content for Romanian; Moldavian; Moldovan.",
+        "supported": False,
     },
     {
         "ka_lang": "ru",
@@ -622,6 +674,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "русский язык",
         "title": "Khan Academy (русский язык)",
         "description": "Khan Academy content for Russian.",
+        "supported": True,
     },
     {
         "ka_lang": "rw",
@@ -630,6 +683,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Ikinyarwanda",
         "title": "Khan Academy (Ikinyarwanda)",
         "description": "Khan Academy content for Kinyarwanda.",
+        "supported": False,
     },
     {
         "ka_lang": "sk",
@@ -638,6 +692,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "slovenčina",
         "title": "Khan Academy (slovenčina)",
         "description": "Khan Academy content for Slovak.",
+        "supported": False,
     },
     {
         "ka_lang": "sr",
@@ -646,6 +701,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "српски језик",
         "title": "Khan Academy (српски језик)",
         "description": "Khan Academy content for Serbian.",
+        "supported": True,
     },
     {
         "ka_lang": "sv",
@@ -654,6 +710,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "svenska",
         "title": "Khan Academy (svenska)",
         "description": "Khan Academy content for Swedish.",
+        "supported": True,
     },
     {
         "ka_lang": "ta",
@@ -662,6 +719,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "தமிழ்",
         "title": "Khan Academy (தமிழ்)",
         "description": "Khan Academy content for Tamil.",
+        "supported": True,
     },
     {
         "ka_lang": "te",
@@ -670,6 +728,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "తెలుగు",
         "title": "Khan Academy (తెలుగు)",
         "description": "Khan Academy content for Telugu.",
+        "supported": False,
     },
     {
         "ka_lang": "tr",
@@ -678,6 +737,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Türkçe",
         "title": "Khan Academy (Türkçe)",
         "description": "Khan Academy content for Turkish.",
+        "supported": True,
     },
     {
         "ka_lang": "uk",
@@ -686,6 +746,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "українська",
         "title": "Khan Academy (українська)",
         "description": "Khan Academy пропонує практичні вправи a пояснювальні відео. У нас є матеріали з математики, природничих наук, програмування, історії, історії мистецтв, економіки та багатьох інших предметів.",
+        "supported": False,
     },
     {
         "ka_lang": "ur",
@@ -694,6 +755,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "اردو",
         "title": "Khan Academy (اردو)",
         "description": "Khan Academy content for Urdu.",
+        "supported": False,
     },
     {
         "ka_lang": "uz",
@@ -702,6 +764,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "zbek, Ўзбек, أۇزبېك‎",
         "title": "Khan Academy (zbek)",
         "description": "Khan Academy content for Uzbek.",
+        "supported": True,
     },
     {
         "ka_lang": "vi",
@@ -710,6 +773,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "Tiếng Việt",
         "title": "Khan Academy (Tiếng Việt)",
         "description": "Khan Academy content for Vietnamese.",
+        "supported": False,
     },
     {
         "ka_lang": "zh-hans",
@@ -718,13 +782,24 @@ LANGUAGE_CURRICULUM_MAP = [
         "native_name": "中文（中国）",
         "title": "Khan Academy (中文（中国）)",
         "description": "可汗学院提供与美国课程一致的视频和习题，涵盖数学、物理、化学、生物和历史。每一个主题都包括了直观的视频解释和大量的练习题目以帮助学生掌握这些学科。这些内容适合初中生、高中生和成年人学习。",
+        "supported": True,
     },
 ]
 # END AUTO-GENERATED LANGUAGE_CURRICULUM_MAP
 
 
 # Auto-generated from LANGUAGE_CURRICULUM_MAP for backward compatibility
-SUPPORTED_LANGS = [o["le_lang"] for o in LANGUAGE_CURRICULUM_MAP]
+# Only includes languages that are marked as supported
+SUPPORTED_LANGS = []
+for o in LANGUAGE_CURRICULUM_MAP:
+    if "curricula" in o:
+        # For languages with curricula, include if at least one curriculum is supported
+        if any(c.get("supported", False) for c in o["curricula"]):
+            SUPPORTED_LANGS.append(o["le_lang"])
+    else:
+        # For languages without curricula, include if supported
+        if o.get("supported", False):
+            SUPPORTED_LANGS.append(o["le_lang"])
 
 
 # Auto-generated from LANGUAGE_CURRICULUM_MAP for backward compatibility
