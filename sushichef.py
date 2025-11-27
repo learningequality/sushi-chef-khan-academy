@@ -216,7 +216,8 @@ class KhanAcademySushiChef(SushiChef):
 
         LOGGER.info("Downloading KA topic tree")
         # Obtain the complete topic tree for lang=lang from the KA API
-        TSVManager(channel, lang=lang, variant=variant, hires=hires)
+        verbose = options.get('verbose', False)
+        TSVManager(channel, lang=lang, variant=variant, hires=hires, verbose=verbose)
 
         return channel
 

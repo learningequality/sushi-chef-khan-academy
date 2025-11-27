@@ -155,6 +155,9 @@ class TSVManager:
         self.hires = hires
         self.node_report = []
 
+        # Track metadata updates for debugging cross-contamination
+        self.metadata_tracking = {} if verbose else None
+
         if self.generate_metadata:
             self.onlylisted = False
         self.collected_nodes = {} if self.generate_metadata else None
@@ -196,6 +199,10 @@ class TSVManager:
         if self.verbose:
             with open("node_report.txt", "w") as f:
                 f.writelines(self.node_report)
+
+        # Report metadata tracking if verbose mode is enabled
+        if self.verbose and self.metadata_tracking:
+            self._report_metadata_contamination()
 
         # Generate metadata mapping if in generation mode
         if self.generate_metadata:
@@ -255,7 +262,7 @@ class TSVManager:
         """
         sorted_categories = sorted(categories)
         filtered = []
-        
+
         for i, category in enumerate(sorted_categories):
             is_prefix = False
             for j, other_category in enumerate(sorted_categories):
@@ -264,8 +271,99 @@ class TSVManager:
                     break
             if not is_prefix:
                 filtered.append(category)
-        
+
         return filtered
+
+    def _track_metadata(self, node, stage, source_info=None):
+        """
+        Track metadata updates for debugging cross-contamination issues.
+        Records the state of categories and grade_levels at each stage.
+        """
+        if self.metadata_tracking is None:
+            return
+
+        node_id = getattr(node, 'source_id', str(id(node)))
+
+        if node_id not in self.metadata_tracking:
+            self.metadata_tracking[node_id] = {
+                'title': getattr(node, 'title', 'Unknown'),
+                'kind': getattr(node, 'kind', 'Unknown'),
+                'history': []
+            }
+
+        categories = list(getattr(node, 'categories', []))
+        grade_levels = list(getattr(node, 'grade_levels', []))
+
+        history_entry = {
+            'stage': stage,
+            'categories': categories,
+            'grade_levels': grade_levels,
+        }
+
+        if source_info:
+            history_entry['source'] = source_info
+
+        self.metadata_tracking[node_id]['history'].append(history_entry)
+
+    def _report_metadata_contamination(self):
+        """
+        Report resources that have visual arts or arts categories,
+        showing their complete metadata update history.
+        """
+        from le_utils.constants.labels import subjects
+
+        contaminated_resources = []
+
+        for node_id, tracking_data in self.metadata_tracking.items():
+            # Get the final categories
+            if tracking_data['history']:
+                final_categories = tracking_data['history'][-1]['categories']
+                # Check if visual arts or arts appear in categories
+                has_arts = any(
+                    subjects.VISUAL_ART in str(cat) or subjects.ARTS in str(cat)
+                    for cat in final_categories
+                )
+                if has_arts:
+                    contaminated_resources.append((node_id, tracking_data))
+
+        if contaminated_resources:
+            report_lines = []
+            report_lines.append("=" * 80)
+            report_lines.append("METADATA CONTAMINATION REPORT")
+            report_lines.append(f"Found {len(contaminated_resources)} resources with VISUAL_ART or ARTS categories")
+            report_lines.append("=" * 80)
+            report_lines.append("")
+
+            for node_id, tracking_data in contaminated_resources:
+                report_lines.append("-" * 80)
+                report_lines.append(f"Resource: {tracking_data['title']}")
+                report_lines.append(f"Kind: {tracking_data['kind']}")
+                report_lines.append(f"Source ID: {node_id}")
+                report_lines.append("")
+                report_lines.append("Metadata History:")
+                report_lines.append("")
+
+                for i, history in enumerate(tracking_data['history'], 1):
+                    report_lines.append(f"  Step {i}: {history['stage']}")
+                    if 'source' in history:
+                        report_lines.append(f"    Source: {history['source']}")
+                    report_lines.append(f"    Categories: {history['categories']}")
+                    report_lines.append(f"    Grade Levels: {history['grade_levels']}")
+                    report_lines.append("")
+
+                report_lines.append("")
+
+            report_lines.append("=" * 80)
+
+            # Write to file
+            report_file = "metadata_contamination_report.txt"
+            with open(report_file, "w") as f:
+                f.write("\n".join(report_lines))
+
+            LOGGER.warning(f"Metadata contamination detected! Report written to {report_file}")
+            LOGGER.warning(f"Found {len(contaminated_resources)} resources with visual arts metadata")
+        else:
+            LOGGER.info("No metadata contamination detected (no resources with VISUAL_ART/ARTS categories)")
 
     def _create_replacement_node(self, parent, child):
         fake_child_id = "{}_{}".format(parent["slug"], child["slug"])
@@ -335,10 +433,17 @@ class TSVManager:
         # Distribute accumulated metadata to each resource
         if all_categories or all_grade_levels:
             for resource in resource_children:
+                # Track before sibling sharing
+                self._track_metadata(resource, 'before_sibling_sharing', f'topic: {topic_node.title}')
+
                 if all_categories:
                     resource.categories = final_categories
                 if all_grade_levels:
                     resource.grade_levels = final_grade_levels
+
+                # Track after sibling sharing
+                sibling_count = len(resource_children)
+                self._track_metadata(resource, 'after_sibling_sharing', f'topic: {topic_node.title}, {sibling_count} siblings')
 
     def _recurse_create(self, parent, node, level=0):
         """
@@ -436,8 +541,16 @@ class TSVManager:
                 self.lang,
             )
             parent.add_child(khan_node)
+
+            # Track initial metadata from METADATA_BY_SLUG
+            self._track_metadata(khan_node, 'initial', f'METADATA_BY_SLUG[{slug_no_prefix}]')
+
             khan_node.set_metadata_from_ancestors()
-            
+
+            # Track after ancestor inheritance
+            parent_title = getattr(parent, 'title', 'Unknown')
+            self._track_metadata(khan_node, 'after_ancestors', f'parent: {parent_title}')
+
             # Collect node for metadata generation
             if self.generate_metadata:
                 if slug_no_prefix not in self.collected_nodes:
@@ -560,8 +673,16 @@ class TSVManager:
             # to lookup any potentially pre-existing remote files.
             parent.add_child(khan_node)
             khan_node._set_video_files(self.remote_nodes)
+
+            # Track initial metadata from METADATA_BY_SLUG
+            self._track_metadata(khan_node, 'initial', f'METADATA_BY_SLUG[{slug_no_prefix}]')
+
             khan_node.set_metadata_from_ancestors()
-            
+
+            # Track after ancestor inheritance
+            parent_title = getattr(parent, 'title', 'Unknown')
+            self._track_metadata(khan_node, 'after_ancestors', f'parent: {parent_title}')
+
             # Collect node for metadata generation
             if self.generate_metadata:
                 if slug_no_prefix not in self.collected_nodes:
