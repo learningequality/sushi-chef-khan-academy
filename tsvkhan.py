@@ -294,10 +294,14 @@ class TSVManager:
         categories = list(getattr(node, 'categories', []))
         grade_levels = list(getattr(node, 'grade_levels', []))
 
+        # Include object id to distinguish between separate instances
+        instance_id = id(node)
+
         history_entry = {
             'stage': stage,
             'categories': categories,
             'grade_levels': grade_levels,
+            'instance_id': instance_id,
         }
 
         if source_info:
@@ -345,6 +349,8 @@ class TSVManager:
 
                 for i, history in enumerate(tracking_data['history'], 1):
                     report_lines.append(f"  Step {i}: {history['stage']}")
+                    if 'instance_id' in history:
+                        report_lines.append(f"    Instance ID: {history['instance_id']}")
                     if 'source' in history:
                         report_lines.append(f"    Source: {history['source']}")
                     report_lines.append(f"    Categories: {history['categories']}")
