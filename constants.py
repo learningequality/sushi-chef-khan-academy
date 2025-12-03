@@ -798,7 +798,7 @@ for o in LANGUAGE_CURRICULUM_MAP:
         # For languages with curricula, include if at least one curriculum is supported
         if any(c.get("supported", False) for c in o["curricula"]):
             SUPPORTED_LANGS.append(o["le_lang"])
-    # For languages without curricula, include if supported
+    # Or include if supported
     if o.get("supported", False):
         SUPPORTED_LANGS.append(o["le_lang"])
 
@@ -811,9 +811,8 @@ for lang_entry in LANGUAGE_CURRICULUM_MAP:
         for curriculum in lang_entry["curricula"]:
             if curriculum.get("title"):
                 CHANNEL_TITLE_LOOKUP[(le_lang, curriculum["curriculum_key"])] = curriculum["title"]
-    else:
-        if lang_entry.get("title"):
-            CHANNEL_TITLE_LOOKUP[le_lang] = lang_entry["title"]
+    if lang_entry.get("title"):
+        CHANNEL_TITLE_LOOKUP[le_lang] = lang_entry["title"]
 
 
 # Auto-generated from LANGUAGE_CURRICULUM_MAP for backward compatibility
@@ -824,9 +823,8 @@ for lang_entry in LANGUAGE_CURRICULUM_MAP:
         for curriculum in lang_entry["curricula"]:
             if curriculum.get("description"):
                 CHANNEL_DESCRIPTION_LOOKUP[(le_lang, curriculum["curriculum_key"])] = curriculum["description"]
-    else:
-        if lang_entry.get("description"):
-            CHANNEL_DESCRIPTION_LOOKUP[le_lang] = lang_entry["description"]
+    if lang_entry.get("description"):
+        CHANNEL_DESCRIPTION_LOOKUP[le_lang] = lang_entry["description"]
 
 
 # Auto-generated from LANGUAGE_CURRICULUM_MAP for backward compatibility

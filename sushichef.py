@@ -32,10 +32,11 @@ def get_supported_language_variants():
             for curriculum in entry["curricula"]:
                 if curriculum.get("supported", False):
                     result.append((le_lang, curriculum["curriculum_key"]))
-        else:
-            # Language without curricula - include if supported
-            if entry.get("supported", False):
-                result.append((le_lang, None))
+        # Language without curricula - include if supported
+        if entry.get("supported", False):
+            result.append((le_lang, None))
+    # Always run English first to gather metadata
+    result.insert(0, ("en", None))
     return result
 
 
@@ -58,9 +59,12 @@ def get_all_language_variants(include_all_variants=False):
             for curriculum in entry["curricula"]:
                 if include_all_variants or curriculum.get("supported", False):
                     result.append((le_lang, curriculum["curriculum_key"]))
-        else:
-            # Language without curricula - always include
-            result.append((le_lang, None))
+        if le_lang == "en":
+            continue
+        # Language without curricula - always include
+        result.append((le_lang, None))
+    # Always run English first to gather metadata
+    result.insert(0, ("en", None))
     return result
 
 
