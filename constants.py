@@ -384,6 +384,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "le_lang": "es",
         "name": "Spanish",
         "native_name": "Español",
+        "supported": True,
         "curricula": [
             {
                 "curriculum_key": "mx-eb",
@@ -404,6 +405,7 @@ LANGUAGE_CURRICULUM_MAP = [
         "le_lang": "fr",
         "name": "French",
         "native_name": "Français, langue française",
+        "supported": True,
         "curricula": [
             {
                 "curriculum_key": "be-be",
@@ -796,10 +798,9 @@ for o in LANGUAGE_CURRICULUM_MAP:
         # For languages with curricula, include if at least one curriculum is supported
         if any(c.get("supported", False) for c in o["curricula"]):
             SUPPORTED_LANGS.append(o["le_lang"])
-    else:
-        # For languages without curricula, include if supported
-        if o.get("supported", False):
-            SUPPORTED_LANGS.append(o["le_lang"])
+    # For languages without curricula, include if supported
+    if o.get("supported", False):
+        SUPPORTED_LANGS.append(o["le_lang"])
 
 
 # Auto-generated from LANGUAGE_CURRICULUM_MAP for backward compatibility
