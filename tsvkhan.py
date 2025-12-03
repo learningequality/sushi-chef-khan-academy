@@ -155,8 +155,6 @@ class TSVManager:
         self.hires = hires
         self.node_report = []
 
-        if self.generate_metadata:
-            self.onlylisted = False
         self.collected_nodes = {} if self.generate_metadata else None
 
         # Load JSON mapping for source_id to metadata (skip if generating)
@@ -369,7 +367,7 @@ class TSVManager:
         if (
             self.onlylisted
             and node["kind"] in TOPIC_LIKE_KINDS
-            and (not node.get("listed", True) and (node.get("fully_translated", True) == False or node.get("fully_translated", True) is None))
+            and (not node.get("listed", True) and not node.get("fully_translated", False))
         ):
             LOGGER.warning(node["original_title"] + " is not fully_translated")
             return None  # we want to keep only topic nodes with `fully_translated=True`
@@ -563,12 +561,12 @@ class TSVManager:
             khan_node.set_metadata_from_ancestors()
             
             # Collect node for metadata generation
-            if self.generate_metadata:
+            if not khan_node.has_video_file:
+                parent.children.remove(khan_node)
+            elif self.generate_metadata:
                 if slug_no_prefix not in self.collected_nodes:
                     self.collected_nodes[slug_no_prefix] = []
                 self.collected_nodes[slug_no_prefix].append(khan_node)
-            if not khan_node.has_video_file:
-                parent.children.remove(khan_node)
         else:
             if node["kind"] in UNSUPPORTED_KINDS:
                 # silentry skip unsupported content kinds like Article, Project,
