@@ -161,6 +161,9 @@ class TSVManager:
         if not self.generate_metadata:
             try:
                 with open(METADATA_MAPPING_FILE, 'r', encoding='utf-8') as f:
+                    # Clear all existing entries, which are only for topic metadata
+                    METADATA_BY_SLUG.clear()
+                    # Load in resource only metadata
                     METADATA_BY_SLUG.update(json.load(f))
                 LOGGER.info(f"Loaded metadata mapping from {METADATA_MAPPING_FILE}")
             except (json.JSONDecodeError, IOError) as e:
