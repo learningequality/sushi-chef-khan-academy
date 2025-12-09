@@ -476,6 +476,8 @@ class TSVManager:
                     slug,  # set topic id to slug (used for source_id later)
                     title,
                     description,
+                    # Only set metadata when generating metadata mapping
+                    self.generate_metadata,
                 )
                 parent.add_child(khan_node)
 
@@ -695,8 +697,8 @@ def clean_tsv_row(row):
 
 
 class KhanTopic(TopicNode):
-    def __init__(self, id, title, description):
-        metadata = METADATA_BY_SLUG.get(id, {})
+    def __init__(self, id, title, description, set_metadata):
+        metadata = METADATA_BY_SLUG.get(id, {}) if set_metadata else {}
         super(KhanTopic, self).__init__(
             id, title, description=description[:400] if description else "", **metadata
         )
