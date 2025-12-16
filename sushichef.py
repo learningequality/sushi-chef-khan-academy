@@ -106,20 +106,13 @@ def run_chef_for_multiple_languages(combinations, mode_description):
 
         # Build subprocess command
         cmd = [sys.executable, __file__]
-        cmd.extend(["--lang", lang])
+        cmd.extend([f"--lang={lang}"])
         if variant:
-            cmd.extend(["--variant", variant])
+            cmd.extend([f"--variant={variant}"])
 
         # Add all other arguments except --lang and --variant
-        skip_next = False
         for arg in sys.argv[1:]:
-            if skip_next:
-                skip_next = False
-                continue
-            if arg in ["--lang", "--variant"]:
-                skip_next = True
-                continue
-            if arg in ["supported", "all"]:
+            if arg.startswith("--lang") or arg.startswith("--variant"):
                 continue
             cmd.append(arg)
 
@@ -153,11 +146,11 @@ class KhanAcademySushiChef(SushiChef):
         Returns: (lang, variant), where `lang` uses internal repr. from le-utils
         and `variant` (str or None) identifies different channel version.
         """
-        if "lang" not in kwargs:
-            raise ValueError("Khan Academy chef must be run with lang=<code>")
-        lang = kwargs["lang"]
+        if "--lang" not in kwargs:
+            raise ValueError("Khan Academy chef must be run with --lang=<code>")
+        lang = kwargs["--lang"]
         assert getlang(lang), "Language code " + lang + " not recognized"
-        variant = kwargs.get("variant", None)
+        variant = kwargs.get("--variant", None)
         hires = bool(kwargs.get("hires", False))
         return lang, variant, hires
 
