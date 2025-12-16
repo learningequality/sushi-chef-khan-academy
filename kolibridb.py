@@ -210,7 +210,7 @@ def get_nodes_by_id(conn, attach_files=True, attach_assessments=True):
 
 def get_nodes_for_remote_files(channel_id):
     try:
-        db_file_path = download_db_file(channel_id)
+        db_file_path = download_db_file(channel_id, update=True)
         conn = sqlite3.connect(db_file_path)
         return get_nodes_by_id(conn, attach_files=True, attach_assessments=False)
     except Exception:
